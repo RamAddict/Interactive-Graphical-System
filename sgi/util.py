@@ -1,19 +1,23 @@
-"""@TODO: graphics module docstrings"""
+"""Miscellaneous project utilities."""
 
-from typing import Generator, Sequence, Tuple
+from typing import Iterable, Sequence, Generator, Tuple
 from itertools import tee
 
 
-def grouped(seq: Sequence, n: int) -> Generator[Tuple, None, None]:
-    it = iter(seq)
+def grouped(iterable: Iterable, n: int) -> Generator[Tuple, None, None]:
+    """Goes through an Iterable, n elements at a time.
+    If there aren't enough elements left for a last iteration, it won't happen.
+    """
+
+    it = iter(iterable)
     return zip(*([it] * n))
 
 
 def pairwise(seq: Sequence) -> Generator[Tuple, None, None]:
-    return grouped(seq, 2)
+    """Goes through a Sequence, a pair at a time with repetition.
+    eg: [1, 2, 3, 4, 5] -> (1, 2), (2, 3), (3, 4), (4, 5)
+    """
 
-
-def interlaced(seq: Sequence) -> Generator[Tuple, None, None]:
     first = iter(seq)
     first, second = tee(first)
     next(second)
