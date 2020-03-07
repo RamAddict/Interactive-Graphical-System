@@ -1,4 +1,4 @@
-"""@TODO: main module docstring"""
+"""Main Qt application."""
 
 import sys
 from PySide2.QtWidgets import QApplication, QMainWindow, QGraphicsView
@@ -7,6 +7,7 @@ from PySide2.QtCore import (QCoreApplication, QMetaObject, QObject, QPoint,
     QRect, QSize, QUrl, Qt)
 
 from gui import Ui_MainWindow
+from primitives import *
 from graphics import *
 
 
@@ -31,8 +32,6 @@ class MyGraphicsView(QGraphicsView):
             obj.draw(painter)
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
-    """@TODO: SGI class docstring"""
-
     def __init__(self):
         super(InteractiveGraphicalSystem, self).__init__()
 
@@ -49,5 +48,5 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    gui = InteractiveGraphicalSystem()
+    gui = InteractiveGraphicalSystem()  # gui variable is needed
     sys.exit(app.exec_())
