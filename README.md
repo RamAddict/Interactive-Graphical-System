@@ -1,2 +1,4 @@
-# INE5420-CG
-Computer Graphics project
+Interactive Graphical System
+====
+
+UFSC Computer Graphics (INE5420) project
