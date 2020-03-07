@@ -20,7 +20,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(805, 601)
+        MainWindow.resize(830, 608)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.up_btn = QPushButton(self.centralwidget)
@@ -45,11 +45,6 @@ class Ui_MainWindow(object):
         self.display_file = QListWidget(self.centralwidget)
         self.display_file.setObjectName(u"display_file")
         self.display_file.setGeometry(QRect(600, 10, 191, 171))
-        self.frame = QFrame(self.centralwidget)
-        self.frame.setObjectName(u"frame")
-        self.frame.setGeometry(QRect(20, 10, 561, 381))
-        self.frame.setFrameShape(QFrame.StyledPanel)
-        self.frame.setFrameShadow(QFrame.Raised)
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
