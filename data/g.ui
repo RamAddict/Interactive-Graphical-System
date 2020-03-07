@@ -14,16 +14,6 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QGraphicsView" name="main_vie_port">
-    <property name="geometry">
-     <rect>
-      <x>-10</x>
-      <y>-10</y>
-      <width>591</width>
-      <height>421</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QPushButton" name="up_btn">
     <property name="geometry">
      <rect>
@@ -107,6 +97,22 @@
       <width>191</width>
       <height>171</height>
      </rect>
+    </property>
+   </widget>
+   <widget class="QFrame" name="frame">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>10</y>
+      <width>561</width>
+      <height>381</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
     </property>
    </widget>
   </widget>
