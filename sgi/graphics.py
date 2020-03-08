@@ -61,8 +61,8 @@ class Camera(Painter):
 
     @zoom.setter
     def zoom(self, scale):
-        self.width /= scale
-        self.height /= scale
+        self.width = self._viewport_width / scale
+        self.height = self._viewport_height / scale
 
     @property
     def x(self):
