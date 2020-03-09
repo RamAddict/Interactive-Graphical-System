@@ -31,10 +31,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.console.setGeometry(10, 560, 960, 150)
 
         # setting up camera pan controls
-        self.upButton.clicked.connect(lambda: self.pan_camera(0, 10))
-        self.downButton.clicked.connect(lambda: self.pan_camera(0, -10))
-        self.leftButton.clicked.connect(lambda: self.pan_camera(-10, 0))
-        self.rightButton.clicked.connect(lambda: self.pan_camera(10, 0))
+        self._pan: int = 10  # @NOTE: camera step is adjusted by zoom
+        self.upButton.clicked.connect(lambda: self.pan_camera(0, self._pan))
+        self.downButton.clicked.connect(lambda: self.pan_camera(0, -self._pan))
+        self.leftButton.clicked.connect(lambda: self.pan_camera(-self._pan, 0))
+        self.rightButton.clicked.connect(lambda: self.pan_camera(self._pan, 0))
 
         # zoom slider setup
         self.zoomSlider.valueChanged.connect(
@@ -55,7 +56,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.viewport.update()
 
     def update_zoom(self, value, minimum=0, maximum=1.0):
-        self.viewport.camera.zoom = experp(value, minimum, maximum, 0.1, 10)
+        zoom = experp(value, minimum, maximum, 0.1, 10)
+        self.viewport.camera.zoom = zoom
+        self._pan = int(10 / zoom)
         self.viewport.update()
 
     def log(self, message: str):
@@ -70,10 +73,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 class QtPainter(QPainter, Painter):
     """Qt-based implementation of an abstract Painter."""
 
-    def draw_pixel(self, x, y):
+    def draw_pixel(self, x: int, y: int):
         self.drawPoint(x, y)
 
-    def draw_line(self, xa, ya, xb, yb):
+    def draw_line(self, xa: int, ya: int, xb: int, yb: int):
         self.drawLine(xa, ya, xb, yb)
 
 
@@ -94,11 +97,12 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     gui = InteractiveGraphicalSystem()  # gui variable is needed
-    gui.add_object(Line(Point(500, 500), Point(700, 500)), "l0")
     gui.add_object(Point(250, 250), "p0")
+    gui.add_object(Line(Point(500, 500), Point(700, 500)), "lh")
     gui.add_object(Wireframe(Point(300, 400),  # ->    /|
                              Point(300, 0),    # -v   / |
                              Point(0, 0)),     # ->  *---
-                   "w0")
+                   "tr")
+    gui.add_object(Line(Point(600, 400), Point(600, 600)), "lv")
 
     sys.exit(app.exec_())
