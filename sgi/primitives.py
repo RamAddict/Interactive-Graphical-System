@@ -1,24 +1,23 @@
 """Primitive graphics API."""
 
-from abc import ABC, abstractmethod
+from typing import Tuple
+
+from util import pairwise
 
 
-class Painter(ABC):
+class Painter():
     """Interface providing primitive graphics drawing."""
 
-    @abstractmethod
     def draw_pixel(self, x, y):
-        pass
+        raise NotImplementedError("Painter is an abstract class.")
 
-    @abstractmethod
-    def draw_line(self, x1, y1, x2, y2):
-        pass
+    def draw_line(self, xa, ya, xb, yb):
+        raise NotImplementedError("Painter is an abstract class.")
 
 
-class Drawable(ABC):
-    @abstractmethod
+class Drawable():
     def draw(self, painter: Painter):
-        pass
+        raise NotImplementedError("Drawable is an abstract class.")
 
 
 class Point(Drawable):
@@ -41,8 +40,8 @@ class Point(Drawable):
         return self._coordinates[1]
 
     @y.setter
-    def y(self, t):
-        self._coordinates[1] = t
+    def y(self, y):
+        self._coordinates[1] = y
 
     def __getitem__(self, key):
         return self._coordinates[key]
@@ -55,8 +54,8 @@ class Point(Drawable):
 
 
 class Line(Drawable):
-    def __init__(self, p1: Point, p2: Point):
-        self._points = [p1, p2]
+    def __init__(self, pa: Point, pb: Point):
+        self._points = [pa, pb]
 
     def draw(self, painter):
         painter.draw_line(self._points[0].x, self._points[0].y,
@@ -70,3 +69,25 @@ class Line(Drawable):
 
     def __str__(self):
         return '({}; {})'.format(self[0], self[1])
+
+
+class Wireframe(Drawable):
+    """Polygon-like object defined by a sequence of points."""
+
+    def __init__(self, *points: Tuple[Point]):
+        self.points = list(points)
+
+    def draw(self, painter):
+        for pa, pb in pairwise(self.points + [self.points[0]]):
+            painter.draw_line(pa.x, pa.y, pb.x, pb.y)
+
+    def __getitem__(self, key):
+        return self.points[key]
+
+    def __setitem__(self, key, point: Point):
+        self.points[key] = point
+
+    def __str__(self):
+        return '({})'.format(
+            '; '.join(str(p) for p in self.points + [self.points[0]])
+        )

@@ -1,113 +1,104 @@
-"""Main Qt application."""
+#!/usr/bin/env python
 
 import sys
-from PySide2.QtWidgets import QApplication, QMainWindow, QGraphicsView, QTextBrowser, QSlider, QWidget
+from typing import Dict
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QTextBrowser
 from PySide2.QtGui import QPainter
-from PySide2.QtCore import (QCoreApplication, QMetaObject, QObject, QPoint,
-    QRect, QSize, QUrl, Qt)
 
 from gui import Ui_MainWindow
-from primitives import *
-from graphics import *
+from primitives import Point, Line, Wireframe, Painter, Drawable
+from graphics import Camera
+from util import experp
 
-
-class DebugConsole(QTextBrowser):
-    def __init__(self, widget):
-        QTextBrowser.__init__(self, widget)
-    
-    def print(self, str):
-        self.setPlainText(self.toPlainText() + str + '\n')
-
-
-class MyPainter(Painter):
-    def __init__(self):
-        self.painter = QPainter()
-
-    def draw_pixel(self, x, y):
-        self.painter.drawPoint(x, y)
-
-    def draw_line(self, x1, y1, x2, y2):
-        self.painter.drawLine(x1, y1, x2, y2)
-
-class MainGraphicsView(QWidget):
-    def __init__(self, widget, objects, camera):
-        QWidget.__init__(self, widget)
-        self.objects = objects
-        self.camera = camera
-
-    def paintEvent(self, event):
-        self.camera.painter = MyPainter()
-        self.camera.painter.painter.begin(self)
-        for name, obj in self.objects.items():
-            obj.draw(self.camera)
-        self.camera.painter.painter.end()
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     def __init__(self):
+        # imported Qt UI setup
         super(InteractiveGraphicalSystem, self).__init__()
-
-        self.objects = {'line': Line(Point(500, 500), Point(700, 500)),
-                        'point': Point(250, 250),
-                        'wireframe': Wireframe(Point(0, 0), Point(300, 0), Point(300, 400))}
-
-        
-
-        # Setting up ViewPort
         self.setupUi(self)
-        self.view_port = MainGraphicsView(self.centralwidget, self.objects, Camera(581, 391, None, Point(00, 00)))
-        self.view_port.setObjectName(u"view_port")
-        self.view_port.setGeometry(QRect(10, 10, 581, 391))
 
-        # Adding items to DisplayFile
-        for num, name in enumerate(self.objects.keys()):
-            self.display_file.insertItem(num, name)
+        self.display_file: Dict[str, Drawable] = {}
 
-        # Setting up debug console
-        self.debug_console = DebugConsole(self.centralwidget)
-        self.debug_console.setObjectName(u"debug_console")
-        self.debug_console.setGeometry(QRect(0, 430, 591, 171))
-        self.debug_console.print("Setting up debug console")
+        # viewport setup
+        self.viewport = QtViewport(self.centralwidget, self.display_file,
+                                   Camera(960, 540, QtPainter(), Point(0, 0)))
+        self.viewport.setObjectName(u"viewport")
+        self.viewport.setGeometry(10, 10, 960, 540)
 
-        # Setting up moving around buttons
-        self.up_btn.setText("^")
-        self.down_btn.setText("v")
-        self.left_btn.setText("<")
-        self.right_btn.setText(">")
+        # console setup
+        self.console = QTextBrowser(self.centralwidget)
+        self.console.setObjectName(u"console")
+        self.console.setGeometry(10, 560, 960, 150)
 
-        def go_up():
-            self.view_port.camera.y += 10
-            self.view_port.update()
-        def go_down():
-            self.view_port.camera.y -= 10
-            self.view_port.update()
-        def go_left():
-            self.view_port.camera.x -= 10
-            self.view_port.update()
-        def go_right():
-            self.view_port.camera.x += 10
-            self.view_port.update()
-        
-        self.up_btn.clicked.connect(go_up)
-        self.down_btn.clicked.connect(go_down)
-        self.left_btn.clicked.connect(go_left)
-        self.right_btn.clicked.connect(go_right)
+        # setting up camera pan controls
+        self.upButton.clicked.connect(lambda: self.pan_camera(0, 10))
+        self.downButton.clicked.connect(lambda: self.pan_camera(0, -10))
+        self.leftButton.clicked.connect(lambda: self.pan_camera(-10, 0))
+        self.rightButton.clicked.connect(lambda: self.pan_camera(10, 0))
 
-        # Setting up Slider
-        self.horizontalSlider.setMinimum(-9.9)
-        self.horizontalSlider.setMaximum(10)
-        self.horizontalSlider.setTickInterval(2)
-        self.horizontalSlider.setValue(0)
-        self.horizontalSlider.setTickPosition(QSlider.TickPosition.TicksBothSides)
-        def changeZoom():
-            self.view_port.camera.zoom = (10+(self.horizontalSlider.value()))/10
-            self.view_port.update()
-        self.horizontalSlider.valueChanged.connect(changeZoom)
+        # zoom slider setup
+        self.zoomSlider.valueChanged.connect(
+            lambda: self.update_zoom(self.zoomSlider.value(),
+                                     self.zoomSlider.minimum(),
+                                     self.zoomSlider.maximum())
+        )
+        self.update_zoom(self.zoomSlider.value(),
+                         self.zoomSlider.minimum(), self.zoomSlider.maximum())
 
         # render it all
         self.show()
+        self.log("Interactive Graphical System initialized.")
+
+    def pan_camera(self, dx, dy):
+        self.viewport.camera.x += dx
+        self.viewport.camera.y += dy
+        self.viewport.update()
+
+    def update_zoom(self, value, minimum=0, maximum=1.0):
+        self.viewport.camera.zoom = experp(value, minimum, maximum, 0.1, 10)
+        self.viewport.update()
+
+    def log(self, message: str):
+        self.console.append(message)
+
+    def add_object(self, obj: Drawable, name: str):
+        self.display_file[name] = obj
+        self.objectList.addItem(name)
+        self.log("%s '%s' added to display file." % (type(obj).__name__, name))
+
+
+class QtPainter(QPainter, Painter):
+    """Qt-based implementation of an abstract Painter."""
+
+    def draw_pixel(self, x, y):
+        self.drawPoint(x, y)
+
+    def draw_line(self, xa, ya, xb, yb):
+        self.drawLine(xa, ya, xb, yb)
+
+
+class QtViewport(QWidget):
+    def __init__(self, parent, objects: Dict[str, Drawable], _qt_cam: Camera):
+        QWidget.__init__(self, parent)
+        self.objects = objects
+        self.camera = _qt_cam
+
+    def paintEvent(self, event):
+        self.camera.painter.begin(self)
+        for obj in self.objects.values():
+            obj.draw(self.camera)
+        self.camera.painter.end()
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
     gui = InteractiveGraphicalSystem()  # gui variable is needed
+    gui.add_object(Line(Point(500, 500), Point(700, 500)), "l0")
+    gui.add_object(Point(250, 250), "p0")
+    gui.add_object(Wireframe(Point(300, 400),  # ->    /|
+                             Point(300, 0),    # -v   / |
+                             Point(0, 0)),     # ->  *---
+                   "w0")
+
     sys.exit(app.exec_())

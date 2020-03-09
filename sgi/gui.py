@@ -20,28 +20,54 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(830, 608)
+        MainWindow.resize(1280, 720)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.up_btn = QPushButton(self.centralwidget)
-        self.up_btn.setObjectName(u"up_btn")
-        self.up_btn.setGeometry(QRect(670, 210, 41, 25))
-        self.left_btn = QPushButton(self.centralwidget)
-        self.left_btn.setObjectName(u"left_btn")
-        self.left_btn.setGeometry(QRect(630, 240, 41, 25))
-        self.right_btn = QPushButton(self.centralwidget)
-        self.right_btn.setObjectName(u"right_btn")
-        self.right_btn.setGeometry(QRect(710, 240, 41, 25))
-        self.down_btn = QPushButton(self.centralwidget)
-        self.down_btn.setObjectName(u"down_btn")
-        self.down_btn.setGeometry(QRect(670, 270, 41, 25))
-        self.horizontalSlider = QSlider(self.centralwidget)
-        self.horizontalSlider.setObjectName(u"horizontalSlider")
-        self.horizontalSlider.setGeometry(QRect(610, 310, 160, 16))
-        self.horizontalSlider.setOrientation(Qt.Horizontal)
-        self.display_file = QListWidget(self.centralwidget)
-        self.display_file.setObjectName(u"display_file")
-        self.display_file.setGeometry(QRect(600, 10, 191, 171))
+        self.objectList = QListWidget(self.centralwidget)
+        self.objectList.setObjectName(u"objectList")
+        self.objectList.setGeometry(QRect(980, 10, 290, 200))
+        self.layoutWidget = QWidget(self.centralwidget)
+        self.layoutWidget.setObjectName(u"layoutWidget")
+        self.layoutWidget.setGeometry(QRect(970, 220, 304, 171))
+        self.cameraControls = QGridLayout(self.layoutWidget)
+        self.cameraControls.setObjectName(u"cameraControls")
+        self.cameraControls.setContentsMargins(20, 0, 20, 0)
+        self.upButton = QPushButton(self.layoutWidget)
+        self.upButton.setObjectName(u"upButton")
+        self.upButton.setText(u"^")
+
+        self.cameraControls.addWidget(self.upButton, 0, 1, 1, 1)
+
+        self.leftButton = QPushButton(self.layoutWidget)
+        self.leftButton.setObjectName(u"leftButton")
+        self.leftButton.setText(u"<")
+
+        self.cameraControls.addWidget(self.leftButton, 1, 0, 1, 1)
+
+        self.rightButton = QPushButton(self.layoutWidget)
+        self.rightButton.setObjectName(u"rightButton")
+        self.rightButton.setText(u">")
+
+        self.cameraControls.addWidget(self.rightButton, 1, 2, 1, 1)
+
+        self.downButton = QPushButton(self.layoutWidget)
+        self.downButton.setObjectName(u"downButton")
+        self.downButton.setText(u"v")
+
+        self.cameraControls.addWidget(self.downButton, 2, 1, 1, 1)
+
+        self.zoomSlider = QSlider(self.layoutWidget)
+        self.zoomSlider.setObjectName(u"zoomSlider")
+        self.zoomSlider.setMinimum(0)
+        self.zoomSlider.setMaximum(100)
+        self.zoomSlider.setSingleStep(10)
+        self.zoomSlider.setValue(50)
+        self.zoomSlider.setOrientation(Qt.Horizontal)
+        self.zoomSlider.setTickPosition(QSlider.TicksBothSides)
+        self.zoomSlider.setTickInterval(5)
+
+        self.cameraControls.addWidget(self.zoomSlider, 3, 0, 1, 3)
+
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
@@ -50,10 +76,6 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.up_btn.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.left_btn.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.right_btn.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
-        self.down_btn.setText(QCoreApplication.translate("MainWindow", u"PushButton", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Interactive Graphical System - INE5420-CG - 2020/1", None))
     # retranslateUi
 
