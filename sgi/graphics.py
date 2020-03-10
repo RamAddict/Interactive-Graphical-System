@@ -6,7 +6,7 @@ from primitives import Painter, Point
 
 
 class Camera(Painter):
-    """Used to render objects using a window as reference."""
+    """Window used as reference to render objects."""
 
     def __init__(self, viewport_width: int, viewport_height: int,
                  painter: Painter, center: Point):
@@ -28,7 +28,7 @@ class Camera(Painter):
         xb, yb = self._transform(xb - self.x, yb - self.y)
         self.painter.draw_line(xa, ya, xb, yb)
 
-    def _transform(self, x, y) -> Tuple[int]:
+    def _transform(self, x, y) -> Tuple[int, int]:
         """Apply the Window-to-Viewport Transformation on given coordinates."""
         # equivalent to lerp(x, _x_min, x_min+width, 0, _viewport_width),
         x = (x - self._x_min) * self._viewport_width / self.width
