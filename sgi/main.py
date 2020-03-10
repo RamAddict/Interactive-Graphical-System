@@ -12,6 +12,8 @@ from util import experp
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
+    console = None
+
     def __init__(self):
         # imported Qt UI setup
         super(InteractiveGraphicalSystem, self).__init__()
@@ -26,9 +28,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.viewport.setGeometry(10, 10, 960, 540)
 
         # console setup
-        self.console = QTextBrowser(self.centralwidget)
-        self.console.setObjectName(u"console")
-        self.console.setGeometry(10, 560, 960, 150)
+        InteractiveGraphicalSystem.console = QTextBrowser(self.centralwidget)
+        InteractiveGraphicalSystem.console.setObjectName(u"console")
+        InteractiveGraphicalSystem.console.setGeometry(10, 560, 960, 150)
 
         # setting up camera pan controls
         self._pan: int = 10  # @NOTE: camera step is adjusted by zoom
@@ -48,7 +50,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         # render it all
         self.show()
-        self.log("Interactive Graphical System initialized.")
+        InteractiveGraphicalSystem.log("Interactive Graphical System initialized.")
 
     def pan_camera(self, dx, dy):
         self.viewport.camera.x += dx
@@ -61,13 +63,13 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self._pan = int(10 / zoom)
         self.viewport.update()
 
-    def log(self, message: str):
-        self.console.append(message)
+    def log(message: str):
+        InteractiveGraphicalSystem.console.append(message)
 
     def add_object(self, obj: Drawable, name: str):
         self.display_file[name] = obj
         self.objectList.addItem(name)
-        self.log("%s '%s' added to display file." % (type(obj).__name__, name))
+        InteractiveGraphicalSystem.log("%s '%s' added to display file." % (type(obj).__name__, name))
 
 
 class QtPainter(QPainter, Painter):
