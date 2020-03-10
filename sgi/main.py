@@ -22,15 +22,15 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.display_file: Dict[str, Drawable] = {}
 
         # viewport setup
-        self.viewport = QtViewport(self.centralwidget, self.display_file,
+        self.viewport = QtViewport(self.canvasFrame, self.display_file,
                                    Camera(960, 540, QtPainter(), Point(0, 0)))
         self.viewport.setObjectName(u"viewport")
-        self.viewport.setGeometry(10, 10, 960, 540)
+        self.viewport.setGeometry(0, 0, 960, 540)
 
         # console setup
         InteractiveGraphicalSystem.console = QTextBrowser(self.centralwidget)
         InteractiveGraphicalSystem.console.setObjectName(u"console")
-        InteractiveGraphicalSystem.console.setGeometry(10, 560, 960, 150)
+        InteractiveGraphicalSystem.console.setGeometry(10, 590, 960, 120)
 
         # setting up camera pan controls
         self._pan: int = 10  # @NOTE: camera step is adjusted by zoom
@@ -69,7 +69,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     def add_object(self, obj: Drawable, name: str):
         self.display_file[name] = obj
         self.objectList.addItem(name)
-        InteractiveGraphicalSystem.log("%s '%s' added to display file." % (type(obj).__name__, name))
+        InteractiveGraphicalSystem.log("%s '%s' added to Display File." % (type(obj).__name__, name))
 
 
 class QtPainter(QPainter, Painter):
@@ -84,7 +84,7 @@ class QtPainter(QPainter, Painter):
 
 class QtViewport(QWidget):
     def __init__(self, parent, objects: Dict[str, Drawable], _qt_cam: Camera):
-        QWidget.__init__(self, parent)
+        super().__init__(parent)
         self.objects = objects
         self.camera = _qt_cam
 
