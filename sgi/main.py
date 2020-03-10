@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from typing import Dict
+from typing import Dict, Tuple
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QTextBrowser
 from PySide2.QtGui import QPainter
 
@@ -19,7 +19,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         super(InteractiveGraphicalSystem, self).__init__()
         self.setupUi(self)
 
-        self.display_file: Dict[str, Drawable] = {}
+        self.display_file: Dict[str, Tuple[int, Drawable]] = {}
 
         # viewport setup
         self.viewport = QtViewport(self.canvasFrame, self.display_file,
@@ -48,9 +48,24 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.update_zoom(self.zoomSlider.value(),
                          self.zoomSlider.minimum(), self.zoomSlider.maximum())
 
+        # setting up scene controls  # @TODO: finish
+        # self.newButton
+        # self.editButton
+        self.removeButton.clicked.connect(
+            lambda: self.remove_object(self.objectList.currentRow())
+        )
+        # self.upListButton
+        # self.downListButton
+        # self.nameEdit
+        # self.typeBox
+        # self.dialogBox
+        # self.objectArea
+
         # render it all
         self.show()
-        InteractiveGraphicalSystem.log("Interactive Graphical System initialized.")
+        InteractiveGraphicalSystem.log(
+            "Interactive Graphical System initialized."
+        )
 
     def pan_camera(self, dx, dy):
         self.viewport.camera.x += dx
@@ -66,10 +81,27 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     def log(message: str):
         InteractiveGraphicalSystem.console.append(message)
 
-    def add_object(self, obj: Drawable, name: str):
-        self.display_file[name] = obj
-        self.objectList.addItem(name)
-        InteractiveGraphicalSystem.log("%s '%s' added to Display File." % (type(obj).__name__, name))
+    def remove_object(self, index: int):
+        item = self.objectList.takeItem(index)
+        if item:
+            name = item.text()
+            item = self.display_file.pop(name)
+            InteractiveGraphicalSystem.log(
+                "Removed '%s' from Display File." % name
+            )
+            self.viewport.update()
+        return item
+
+    def add_object(self, obj: Drawable, name: str, index: int = None) -> int:
+        """Adds an object to the Display File, returning its position."""
+        index = self.objectList.count() if index is None else index
+        self.display_file[name] = (index, obj)  # @FIXME: name conflicts
+        self.objectList.insertItem(index, name)
+        InteractiveGraphicalSystem.log(
+            "%s '%s' added to Display File." % (type(obj).__name__, name)
+        )
+        self.viewport.update()
+        return index
 
 
 class QtPainter(QPainter, Painter):
@@ -90,7 +122,7 @@ class QtViewport(QWidget):
 
     def paintEvent(self, event):
         self.camera.painter.begin(self)
-        for obj in self.objects.values():
+        for _, obj in self.objects.values():
             obj.draw(self.camera)
         self.camera.painter.end()
 

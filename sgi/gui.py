@@ -20,6 +20,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
+        MainWindow.setEnabled(True)
         MainWindow.resize(1280, 720)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
@@ -83,11 +84,6 @@ class Ui_MainWindow(object):
         self.consoleLabel = QLabel(self.centralwidget)
         self.consoleLabel.setObjectName(u"consoleLabel")
         self.consoleLabel.setGeometry(QRect(10, 570, 50, 18))
-        self.objectFrame = QFrame(self.centralwidget)
-        self.objectFrame.setObjectName(u"objectFrame")
-        self.objectFrame.setGeometry(QRect(980, 460, 290, 250))
-        self.objectFrame.setFrameShape(QFrame.StyledPanel)
-        self.objectFrame.setFrameShadow(QFrame.Raised)
         self.objectLabel = QLabel(self.centralwidget)
         self.objectLabel.setObjectName(u"objectLabel")
         self.objectLabel.setGeometry(QRect(980, 440, 40, 18))
@@ -96,40 +92,75 @@ class Ui_MainWindow(object):
         self.canvasFrame.setGeometry(QRect(10, 25, 960, 540))
         self.canvasFrame.setFrameShape(QFrame.StyledPanel)
         self.canvasFrame.setFrameShadow(QFrame.Sunken)
-        self.widget = QWidget(self.centralwidget)
-        self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(1180, 30, 90, 196))
-        self.actionsLayout = QVBoxLayout(self.widget)
+        self.layoutWidget = QWidget(self.centralwidget)
+        self.layoutWidget.setObjectName(u"layoutWidget")
+        self.layoutWidget.setGeometry(QRect(1180, 30, 90, 196))
+        self.actionsLayout = QVBoxLayout(self.layoutWidget)
         self.actionsLayout.setObjectName(u"actionsLayout")
         self.actionsLayout.setContentsMargins(0, 0, 0, 0)
-        self.newButton = QPushButton(self.widget)
+        self.newButton = QPushButton(self.layoutWidget)
         self.newButton.setObjectName(u"newButton")
 
         self.actionsLayout.addWidget(self.newButton)
 
-        self.editButton = QPushButton(self.widget)
+        self.editButton = QPushButton(self.layoutWidget)
         self.editButton.setObjectName(u"editButton")
 
         self.actionsLayout.addWidget(self.editButton)
 
-        self.removeButton = QPushButton(self.widget)
+        self.removeButton = QPushButton(self.layoutWidget)
         self.removeButton.setObjectName(u"removeButton")
 
         self.actionsLayout.addWidget(self.removeButton)
 
-        self.upListButton = QPushButton(self.widget)
+        self.upListButton = QPushButton(self.layoutWidget)
         self.upListButton.setObjectName(u"upListButton")
 
         self.actionsLayout.addWidget(self.upListButton)
 
-        self.downListButton = QPushButton(self.widget)
+        self.downListButton = QPushButton(self.layoutWidget)
         self.downListButton.setObjectName(u"downListButton")
 
         self.actionsLayout.addWidget(self.downListButton)
 
+        self.objectArea = QScrollArea(self.centralwidget)
+        self.objectArea.setObjectName(u"objectArea")
+        self.objectArea.setEnabled(True)
+        self.objectArea.setGeometry(QRect(980, 460, 290, 250))
+        self.objectArea.setWidgetResizable(True)
+        self.scrollAreaWidgetContents = QWidget()
+        self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 286, 246))
+        self.nameLabel = QLabel(self.scrollAreaWidgetContents)
+        self.nameLabel.setObjectName(u"nameLabel")
+        self.nameLabel.setGeometry(QRect(10, 10, 50, 32))
+        font = QFont()
+        font.setPointSize(12)
+        self.nameLabel.setFont(font)
+        self.nameEdit = QLineEdit(self.scrollAreaWidgetContents)
+        self.nameEdit.setObjectName(u"nameEdit")
+        self.nameEdit.setGeometry(QRect(70, 10, 200, 32))
+        self.typeBox = QComboBox(self.scrollAreaWidgetContents)
+        self.typeBox.addItem("")
+        self.typeBox.addItem("")
+        self.typeBox.addItem("")
+        self.typeBox.setObjectName(u"typeBox")
+        self.typeBox.setGeometry(QRect(70, 50, 200, 32))
+        self.typeLabel = QLabel(self.scrollAreaWidgetContents)
+        self.typeLabel.setObjectName(u"typeLabel")
+        self.typeLabel.setGeometry(QRect(10, 50, 40, 32))
+        self.typeLabel.setFont(font)
+        self.dialogBox = QDialogButtonBox(self.scrollAreaWidgetContents)
+        self.dialogBox.setObjectName(u"dialogBox")
+        self.dialogBox.setGeometry(QRect(60, 204, 160, 34))
+        self.dialogBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
+        self.objectArea.setWidget(self.scrollAreaWidgetContents)
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
+
+        self.typeBox.setCurrentIndex(1)
+
 
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
@@ -145,5 +176,12 @@ class Ui_MainWindow(object):
         self.removeButton.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.upListButton.setText(QCoreApplication.translate("MainWindow", u"Move Up", None))
         self.downListButton.setText(QCoreApplication.translate("MainWindow", u"Move Down", None))
+        self.nameLabel.setText(QCoreApplication.translate("MainWindow", u"Name:", None))
+        self.nameEdit.setText(QCoreApplication.translate("MainWindow", u"Enter name here", None))
+        self.typeBox.setItemText(0, QCoreApplication.translate("MainWindow", u"Point", None))
+        self.typeBox.setItemText(1, QCoreApplication.translate("MainWindow", u"Line", None))
+        self.typeBox.setItemText(2, QCoreApplication.translate("MainWindow", u"Wireframe", None))
+
+        self.typeLabel.setText(QCoreApplication.translate("MainWindow", u"Type:", None))
     # retranslateUi
 

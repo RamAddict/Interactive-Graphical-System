@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -153,22 +156,6 @@
      <string>Console</string>
     </property>
    </widget>
-   <widget class="QFrame" name="objectFrame">
-    <property name="geometry">
-     <rect>
-      <x>980</x>
-      <y>460</y>
-      <width>290</width>
-      <height>250</height>
-     </rect>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
-    </property>
-    <property name="frameShadow">
-     <enum>QFrame::Raised</enum>
-    </property>
-   </widget>
    <widget class="QLabel" name="objectLabel">
     <property name="geometry">
      <rect>
@@ -198,7 +185,7 @@
      <enum>QFrame::Sunken</enum>
     </property>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>1180</x>
@@ -244,6 +231,122 @@
       </widget>
      </item>
     </layout>
+   </widget>
+   <widget class="QScrollArea" name="objectArea">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>980</x>
+      <y>460</y>
+      <width>290</width>
+      <height>250</height>
+     </rect>
+    </property>
+    <property name="widgetResizable">
+     <bool>true</bool>
+    </property>
+    <widget class="QWidget" name="scrollAreaWidgetContents">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>286</width>
+       <height>246</height>
+      </rect>
+     </property>
+     <widget class="QLabel" name="nameLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>10</y>
+        <width>50</width>
+        <height>32</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Name:</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="nameEdit">
+      <property name="geometry">
+       <rect>
+        <x>70</x>
+        <y>10</y>
+        <width>200</width>
+        <height>32</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Enter name here</string>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="typeBox">
+      <property name="geometry">
+       <rect>
+        <x>70</x>
+        <y>50</y>
+        <width>200</width>
+        <height>32</height>
+       </rect>
+      </property>
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <item>
+       <property name="text">
+        <string>Point</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Line</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Wireframe</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="typeLabel">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>50</y>
+        <width>40</width>
+        <height>32</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Type:</string>
+      </property>
+     </widget>
+     <widget class="QDialogButtonBox" name="dialogBox">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>204</y>
+        <width>160</width>
+        <height>34</height>
+       </rect>
+      </property>
+      <property name="standardButtons">
+       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+      </property>
+     </widget>
+    </widget>
    </widget>
   </widget>
  </widget>
