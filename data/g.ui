@@ -18,22 +18,28 @@
     <property name="geometry">
      <rect>
       <x>980</x>
-      <y>10</y>
-      <width>290</width>
-      <height>200</height>
+      <y>25</y>
+      <width>190</width>
+      <height>205</height>
      </rect>
     </property>
    </widget>
-   <widget class="QWidget" name="layoutWidget">
+   <widget class="QFrame" name="controlFrame">
     <property name="geometry">
      <rect>
-      <x>970</x>
-      <y>220</y>
-      <width>304</width>
-      <height>171</height>
+      <x>980</x>
+      <y>260</y>
+      <width>290</width>
+      <height>170</height>
      </rect>
     </property>
-    <layout class="QGridLayout" name="cameraControls">
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Sunken</enum>
+    </property>
+    <layout class="QGridLayout" name="controlLayout">
      <property name="leftMargin">
       <number>20</number>
      </property>
@@ -90,6 +96,150 @@
        </property>
        <property name="tickInterval">
         <number>5</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QLabel" name="viewportLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>5</y>
+      <width>58</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string notr="true">Viewport</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sceneLabel">
+    <property name="geometry">
+     <rect>
+      <x>980</x>
+      <y>5</y>
+      <width>70</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Display File</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="controlLabel">
+    <property name="geometry">
+     <rect>
+      <x>980</x>
+      <y>240</y>
+      <width>50</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Controls</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="consoleLabel">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>570</y>
+      <width>50</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Console</string>
+    </property>
+   </widget>
+   <widget class="QFrame" name="objectFrame">
+    <property name="geometry">
+     <rect>
+      <x>980</x>
+      <y>460</y>
+      <width>290</width>
+      <height>250</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Raised</enum>
+    </property>
+   </widget>
+   <widget class="QLabel" name="objectLabel">
+    <property name="geometry">
+     <rect>
+      <x>980</x>
+      <y>440</y>
+      <width>40</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Object</string>
+    </property>
+   </widget>
+   <widget class="QFrame" name="canvasFrame">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>25</y>
+      <width>960</width>
+      <height>540</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Sunken</enum>
+    </property>
+   </widget>
+   <widget class="QWidget" name="">
+    <property name="geometry">
+     <rect>
+      <x>1180</x>
+      <y>30</y>
+      <width>90</width>
+      <height>196</height>
+     </rect>
+    </property>
+    <layout class="QVBoxLayout" name="actionsLayout">
+     <item>
+      <widget class="QPushButton" name="newButton">
+       <property name="text">
+        <string>New</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="editButton">
+       <property name="text">
+        <string>Edit</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="removeButton">
+       <property name="text">
+        <string>Remove</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="upListButton">
+       <property name="text">
+        <string>Move Up</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="downListButton">
+       <property name="text">
+        <string>Move Down</string>
        </property>
       </widget>
      </item>

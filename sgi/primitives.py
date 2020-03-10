@@ -11,7 +11,6 @@ class Painter():
     def draw_pixel(self, x: int, y: int):
         raise NotImplementedError("Painter is an abstract class.")
 
-    # @NOTE: evidently, draw_line can be implemented with draw_pixel
     def draw_line(self, xa: int, ya: int, xb: int, yb: int):
         # Bresenham's line algorithm, which is based on a decision parameter p
         # allowing to solve y = mx + c using only integer operations {+, -, 2*}
