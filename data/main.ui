@@ -26,6 +26,9 @@
       <height>205</height>
      </rect>
     </property>
+    <property name="verticalScrollBarPolicy">
+     <enum>Qt::ScrollBarAlwaysOn</enum>
+    </property>
    </widget>
    <widget class="QFrame" name="controlFrame">
     <property name="geometry">
@@ -256,96 +259,87 @@
        <height>246</height>
       </rect>
      </property>
-     <widget class="QLabel" name="nameLabel">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>10</y>
-        <width>50</width>
-        <height>32</height>
-       </rect>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="leftMargin">
+       <number>6</number>
       </property>
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Name:</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="nameEdit">
-      <property name="geometry">
-       <rect>
-        <x>70</x>
-        <y>10</y>
-        <width>200</width>
-        <height>32</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Enter name here</string>
-      </property>
-     </widget>
-     <widget class="QComboBox" name="typeBox">
-      <property name="geometry">
-       <rect>
-        <x>70</x>
-        <y>50</y>
-        <width>200</width>
-        <height>32</height>
-       </rect>
-      </property>
-      <property name="currentIndex">
-       <number>1</number>
+      <property name="topMargin">
+       <number>5</number>
       </property>
       <item>
-       <property name="text">
-        <string>Point</string>
-       </property>
+       <layout class="QFormLayout" name="formLayout">
+        <property name="formAlignment">
+         <set>Qt::AlignHCenter|Qt::AlignTop</set>
+        </property>
+        <item row="0" column="0">
+         <widget class="QLabel" name="nameLabel">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Name:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="nameEdit">
+          <property name="text">
+           <string>Enter name here</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="typeLabel">
+          <property name="font">
+           <font>
+            <pointsize>12</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>Type:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="typeBox">
+          <property name="currentIndex">
+           <number>1</number>
+          </property>
+          <item>
+           <property name="text">
+            <string>Point</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Line</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Wireframe</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <property name="text">
-        <string>Line</string>
-       </property>
+       <widget class="QDialogButtonBox" name="dialogBox">
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="standardButtons">
+         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+        </property>
+        <property name="centerButtons">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
-      <item>
-       <property name="text">
-        <string>Wireframe</string>
-       </property>
-      </item>
-     </widget>
-     <widget class="QLabel" name="typeLabel">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>50</y>
-        <width>40</width>
-        <height>32</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Type:</string>
-      </property>
-     </widget>
-     <widget class="QDialogButtonBox" name="dialogBox">
-      <property name="geometry">
-       <rect>
-        <x>60</x>
-        <y>204</y>
-        <width>160</width>
-        <height>34</height>
-       </rect>
-      </property>
-      <property name="standardButtons">
-       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-      </property>
-     </widget>
+     </layout>
     </widget>
    </widget>
    <widget class="QTextBrowser" name="console">

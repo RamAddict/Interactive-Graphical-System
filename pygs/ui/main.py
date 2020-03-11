@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'g.ui'
+## Form generated from reading UI file 'main.ui'
 ##
 ## Created by: Qt User Interface Compiler version 5.14.1
 ##
@@ -27,6 +27,7 @@ class Ui_MainWindow(object):
         self.displayFile = QListWidget(self.centralwidget)
         self.displayFile.setObjectName(u"displayFile")
         self.displayFile.setGeometry(QRect(980, 25, 190, 205))
+        self.displayFile.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.controlFrame = QFrame(self.centralwidget)
         self.controlFrame.setObjectName(u"controlFrame")
         self.controlFrame.setGeometry(QRect(980, 260, 290, 170))
@@ -131,29 +132,50 @@ class Ui_MainWindow(object):
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
         self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 286, 246))
+        self.verticalLayout = QVBoxLayout(self.scrollAreaWidgetContents)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(6, 5, -1, -1)
+        self.formLayout = QFormLayout()
+        self.formLayout.setObjectName(u"formLayout")
+        self.formLayout.setFormAlignment(Qt.AlignHCenter|Qt.AlignTop)
         self.nameLabel = QLabel(self.scrollAreaWidgetContents)
         self.nameLabel.setObjectName(u"nameLabel")
-        self.nameLabel.setGeometry(QRect(10, 10, 50, 32))
         font = QFont()
         font.setPointSize(12)
         self.nameLabel.setFont(font)
+
+        self.formLayout.setWidget(0, QFormLayout.LabelRole, self.nameLabel)
+
         self.nameEdit = QLineEdit(self.scrollAreaWidgetContents)
         self.nameEdit.setObjectName(u"nameEdit")
-        self.nameEdit.setGeometry(QRect(70, 10, 200, 32))
+
+        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.nameEdit)
+
+        self.typeLabel = QLabel(self.scrollAreaWidgetContents)
+        self.typeLabel.setObjectName(u"typeLabel")
+        self.typeLabel.setFont(font)
+
+        self.formLayout.setWidget(1, QFormLayout.LabelRole, self.typeLabel)
+
         self.typeBox = QComboBox(self.scrollAreaWidgetContents)
         self.typeBox.addItem("")
         self.typeBox.addItem("")
         self.typeBox.addItem("")
         self.typeBox.setObjectName(u"typeBox")
-        self.typeBox.setGeometry(QRect(70, 50, 200, 32))
-        self.typeLabel = QLabel(self.scrollAreaWidgetContents)
-        self.typeLabel.setObjectName(u"typeLabel")
-        self.typeLabel.setGeometry(QRect(10, 50, 40, 32))
-        self.typeLabel.setFont(font)
+
+        self.formLayout.setWidget(1, QFormLayout.FieldRole, self.typeBox)
+
+
+        self.verticalLayout.addLayout(self.formLayout)
+
         self.dialogBox = QDialogButtonBox(self.scrollAreaWidgetContents)
         self.dialogBox.setObjectName(u"dialogBox")
-        self.dialogBox.setGeometry(QRect(60, 204, 160, 34))
+        self.dialogBox.setLayoutDirection(Qt.LeftToRight)
         self.dialogBox.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
+        self.dialogBox.setCenterButtons(True)
+
+        self.verticalLayout.addWidget(self.dialogBox)
+
         self.objectArea.setWidget(self.scrollAreaWidgetContents)
         self.console = QTextBrowser(self.centralwidget)
         self.console.setObjectName(u"console")
@@ -181,10 +203,10 @@ class Ui_MainWindow(object):
         self.downListButton.setText(QCoreApplication.translate("MainWindow", u"Move Down", None))
         self.nameLabel.setText(QCoreApplication.translate("MainWindow", u"Name:", None))
         self.nameEdit.setText(QCoreApplication.translate("MainWindow", u"Enter name here", None))
+        self.typeLabel.setText(QCoreApplication.translate("MainWindow", u"Type:", None))
         self.typeBox.setItemText(0, QCoreApplication.translate("MainWindow", u"Point", None))
         self.typeBox.setItemText(1, QCoreApplication.translate("MainWindow", u"Line", None))
         self.typeBox.setItemText(2, QCoreApplication.translate("MainWindow", u"Wireframe", None))
 
-        self.typeLabel.setText(QCoreApplication.translate("MainWindow", u"Type:", None))
     # retranslateUi
 

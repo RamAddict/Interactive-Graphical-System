@@ -1,14 +1,12 @@
-#!/usr/bin/env python
-
+#!/usr/bin/env python3
 from sys import argv
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QListWidget
 from PySide2.QtGui import QPainter
 from PySide2.QtCore import Qt
 
-from gui import Ui_MainWindow
-from primitives import Point, Line, Wireframe, Painter, Drawable
-from graphics import Camera
-from util import experp
+from ui.main import Ui_MainWindow
+from graphics import Point, Line, Wireframe, Painter, Drawable, Camera
+from utilities import experp
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
@@ -67,7 +65,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         # self.nameEdit
         # self.typeBox
         # self.dialogBox
-        # self.objectArea
+        # self.objectArea / self.formLayout
+        # Ui_PointForm
 
         # render it all
         self.show()
