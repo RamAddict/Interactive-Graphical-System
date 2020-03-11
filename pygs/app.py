@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 from sys import argv
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QListWidget
+from math import inf
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QListWidget, QFormLayout
 from PySide2.QtGui import QPainter
 from PySide2.QtCore import Qt
 
 from ui.main import Ui_MainWindow
+from ui.point import Ui_PointForm
 from graphics import Point, Line, Wireframe, Painter, Drawable, Camera
 from utilities import experp
 
@@ -63,10 +65,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         # self.newButton
         # self.editButton
         # self.nameEdit
-        # self.typeBox
+        self.typeBox.currentIndexChanged.connect(lambda shape: print(shape))
         # self.dialogBox
         # self.objectArea / self.formLayout
         # Ui_PointForm
+        self.formLayout.addRow(PointField())
+        self.formLayout.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)  # @XXX: fixthis
 
         # render it all
         self.show()
@@ -143,6 +147,14 @@ class QtViewport(QWidget):
         for i in range(self.display_file.count()):
             self.display_file.item(i).data(Qt.UserRole).draw(self.camera)
         self.camera.painter.end()
+
+
+class PointField(QWidget, Ui_PointForm):
+    def __init__(self):
+        super(PointField, self).__init__()
+        self.setupUi(self)
+        self.xDoubleSpinBox.setRange(-inf, inf)
+        self.yDoubleSpinBox.setRange(-inf, inf)
 
 
 if __name__ == '__main__':

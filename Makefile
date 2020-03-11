@@ -1,5 +1,5 @@
 PYTHON = python3
-PY_APP = pygs/main.py
+PY_APP = pygs/app.py
 PY_SRC = pygs
 PY_SOURCES = $(wildcard $(PY_SRC)/*.py)
 
