@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-import sys
-from typing import Dict, Tuple
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QTextBrowser
+from sys import argv
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QListWidget
 from PySide2.QtGui import QPainter
+from PySide2.QtCore import Qt
 
 from gui import Ui_MainWindow
 from primitives import Point, Line, Wireframe, Painter, Drawable
@@ -12,25 +12,27 @@ from util import experp
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
-    console = None
+    _console = None
+
+    def log(message: str):
+        if InteractiveGraphicalSystem._console:
+            InteractiveGraphicalSystem._console.append(message)
+        else:
+            print(message)
 
     def __init__(self):
         # imported Qt UI setup
         super(InteractiveGraphicalSystem, self).__init__()
         self.setupUi(self)
 
-        self.display_file: Dict[str, Tuple[int, Drawable]] = {}
-
         # viewport setup
-        self.viewport = QtViewport(self.canvasFrame, self.display_file,
+        self.viewport = QtViewport(self.canvasFrame, self.displayFile,
                                    Camera(960, 540, QtPainter(), Point(0, 0)))
         self.viewport.setObjectName(u"viewport")
         self.viewport.setGeometry(0, 0, 960, 540)
 
         # console setup
-        InteractiveGraphicalSystem.console = QTextBrowser(self.centralwidget)
-        InteractiveGraphicalSystem.console.setObjectName(u"console")
-        InteractiveGraphicalSystem.console.setGeometry(10, 590, 960, 120)
+        InteractiveGraphicalSystem._console = self.console
 
         # setting up camera pan controls
         self._pan: int = 10  # @NOTE: camera step is adjusted by zoom
@@ -48,14 +50,20 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.update_zoom(self.zoomSlider.value(),
                          self.zoomSlider.minimum(), self.zoomSlider.maximum())
 
-        # setting up scene controls  # @TODO: finish
+        # setting up scene controls
+        self.removeButton.clicked.connect(
+            lambda: self.remove_object(self.displayFile.currentRow())
+        )
+        self.upListButton.clicked.connect(
+            lambda: self.move_object(self.displayFile.currentRow(), -1)
+        )
+        self.downListButton.clicked.connect(
+            lambda: self.move_object(self.displayFile.currentRow(), 1)
+        )
+
+        # @TODO: new object dialogue
         # self.newButton
         # self.editButton
-        self.removeButton.clicked.connect(
-            lambda: self.remove_object(self.objectList.currentRow())
-        )
-        # self.upListButton
-        # self.downListButton
         # self.nameEdit
         # self.typeBox
         # self.dialogBox
@@ -78,30 +86,41 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self._pan = int(10 / zoom)
         self.viewport.update()
 
-    def log(message: str):
-        InteractiveGraphicalSystem.console.append(message)
-
-    def remove_object(self, index: int):
-        item = self.objectList.takeItem(index)
-        if item:
-            name = item.text()
-            item = self.display_file.pop(name)
-            InteractiveGraphicalSystem.log(
-                "Removed '%s' from Display File." % name
-            )
-            self.viewport.update()
-        return item
-
     def add_object(self, obj: Drawable, name: str, index: int = None) -> int:
         """Adds an object to the Display File, returning its position."""
-        index = self.objectList.count() if index is None else index
-        self.display_file[name] = (index, obj)  # @FIXME: name conflicts
-        self.objectList.insertItem(index, name)
+
+        n = self.displayFile.count()
+        if index and (index < 0 or index > n):
+            raise IndexError("Invalid Display File index: %d" & index)
+        elif index is None:
+            index = n
+
+        self.displayFile.insertItem(index, name)  # @FIXME: name conflicts
+        self.displayFile.item(index).setData(Qt.UserRole, obj)
         InteractiveGraphicalSystem.log(
-            "%s '%s' added to Display File." % (type(obj).__name__, name)
+            "Added %s '%s' to Display File." % (type(obj).__name__, name)
         )
+        self.displayFile.setCurrentRow(index)
         self.viewport.update()
         return index
+
+    def remove_object(self, index: int) -> object:
+        item = self.displayFile.takeItem(index)
+        if item:
+            InteractiveGraphicalSystem.log(
+                "Removed '%s' from Display File." % item.text()
+            )
+            self.viewport.update()
+            item = item.data(Qt.UserRole)
+        return item
+
+    def move_object(self, current: int, offset: int):
+        pos = current + offset
+        if pos < 0 or pos >= self.displayFile.count():
+            return
+        self.displayFile.insertItem(pos, self.displayFile.takeItem(current))
+        self.displayFile.setCurrentRow(pos)
+        self.viewport.update()
 
 
 class QtPainter(QPainter, Painter):
@@ -115,20 +134,20 @@ class QtPainter(QPainter, Painter):
 
 
 class QtViewport(QWidget):
-    def __init__(self, parent, objects: Dict[str, Drawable], _qt_cam: Camera):
+    def __init__(self, parent, objects: QListWidget, _qt_cam: Camera):
         super().__init__(parent)
-        self.objects = objects
+        self.display_file = objects
         self.camera = _qt_cam
 
     def paintEvent(self, event):
         self.camera.painter.begin(self)
-        for _, obj in self.objects.values():
-            obj.draw(self.camera)
+        for i in range(self.display_file.count()):
+            self.display_file.item(i).data(Qt.UserRole).draw(self.camera)
         self.camera.painter.end()
 
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    app = QApplication(argv)
 
     gui = InteractiveGraphicalSystem()  # gui variable is needed
     gui.add_object(Point(250, 250), "p0")
@@ -139,4 +158,4 @@ if __name__ == '__main__':
                    "tr")
     gui.add_object(Line(Point(600, 400), Point(600, 600)), "lv")
 
-    sys.exit(app.exec_())
+    exit(app.exec_())
