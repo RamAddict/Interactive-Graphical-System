@@ -1,8 +1,8 @@
 # Python
 __pycache__/
 
+# VSCode
+.vscode/
+
 # virtualenv
 venv/
-
-# Qt Designer
-# pygs/ui/*.py # requires Qt compiler (see Makefile)
