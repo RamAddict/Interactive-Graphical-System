@@ -17,7 +17,7 @@
    <string>Interactive Graphical System - INE5420-CG - 2020/1</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QListWidget" name="objectList">
+   <widget class="QListWidget" name="displayFile">
     <property name="geometry">
      <rect>
       <x>980</x>
@@ -135,12 +135,12 @@
      <rect>
       <x>980</x>
       <y>240</y>
-      <width>50</width>
+      <width>100</width>
       <height>18</height>
      </rect>
     </property>
     <property name="text">
-     <string>Controls</string>
+     <string>Window Control</string>
     </property>
    </widget>
    <widget class="QLabel" name="consoleLabel">
@@ -347,6 +347,16 @@
       </property>
      </widget>
     </widget>
+   </widget>
+   <widget class="QTextBrowser" name="console">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>590</y>
+      <width>960</width>
+      <height>120</height>
+     </rect>
+    </property>
    </widget>
   </widget>
  </widget>
