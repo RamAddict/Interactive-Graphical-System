@@ -14,6 +14,7 @@ class Painter():
     def draw_line(self, xa: int, ya: int, xb: int, yb: int):
         # Bresenham's line algorithm, which is based on a decision parameter p
         # allowing to solve y = mx + c using only integer operations {+, -, 2*}
+        xa, ya, xb, yb = int(xa), int(ya), int(xb), int(yb)
         dx = xb - xa
         dy = yb - ya
         sign_x = +1 if dx >= 0 else -1
@@ -64,8 +65,8 @@ class Point(Drawable):
         self._coordinates = [x, y]
 
     def draw(self, painter):
-        painter.draw_pixel(int(self._coordinates[0]),
-                           int(self._coordinates[1]))
+        painter.draw_pixel(round(self._coordinates[0]),
+                           round(self._coordinates[1]))
 
     @property
     def x(self):
@@ -98,8 +99,8 @@ class Line(Drawable):
         self._points = [pa, pb]
 
     def draw(self, painter):
-        painter.draw_line(int(self._points[0].x), int(self._points[0].y),
-                          int(self._points[1].x), int(self._points[1].y))
+        painter.draw_line(round(self._points[0].x), round(self._points[0].y),
+                          round(self._points[1].x), round(self._points[1].y))
 
     def __getitem__(self, key):
         return self._points[key]
@@ -115,21 +116,22 @@ class Wireframe(Drawable):
     """Polygon-like object defined by a sequence of points."""
 
     def __init__(self, *points: Tuple[Point]):
-        self.points = list(points)
+        self._points = list(points)
 
     def draw(self, painter):
-        for pa, pb in pairwise(self.points + [self.points[0]]):
-            painter.draw_line(int(pa.x), int(pa.y), int(pb.x), int(pb.y))
+        for pa, pb in pairwise(self._points + [self._points[0]]):
+            painter.draw_line(round(pa.x), round(pa.y),
+                              round(pb.x), round(pb.y))
 
     def __getitem__(self, key):
-        return self.points[key]
+        return self._points[key]
 
     def __setitem__(self, key, point: Point):
-        self.points[key] = point
+        self._points[key] = point
 
     def __str__(self):
         return '({})'.format(
-            '; '.join(str(p) for p in self.points + [self.points[0]])
+            '; '.join(str(p) for p in self._points + [self._points[0]])
         )
 
 
@@ -148,6 +150,7 @@ class Camera(Painter):
         self._y_min = int(self.y - self.height/2)
 
     def draw_pixel(self, x: int, y: int):
+        # @TODO: camera-relative transform can be optimized
         x, y = self._transform(x - self.x, y - self.y)
         self.painter.draw_pixel(x, y)
 

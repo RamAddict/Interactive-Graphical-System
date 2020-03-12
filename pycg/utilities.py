@@ -1,4 +1,4 @@
-"""Miscellaneous python utilities."""
+"""Miscellaneous Python utilities."""
 
 from typing import Iterable, Sequence, Generator, Tuple
 from itertools import tee

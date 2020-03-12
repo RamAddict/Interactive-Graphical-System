@@ -16,18 +16,18 @@ from PySide2.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
 from PySide2.QtWidgets import *
 
 
-class Ui_PointForm(object):
-    def setupUi(self, PointForm):
-        if PointForm.objectName():
-            PointForm.setObjectName(u"PointForm")
-        PointForm.resize(272, 34)
-        self.horizontalLayout = QHBoxLayout(PointForm)
+class Ui_PointFields(object):
+    def setupUi(self, PointFields):
+        if PointFields.objectName():
+            PointFields.setObjectName(u"PointFields")
+        PointFields.resize(272, 34)
+        self.horizontalLayout = QHBoxLayout(PointFields)
         self.horizontalLayout.setSpacing(6)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.xHorizontalLayout = QHBoxLayout()
         self.xHorizontalLayout.setObjectName(u"xHorizontalLayout")
-        self.xLabel = QLabel(PointForm)
+        self.xLabel = QLabel(PointFields)
         self.xLabel.setObjectName(u"xLabel")
         font = QFont()
         font.setPointSize(12)
@@ -35,43 +35,48 @@ class Ui_PointForm(object):
 
         self.xHorizontalLayout.addWidget(self.xLabel)
 
-        self.xDoubleSpinBox = QDoubleSpinBox(PointForm)
+        self.xDoubleSpinBox = QDoubleSpinBox(PointFields)
         self.xDoubleSpinBox.setObjectName(u"xDoubleSpinBox")
-        self.xDoubleSpinBox.setDecimals(0)
+        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.xDoubleSpinBox.sizePolicy().hasHeightForWidth())
+        self.xDoubleSpinBox.setSizePolicy(sizePolicy)
+        self.xDoubleSpinBox.setDecimals(4)
 
         self.xHorizontalLayout.addWidget(self.xDoubleSpinBox)
 
-        self.xHorizontalLayout.setStretch(1, 1)
 
         self.horizontalLayout.addLayout(self.xHorizontalLayout)
 
         self.yHorizontalLayout = QHBoxLayout()
         self.yHorizontalLayout.setObjectName(u"yHorizontalLayout")
-        self.yLabel = QLabel(PointForm)
+        self.yLabel = QLabel(PointFields)
         self.yLabel.setObjectName(u"yLabel")
         self.yLabel.setFont(font)
 
         self.yHorizontalLayout.addWidget(self.yLabel)
 
-        self.yDoubleSpinBox = QDoubleSpinBox(PointForm)
+        self.yDoubleSpinBox = QDoubleSpinBox(PointFields)
         self.yDoubleSpinBox.setObjectName(u"yDoubleSpinBox")
-        self.yDoubleSpinBox.setDecimals(0)
+        sizePolicy.setHeightForWidth(self.yDoubleSpinBox.sizePolicy().hasHeightForWidth())
+        self.yDoubleSpinBox.setSizePolicy(sizePolicy)
+        self.yDoubleSpinBox.setDecimals(4)
 
         self.yHorizontalLayout.addWidget(self.yDoubleSpinBox)
 
-        self.yHorizontalLayout.setStretch(1, 1)
 
         self.horizontalLayout.addLayout(self.yHorizontalLayout)
 
 
-        self.retranslateUi(PointForm)
+        self.retranslateUi(PointFields)
 
-        QMetaObject.connectSlotsByName(PointForm)
+        QMetaObject.connectSlotsByName(PointFields)
     # setupUi
 
-    def retranslateUi(self, PointForm):
-        PointForm.setWindowTitle(QCoreApplication.translate("PointForm", u"Form", None))
-        self.xLabel.setText(QCoreApplication.translate("PointForm", u"X:", None))
-        self.yLabel.setText(QCoreApplication.translate("PointForm", u"Y:", None))
+    def retranslateUi(self, PointFields):
+        PointFields.setWindowTitle(QCoreApplication.translate("PointFields", u"Form", None))
+        self.xLabel.setText(QCoreApplication.translate("PointFields", u"X:", None))
+        self.yLabel.setText(QCoreApplication.translate("PointFields", u"Y:", None))
     # retranslateUi
 

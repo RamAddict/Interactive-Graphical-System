@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 from sys import argv
 from math import inf
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QListWidget, QFormLayout
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QListWidget
 from PySide2.QtGui import QPainter
 from PySide2.QtCore import Qt
 
 from ui.main import Ui_MainWindow
-from ui.point import Ui_PointForm
+from ui.point import Ui_PointFields
 from graphics import Point, Line, Wireframe, Painter, Drawable, Camera
 from utilities import experp
 
@@ -27,12 +27,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         # viewport setup
         self.viewport = QtViewport(self.canvasFrame, self.displayFile,
-                                   Camera(960, 540, QtPainter(), Point(0, 0)))
-        self.viewport.setObjectName(u"viewport")
-        self.viewport.setGeometry(0, 0, 960, 540)
+                                   Camera(950, 535, QtPainter(), Point(0, 0)))
+        self.viewport.setGeometry(0, 0, 950, 535)
 
-        # console setup
-        InteractiveGraphicalSystem._console = self.console
+        # static console setup
+        InteractiveGraphicalSystem._console = self.consoleArea
 
         # setting up camera pan controls
         self._pan: int = 10  # @NOTE: camera step is adjusted by zoom
@@ -68,9 +67,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.typeBox.currentIndexChanged.connect(lambda shape: print(shape))
         # self.dialogBox
         # self.objectArea / self.formLayout
-        # Ui_PointForm
-        self.formLayout.addRow(PointField())
-        self.formLayout.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)  # @XXX: fixthis
+        self.formLayout.addRow(PointFields())
 
         # render it all
         self.show()
@@ -149,9 +146,9 @@ class QtViewport(QWidget):
         self.camera.painter.end()
 
 
-class PointField(QWidget, Ui_PointForm):
+class PointFields(QWidget, Ui_PointFields):
     def __init__(self):
-        super(PointField, self).__init__()
+        super(PointFields, self).__init__()
         self.setupUi(self)
         self.xDoubleSpinBox.setRange(-inf, inf)
         self.yDoubleSpinBox.setRange(-inf, inf)
