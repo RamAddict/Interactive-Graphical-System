@@ -11,6 +11,7 @@ QT_OBJECTS = $(patsubst $(QT_SRC)/%.ui, $(QT_OBJ)/%.py, $(QT_SOURCES))
 
 
 default:
+	@ make gui
 	@ make run
 
 

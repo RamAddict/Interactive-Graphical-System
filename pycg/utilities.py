@@ -43,3 +43,8 @@ def experp(x, in_min, in_max, out_min, out_max):
     a = out_min / 2**(b * in_min)
     # now we plug them into the equation (PS: base 2 is probably faster than e)
     return a * 2**(b * x)
+
+
+def begin(*expressions):
+    """Scheme-inspired hack to allow for multiple expressions in lambdas."""
+    return expressions[-1]

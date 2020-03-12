@@ -8,15 +8,15 @@ from PySide2.QtCore import Qt
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
 from graphics import Point, Line, Wireframe, Painter, Drawable, Camera
-from utilities import experp
+from utilities import experp, begin
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     _console = None
 
-    def log(message: str):
+    def log(message):
         if InteractiveGraphicalSystem._console:
-            InteractiveGraphicalSystem._console.append(message)
+            InteractiveGraphicalSystem._console.append(str(message))
         else:
             print(message)
 
@@ -61,13 +61,28 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         )
 
         # @TODO: new object dialogue
+        def new_type_select(index: int):
+            while self.formLayout.rowCount() > 2:
+                self.formLayout.removeRow(2)
+
+            {  # pythonic switch
+                'Point':
+                    lambda: self.formLayout.addRow(PointFields()),
+                'Line':
+                    lambda: begin(self.formLayout.addRow(PointFields()),
+                                  self.formLayout.addRow(PointFields())),
+                'Wireframe':
+                    lambda: begin(self.formLayout.addRow(PointFields()),
+                                  self.formLayout.addRow(PointFields()),
+                                  self.formLayout.addRow(PointFields()),
+                                  self.formLayout.addRow(PointFields(lambda: self.formLayout.removeRow(5))))
+            }[self.typeBox.itemText(index)]()
+
         # self.newButton
         # self.editButton
         # self.nameEdit
-        self.typeBox.currentIndexChanged.connect(lambda shape: print(shape))
+        self.typeBox.currentIndexChanged.connect(new_type_select)
         # self.dialogBox
-        # self.objectArea / self.formLayout
-        self.formLayout.addRow(PointFields())
 
         # render it all
         self.show()
@@ -147,11 +162,21 @@ class QtViewport(QWidget):
 
 
 class PointFields(QWidget, Ui_PointFields):
-    def __init__(self):
+    def __init__(self, click_action=None):
         super(PointFields, self).__init__()
         self.setupUi(self)
         self.xDoubleSpinBox.setRange(-inf, inf)
         self.yDoubleSpinBox.setRange(-inf, inf)
+        if click_action:
+            self.actionButton.clicked.connect(click_action)
+
+    @property
+    def x(self):
+        return self.xDoubleSpinBox.value()
+
+    @property
+    def y(self):
+        return self.yDoubleSpinBox.value()
 
 
 if __name__ == '__main__':

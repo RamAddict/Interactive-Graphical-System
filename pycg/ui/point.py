@@ -21,10 +21,20 @@ class Ui_PointFields(object):
         if PointFields.objectName():
             PointFields.setObjectName(u"PointFields")
         PointFields.resize(272, 34)
+        PointFields.setLayoutDirection(Qt.LeftToRight)
         self.horizontalLayout = QHBoxLayout(PointFields)
-        self.horizontalLayout.setSpacing(6)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.actionButton = QPushButton(PointFields)
+        self.actionButton.setObjectName(u"actionButton")
+        self.actionButton.setMaximumSize(QSize(32, 16777215))
+        icon = QIcon(QIcon.fromTheme(u"list-remove"))
+        self.actionButton.setIcon(icon)
+        self.actionButton.setIconSize(QSize(16, 16))
+        self.actionButton.setFlat(True)
+
+        self.horizontalLayout.addWidget(self.actionButton)
+
         self.xHorizontalLayout = QHBoxLayout()
         self.xHorizontalLayout.setObjectName(u"xHorizontalLayout")
         self.xLabel = QLabel(PointFields)
@@ -76,6 +86,7 @@ class Ui_PointFields(object):
 
     def retranslateUi(self, PointFields):
         PointFields.setWindowTitle(QCoreApplication.translate("PointFields", u"Form", None))
+        self.actionButton.setText("")
         self.xLabel.setText(QCoreApplication.translate("PointFields", u"X:", None))
         self.yLabel.setText(QCoreApplication.translate("PointFields", u"Y:", None))
     # retranslateUi
