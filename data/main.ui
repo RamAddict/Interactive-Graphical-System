@@ -17,341 +17,309 @@
    <string>Interactive Graphical System - INE5420-CG - 2020/1</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QListWidget" name="displayFile">
-    <property name="geometry">
-     <rect>
-      <x>980</x>
-      <y>25</y>
-      <width>190</width>
-      <height>205</height>
-     </rect>
-    </property>
-    <property name="verticalScrollBarPolicy">
-     <enum>Qt::ScrollBarAlwaysOn</enum>
-    </property>
-   </widget>
-   <widget class="QFrame" name="controlFrame">
-    <property name="geometry">
-     <rect>
-      <x>980</x>
-      <y>260</y>
-      <width>290</width>
-      <height>170</height>
-     </rect>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
-    </property>
-    <property name="frameShadow">
-     <enum>QFrame::Sunken</enum>
-    </property>
-    <layout class="QGridLayout" name="controlLayout">
-     <property name="leftMargin">
-      <number>20</number>
-     </property>
-     <property name="rightMargin">
-      <number>20</number>
-     </property>
-     <item row="0" column="1">
-      <widget class="QPushButton" name="upButton">
-       <property name="text">
-        <string notr="true">^</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QPushButton" name="leftButton">
-       <property name="text">
-        <string notr="true">&lt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="2">
-      <widget class="QPushButton" name="rightButton">
-       <property name="text">
-        <string notr="true">&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QPushButton" name="downButton">
-       <property name="text">
-        <string notr="true">v</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0" colspan="3">
-      <widget class="QSlider" name="zoomSlider">
-       <property name="minimum">
-        <number>0</number>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="singleStep">
-        <number>10</number>
-       </property>
-       <property name="value">
-        <number>50</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="tickPosition">
-        <enum>QSlider::TicksBothSides</enum>
-       </property>
-       <property name="tickInterval">
-        <number>5</number>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QLabel" name="viewportLabel">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>5</y>
-      <width>58</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string notr="true">Viewport</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="sceneLabel">
-    <property name="geometry">
-     <rect>
-      <x>980</x>
-      <y>5</y>
-      <width>70</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Display File</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="controlLabel">
-    <property name="geometry">
-     <rect>
-      <x>980</x>
-      <y>240</y>
-      <width>100</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Window Control</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="consoleLabel">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>570</y>
-      <width>50</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Console</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="objectLabel">
-    <property name="geometry">
-     <rect>
-      <x>980</x>
-      <y>440</y>
-      <width>40</width>
-      <height>18</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Object</string>
-    </property>
-   </widget>
-   <widget class="QFrame" name="canvasFrame">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>25</y>
-      <width>960</width>
-      <height>540</height>
-     </rect>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
-    </property>
-    <property name="frameShadow">
-     <enum>QFrame::Sunken</enum>
-    </property>
-   </widget>
-   <widget class="QWidget" name="layoutWidget">
-    <property name="geometry">
-     <rect>
-      <x>1180</x>
-      <y>30</y>
-      <width>90</width>
-      <height>196</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="actionsLayout">
-     <item>
-      <widget class="QPushButton" name="newButton">
-       <property name="text">
-        <string>New</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="editButton">
-       <property name="text">
-        <string>Edit</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="removeButton">
-       <property name="text">
-        <string>Remove</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="upListButton">
-       <property name="text">
-        <string>Move Up</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="downListButton">
-       <property name="text">
-        <string>Move Down</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-   <widget class="QScrollArea" name="objectArea">
-    <property name="enabled">
-     <bool>true</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>980</x>
-      <y>460</y>
-      <width>290</width>
-      <height>250</height>
-     </rect>
-    </property>
-    <property name="widgetResizable">
-     <bool>true</bool>
-    </property>
-    <widget class="QWidget" name="scrollAreaWidgetContents">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>0</y>
-       <width>286</width>
-       <height>246</height>
-      </rect>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <property name="leftMargin">
-       <number>6</number>
-      </property>
-      <property name="topMargin">
-       <number>5</number>
+   <layout class="QGridLayout" name="gridLayout" rowstretch="4,7,4,5" columnstretch="4,1">
+    <item row="0" column="0" rowspan="3">
+     <layout class="QVBoxLayout" name="viewportLayout" stretch="0,1">
+      <property name="spacing">
+       <number>0</number>
       </property>
       <item>
-       <layout class="QFormLayout" name="formLayout">
-        <property name="formAlignment">
-         <set>Qt::AlignHCenter|Qt::AlignTop</set>
+       <widget class="QLabel" name="viewportLabel">
+        <property name="text">
+         <string notr="true">Viewport</string>
         </property>
-        <item row="0" column="0">
-         <widget class="QLabel" name="nameLabel">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Name:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="nameEdit">
-          <property name="text">
-           <string>Enter name here</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="typeLabel">
-          <property name="font">
-           <font>
-            <pointsize>12</pointsize>
-           </font>
-          </property>
-          <property name="text">
-           <string>Type:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QComboBox" name="typeBox">
-          <property name="currentIndex">
-           <number>1</number>
-          </property>
-          <item>
-           <property name="text">
-            <string>Point</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Line</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Wireframe</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-       </layout>
+       </widget>
       </item>
       <item>
-       <widget class="QDialogButtonBox" name="dialogBox">
-        <property name="layoutDirection">
-         <enum>Qt::LeftToRight</enum>
+       <widget class="QFrame" name="canvasFrame">
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
         </property>
-        <property name="standardButtons">
-         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-        </property>
-        <property name="centerButtons">
-         <bool>true</bool>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
         </property>
        </widget>
       </item>
      </layout>
-    </widget>
-   </widget>
-   <widget class="QTextBrowser" name="console">
-    <property name="geometry">
-     <rect>
-      <x>10</x>
-      <y>590</y>
-      <width>960</width>
-      <height>120</height>
-     </rect>
-    </property>
-   </widget>
+    </item>
+    <item row="0" column="1">
+     <layout class="QVBoxLayout" name="displayFileLayout" stretch="0,1">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="sceneLabel">
+        <property name="text">
+         <string>Display File</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="scenelLayout" stretch="1,0">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QListWidget" name="displayFile">
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="actionsLayout">
+          <item>
+           <widget class="QPushButton" name="newButton">
+            <property name="text">
+             <string>New</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="editButton">
+            <property name="text">
+             <string>Edit</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="removeButton">
+            <property name="text">
+             <string>Remove</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="upListButton">
+            <property name="text">
+             <string>Move Up</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="downListButton">
+            <property name="text">
+             <string>Move Down</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+    <item row="1" column="1">
+     <layout class="QVBoxLayout" name="windowLayout" stretch="0,1">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="controlLabel">
+        <property name="text">
+         <string>Window Control</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="controlFrame">
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Sunken</enum>
+        </property>
+        <layout class="QGridLayout" name="controlLayout" rowstretch="0,0,0,1">
+         <property name="leftMargin">
+          <number>20</number>
+         </property>
+         <property name="rightMargin">
+          <number>20</number>
+         </property>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="upButton">
+           <property name="text">
+            <string notr="true">^</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QPushButton" name="leftButton">
+           <property name="text">
+            <string notr="true">&lt;</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QPushButton" name="rightButton">
+           <property name="text">
+            <string notr="true">&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QPushButton" name="downButton">
+           <property name="text">
+            <string notr="true">v</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0" colspan="3">
+          <widget class="QSlider" name="zoomSlider">
+           <property name="minimum">
+            <number>0</number>
+           </property>
+           <property name="maximum">
+            <number>100</number>
+           </property>
+           <property name="singleStep">
+            <number>10</number>
+           </property>
+           <property name="value">
+            <number>50</number>
+           </property>
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="tickPosition">
+            <enum>QSlider::TicksBothSides</enum>
+           </property>
+           <property name="tickInterval">
+            <number>5</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="2" column="1" rowspan="2">
+     <layout class="QVBoxLayout" name="objectLayout" stretch="0,1">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="objectLabel">
+        <property name="text">
+         <string>Object</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QScrollArea" name="objectArea">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="widgetResizable">
+         <bool>true</bool>
+        </property>
+        <widget class="QWidget" name="scrollAreaWidgetContents">
+         <property name="geometry">
+          <rect>
+           <x>0</x>
+           <y>0</y>
+           <width>304</width>
+           <height>247</height>
+          </rect>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">
+          <property name="topMargin">
+           <number>5</number>
+          </property>
+          <item>
+           <layout class="QFormLayout" name="formLayout">
+            <property name="formAlignment">
+             <set>Qt::AlignHCenter|Qt::AlignTop</set>
+            </property>
+            <item row="0" column="0">
+             <widget class="QLabel" name="nameLabel">
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Name:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLineEdit" name="nameEdit"/>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="typeLabel">
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>Type:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="typeBox">
+              <property name="currentIndex">
+               <number>-1</number>
+              </property>
+              <item>
+               <property name="text">
+                <string>Point</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Line</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Wireframe</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QDialogButtonBox" name="dialogBox">
+            <property name="layoutDirection">
+             <enum>Qt::LeftToRight</enum>
+            </property>
+            <property name="standardButtons">
+             <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+            </property>
+            <property name="centerButtons">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="3" column="0">
+     <layout class="QVBoxLayout" name="consoleLayout" stretch="0,1">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="consoleLabel">
+        <property name="text">
+         <string>Console</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTextBrowser" name="consoleArea"/>
+      </item>
+     </layout>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources/>

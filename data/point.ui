@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PointForm</class>
- <widget class="QWidget" name="PointForm">
+ <class>PointFields</class>
+ <widget class="QWidget" name="PointFields">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -45,6 +45,12 @@
      </item>
      <item>
       <widget class="QDoubleSpinBox" name="xDoubleSpinBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="decimals">
         <number>4</number>
        </property>
@@ -68,6 +74,12 @@
      </item>
      <item>
       <widget class="QDoubleSpinBox" name="yDoubleSpinBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="decimals">
         <number>4</number>
        </property>
