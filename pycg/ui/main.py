@@ -39,6 +39,8 @@ class Ui_MainWindow(object):
         self.canvasFrame.setObjectName(u"canvasFrame")
         self.canvasFrame.setFrameShape(QFrame.StyledPanel)
         self.canvasFrame.setFrameShadow(QFrame.Sunken)
+        self.gridLayout_3 = QGridLayout(self.canvasFrame)
+        self.gridLayout_3.setObjectName(u"gridLayout_3")
 
         self.viewportLayout.addWidget(self.canvasFrame)
 
@@ -174,7 +176,7 @@ class Ui_MainWindow(object):
         self.objectArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 304, 247))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 314, 263))
         self.verticalLayout = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(-1, 5, -1, -1)

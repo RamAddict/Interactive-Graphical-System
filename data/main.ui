@@ -38,6 +38,7 @@
         <property name="frameShadow">
          <enum>QFrame::Sunken</enum>
         </property>
+        <layout class="QGridLayout" name="gridLayout_3"/>
        </widget>
       </item>
      </layout>
@@ -219,8 +220,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>304</width>
-           <height>247</height>
+           <width>314</width>
+           <height>263</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">

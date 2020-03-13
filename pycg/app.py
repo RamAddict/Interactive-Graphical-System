@@ -27,9 +27,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         # viewport setup
-        self.viewport = QtViewport(self.canvasFrame, self.displayFile,
-                                   Camera(950, 535, QtPainter(), Point(0, 0)))
-        self.viewport.setGeometry(0, 0, 950, 535)
+        self.viewport = QtViewport(
+            self.canvasFrame, self.displayFile,
+            Camera(950, 535, QtPainter(), Point(-60, 40))
+        )
+        self.canvasFrame.layout().addWidget(self.viewport)
 
         # static console setup
         InteractiveGraphicalSystem._console = self.consoleArea
