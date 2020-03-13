@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 from sys import argv
 from math import inf
+from typing import Optional, Callable
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QListWidget
-from PySide2.QtGui import QPainter
-from PySide2.QtCore import Qt
+from PySide2.QtGui import QPainter, QIcon
+from PySide2.QtCore import Qt, QSize
 
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
@@ -41,13 +42,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.rightButton.clicked.connect(lambda: self.pan_camera(self._pan, 0))
 
         # zoom slider setup
-        self.zoomSlider.valueChanged.connect(
-            lambda: self.update_zoom(self.zoomSlider.value(),
-                                     self.zoomSlider.minimum(),
-                                     self.zoomSlider.maximum())
-        )
-        self.update_zoom(self.zoomSlider.value(),
-                         self.zoomSlider.minimum(), self.zoomSlider.maximum())
+        def zoom_slide():
+            self.update_zoom(self.zoomSlider.value(),
+                             self.zoomSlider.minimum(),
+                             self.zoomSlider.maximum())
+        self.zoomSlider.valueChanged.connect(zoom_slide)
+        zoom_slide()
 
         # setting up scene controls
         self.removeButton.clicked.connect(
@@ -59,30 +59,77 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.downListButton.clicked.connect(
             lambda: self.move_object(self.displayFile.currentRow(), 1)
         )
+        self.newButton.clicked.connect(
+            lambda: begin(self.objectLabel.show(), self.objectArea.show())
+        )
+        # @TODO: edit selected object
+        self.editButton.setEnabled(False)
 
-        # @TODO: new object dialogue
         def new_type_select(index: int):
+            # clean all fields after 'name' and 'type'
             while self.formLayout.rowCount() > 2:
                 self.formLayout.removeRow(2)
 
-            {  # pythonic switch
-                'Point':
-                    lambda: self.formLayout.addRow(PointFields()),
-                'Line':
-                    lambda: begin(self.formLayout.addRow(PointFields()),
-                                  self.formLayout.addRow(PointFields())),
-                'Wireframe':
-                    lambda: begin(self.formLayout.addRow(PointFields()),
-                                  self.formLayout.addRow(PointFields()),
-                                  self.formLayout.addRow(PointFields()),
-                                  self.formLayout.addRow(PointFields(lambda: self.formLayout.removeRow(5))))
-            }[self.typeBox.itemText(index)]()
+            typename = self.typeBox.itemText(index)
+            if typename == 'Point':
+                self.formLayout.addRow(PointFields())
+            elif typename == 'Line':
+                self.formLayout.addRow(PointFields())
+                self.formLayout.addRow(PointFields())
+            elif typename == 'Wireframe':
+                self.formLayout.addRow(PointFields())
+                self.formLayout.addRow(PointFields())
+                self.formLayout.addRow(PointFields())
+                self.formLayout.addRow(make_extra_point())
 
-        # self.newButton
-        # self.editButton
-        # self.nameEdit
+        def make_extra_point() -> PointFields:
+            extra = PointFields()
+            extra.set_active(False)
+            extra.set_icon('list-add')
+            extra.set_action(lambda: begin(
+                extra.set_active(True),
+                extra.set_icon('list-remove'),
+                extra.set_action(lambda: self.formLayout.removeRow(extra)),
+                self.formLayout.addRow(make_extra_point())
+            ))
+            return extra
+
+        def new_object() -> Optional[Drawable]:
+            # @TODO: improve parameter validation (name conflict, valid fields)
+            if self.typeBox.currentIndex() < 0:
+                return
+
+            name = self.nameEdit.text()
+            typename = self.typeBox.currentText()
+
+            # QLayout.itemAt on a QFormLayout -> label, field: QLayoutItem
+            obj = None
+            if typename == 'Point':
+                obj = self.formLayout.itemAt(4).widget().to_point()
+            elif typename == 'Line':
+                pa = self.formLayout.itemAt(4).widget().to_point()
+                pb = self.formLayout.itemAt(5).widget().to_point()
+                obj = Line(pa, pb)
+            elif typename == 'Wireframe':
+                points = []
+                for i in range(4, self.formLayout.count() - 1):
+                    p = self.formLayout.itemAt(i).widget().to_point()
+                    points.append(p)
+                obj = Wireframe(*points)
+
+            finish_object()
+            gui.add_object(obj, name, index=self.displayFile.currentRow() + 1)
+
+        def finish_object():
+            self.objectLabel.hide()
+            self.typeBox.setCurrentIndex(-1)
+            self.nameEdit.setText("")
+            self.objectArea.hide()
+
         self.typeBox.currentIndexChanged.connect(new_type_select)
-        # self.dialogBox
+        self.dialogBox.accepted.connect(new_object)
+        self.dialogBox.rejected.connect(finish_object)
+        finish_object()
 
         # render it all
         self.show()
@@ -95,14 +142,14 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.viewport.camera.y += dy
         self.viewport.update()
 
-    def update_zoom(self, value, minimum=0, maximum=1.0):
+    def update_zoom(self, value, minimum, maximum):
         zoom = experp(value, minimum, maximum, 0.1, 10)
         self.viewport.camera.zoom = zoom
         self._pan = int(10 / zoom)
         self.viewport.update()
 
     def add_object(self, obj: Drawable, name: str, index: int = None) -> int:
-        """Adds an object to the Display File, returning its position."""
+        """Add an object to the Display File, returning its position."""
 
         n = self.displayFile.count()
         if index and (index < 0 or index > n):
@@ -110,7 +157,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         elif index is None:
             index = n
 
-        self.displayFile.insertItem(index, name)  # @FIXME: name conflicts
+        self.displayFile.insertItem(index, name)
         self.displayFile.item(index).setData(Qt.UserRole, obj)
         InteractiveGraphicalSystem.log(
             "Added %s '%s' to Display File." % (type(obj).__name__, name)
@@ -120,6 +167,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         return index
 
     def remove_object(self, index: int) -> object:
+        """Take an object out from a certain index in the Display File."""
         item = self.displayFile.takeItem(index)
         if item:
             InteractiveGraphicalSystem.log(
@@ -130,6 +178,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         return item
 
     def move_object(self, current: int, offset: int):
+        """Offset an object's position in the Display File."""
         pos = current + offset
         if pos < 0 or pos >= self.displayFile.count():
             return
@@ -162,33 +211,71 @@ class QtViewport(QWidget):
 
 
 class PointFields(QWidget, Ui_PointFields):
-    def __init__(self, click_action=None):
+    def __init__(self):
         super(PointFields, self).__init__()
         self.setupUi(self)
         self.xDoubleSpinBox.setRange(-inf, inf)
         self.yDoubleSpinBox.setRange(-inf, inf)
-        if click_action:
-            self.actionButton.clicked.connect(click_action)
+        self._has_action = False
 
-    @property
-    def x(self):
-        return self.xDoubleSpinBox.value()
+    def to_point(self) -> Point:
+        return Point(self.xDoubleSpinBox.value(), self.yDoubleSpinBox.value())
 
-    @property
-    def y(self):
-        return self.yDoubleSpinBox.value()
+    def set_action(self, action: Optional[Callable[[], None]]):
+        """Set procedure to be executed when the action button is clicked."""
+
+        # @NOTE: multiple receivers must be disconnect()ed from a signal
+        if self._has_action:
+            self.actionButton.clicked.disconnect()
+            self._has_action = False
+
+        if action:
+            self.actionButton.clicked.connect(action)
+            self._has_action = True
+            self.actionButton.setEnabled(True)
+        else:
+            self.actionButton.setEnabled(False)
+
+    def set_icon(self, icon_name: str):
+        """Set the action button's icon as by the Icon Theme Specification."""
+        icon = QIcon()
+        if QIcon.hasThemeIcon(icon_name):
+            icon = QIcon.fromTheme(icon_name)
+        else:
+            icon.addFile(u".", QSize(), QIcon.Normal, QIcon.Off)
+        self.actionButton.setIcon(icon)
+
+    def set_active(self, active: bool):
+        """Set whether or not the fields are enabled."""
+        self.xDoubleSpinBox.setEnabled(active)
+        self.yDoubleSpinBox.setEnabled(active)
 
 
 if __name__ == '__main__':
     app = QApplication(argv)
 
-    gui = InteractiveGraphicalSystem()  # gui variable is needed
-    gui.add_object(Point(250, 250), "p0")
-    gui.add_object(Line(Point(500, 500), Point(700, 500)), "lh")
-    gui.add_object(Wireframe(Point(300, 400),  # ->    /|
-                             Point(300, 0),    # -v   / |
-                             Point(0, 0)),     # ->  *---
-                   "tr")
-    gui.add_object(Line(Point(600, 400), Point(600, 600)), "lv")
+    gui = InteractiveGraphicalSystem()  # @NOTE: gui variable is needed
+
+    gui.add_object(Line(Point(-950, 0), Point(1605, 3)), "lhor")
+    gui.add_object(Wireframe(Point(100, 0),
+                             Point(475, 250),
+                             Point(300, 133),
+                             Point(478, 75),
+                             Point(696, 134),
+                             Point(475, 250),
+                             Point(950, 0)),
+                   "wmmc")
+    gui.add_object(Line(Point(220, 75), Point(80, 135)), "lve")
+    gui.add_object(Line(Point(80, 135), Point(-40, 83)), "lvw")
+    gui.add_object(Wireframe(Point(-575, 0),
+                             Point(-475, 135),
+                             Point(-220, 152),
+                             Point(-130, 300),
+                             Point(0, 0)),
+                   "wmt")
+    gui.add_object(Point(-130, 297), "ppmt")
+    gui.add_object(Line(Point(-237, 72), Point(-118, -253)), "lar")
+    gui.add_object(Line(Point(-237, 72), Point(-356, -253)), "lal")
+    gui.add_object(Line(Point(-336, -103), Point(-138, -103)), "lab")
 
     exit(app.exec_())

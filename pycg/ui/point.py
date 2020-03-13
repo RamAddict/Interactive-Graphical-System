@@ -21,62 +21,60 @@ class Ui_PointFields(object):
         if PointFields.objectName():
             PointFields.setObjectName(u"PointFields")
         PointFields.resize(272, 34)
-        PointFields.setLayoutDirection(Qt.LeftToRight)
+        PointFields.setLayoutDirection(Qt.RightToLeft)
         self.horizontalLayout = QHBoxLayout(PointFields)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.actionButton = QPushButton(PointFields)
-        self.actionButton.setObjectName(u"actionButton")
-        self.actionButton.setMaximumSize(QSize(32, 16777215))
-        icon = QIcon(QIcon.fromTheme(u"list-remove"))
-        self.actionButton.setIcon(icon)
-        self.actionButton.setIconSize(QSize(16, 16))
-        self.actionButton.setFlat(True)
-
-        self.horizontalLayout.addWidget(self.actionButton)
-
-        self.xHorizontalLayout = QHBoxLayout()
-        self.xHorizontalLayout.setObjectName(u"xHorizontalLayout")
-        self.xLabel = QLabel(PointFields)
-        self.xLabel.setObjectName(u"xLabel")
-        font = QFont()
-        font.setPointSize(12)
-        self.xLabel.setFont(font)
-
-        self.xHorizontalLayout.addWidget(self.xLabel)
-
-        self.xDoubleSpinBox = QDoubleSpinBox(PointFields)
-        self.xDoubleSpinBox.setObjectName(u"xDoubleSpinBox")
+        self.yHorizontalLayout = QHBoxLayout()
+        self.yHorizontalLayout.setObjectName(u"yHorizontalLayout")
+        self.yDoubleSpinBox = QDoubleSpinBox(PointFields)
+        self.yDoubleSpinBox.setObjectName(u"yDoubleSpinBox")
         sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.xDoubleSpinBox.sizePolicy().hasHeightForWidth())
-        self.xDoubleSpinBox.setSizePolicy(sizePolicy)
-        self.xDoubleSpinBox.setDecimals(4)
-
-        self.xHorizontalLayout.addWidget(self.xDoubleSpinBox)
-
-
-        self.horizontalLayout.addLayout(self.xHorizontalLayout)
-
-        self.yHorizontalLayout = QHBoxLayout()
-        self.yHorizontalLayout.setObjectName(u"yHorizontalLayout")
-        self.yLabel = QLabel(PointFields)
-        self.yLabel.setObjectName(u"yLabel")
-        self.yLabel.setFont(font)
-
-        self.yHorizontalLayout.addWidget(self.yLabel)
-
-        self.yDoubleSpinBox = QDoubleSpinBox(PointFields)
-        self.yDoubleSpinBox.setObjectName(u"yDoubleSpinBox")
         sizePolicy.setHeightForWidth(self.yDoubleSpinBox.sizePolicy().hasHeightForWidth())
         self.yDoubleSpinBox.setSizePolicy(sizePolicy)
         self.yDoubleSpinBox.setDecimals(4)
 
         self.yHorizontalLayout.addWidget(self.yDoubleSpinBox)
 
+        self.yLabel = QLabel(PointFields)
+        self.yLabel.setObjectName(u"yLabel")
+        font = QFont()
+        font.setPointSize(12)
+        self.yLabel.setFont(font)
+
+        self.yHorizontalLayout.addWidget(self.yLabel)
+
 
         self.horizontalLayout.addLayout(self.yHorizontalLayout)
+
+        self.xHorizontalLayout = QHBoxLayout()
+        self.xHorizontalLayout.setObjectName(u"xHorizontalLayout")
+        self.xDoubleSpinBox = QDoubleSpinBox(PointFields)
+        self.xDoubleSpinBox.setObjectName(u"xDoubleSpinBox")
+        sizePolicy.setHeightForWidth(self.xDoubleSpinBox.sizePolicy().hasHeightForWidth())
+        self.xDoubleSpinBox.setSizePolicy(sizePolicy)
+        self.xDoubleSpinBox.setDecimals(4)
+
+        self.xHorizontalLayout.addWidget(self.xDoubleSpinBox)
+
+        self.xLabel = QLabel(PointFields)
+        self.xLabel.setObjectName(u"xLabel")
+        self.xLabel.setFont(font)
+
+        self.xHorizontalLayout.addWidget(self.xLabel)
+
+
+        self.horizontalLayout.addLayout(self.xHorizontalLayout)
+
+        self.actionButton = QPushButton(PointFields)
+        self.actionButton.setObjectName(u"actionButton")
+        self.actionButton.setEnabled(False)
+        self.actionButton.setMaximumSize(QSize(32, 16777215))
+        self.actionButton.setFlat(True)
+
+        self.horizontalLayout.addWidget(self.actionButton)
 
 
         self.retranslateUi(PointFields)
@@ -86,8 +84,8 @@ class Ui_PointFields(object):
 
     def retranslateUi(self, PointFields):
         PointFields.setWindowTitle(QCoreApplication.translate("PointFields", u"Form", None))
-        self.actionButton.setText("")
-        self.xLabel.setText(QCoreApplication.translate("PointFields", u"X:", None))
         self.yLabel.setText(QCoreApplication.translate("PointFields", u"Y:", None))
+        self.xLabel.setText(QCoreApplication.translate("PointFields", u"X:", None))
+        self.actionButton.setText("")
     # retranslateUi
 
