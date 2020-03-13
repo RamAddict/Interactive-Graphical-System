@@ -91,7 +91,10 @@ class Point(Drawable):
         self._coordinates[key] = item
 
     def __str__(self):
-        return '({} {})'.format(self.x, self.y)
+        return "{} {}".format(self.x, self.y)
+
+    def __repr__(self):  # as by the Well-known text representation of geometry
+        return "POINT (%s)" % str(self)
 
 
 class Line(Drawable):
@@ -109,7 +112,10 @@ class Line(Drawable):
         self._points[key] = point
 
     def __str__(self):
-        return '({}; {})'.format(self[0], self[1])
+        return "{}, {}".format(self[0], self[1])
+
+    def __repr__(self):
+        return "LINE (%s)" % str(self)
 
 
 class Wireframe(Drawable):
@@ -130,9 +136,10 @@ class Wireframe(Drawable):
         self._points[key] = point
 
     def __str__(self):
-        return '({})'.format(
-            '; '.join(str(p) for p in self._points + [self._points[0]])
-        )
+        return ", ".join(str(p) for p in self._points)
+
+    def __repr__(self):
+        return "POLYGON (%s)" % str(self)
 
 
 class Camera(Painter):
@@ -150,7 +157,7 @@ class Camera(Painter):
         self._y_min = int(self.y - self.height/2)
 
     def draw_pixel(self, x: int, y: int):
-        # @TODO: camera-relative transform can be optimized
+        # @XXX: camera-relative transform can be optimized
         x, y = self._transform(x - self.x, y - self.y)
         self.painter.draw_pixel(x, y)
 
