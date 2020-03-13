@@ -147,7 +147,7 @@ class Camera(Painter):
 
     def __init__(self, viewport_width: int, viewport_height: int,
                  painter: Painter, center: Point):
-        self._viewport_width = viewport_width
+        self._viewport_width = viewport_width  # @XXX: are these really needed?
         self._viewport_height = viewport_height
         self.painter = painter
         self.position = center
