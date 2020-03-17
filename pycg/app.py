@@ -52,6 +52,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         zoom_slide()
 
         # setting up scene controls
+
+        # This doesn't need to be currentItemChanged. 
+        self.displayFile.currentItemChanged.connect(
+            lambda : begin(self.objectLabel.hide(), self.objectArea.hide())
+        )
         self.removeButton.clicked.connect(
             lambda: self.remove_object(self.displayFile.currentRow())
         )
@@ -62,7 +67,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: self.move_object(self.displayFile.currentRow(), 1)
         )
         self.newButton.clicked.connect(
-            lambda: begin(self.objectLabel.show(), self.objectArea.show())
+            lambda: begin(self.objectLabel.show(), self.objectArea.show(), self.displayFile.currentItem().setSelected(False), self.displayFile.update())
         )
         # @TODO: edit selected object
         self.editButton.setEnabled(False)
@@ -164,12 +169,15 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         InteractiveGraphicalSystem.log(
             "Added %s '%s' to Display File." % (type(obj).__name__, name)
         )
-        self.displayFile.setCurrentRow(index)
         self.viewport.update()
         return index
 
     def remove_object(self, index: int) -> object:
         """Take an object out from a certain index in the Display File."""
+        if (self.displayFile.selectedItems() == []):
+            InteractiveGraphicalSystem.log("You must select an item to remove!")
+            self.displayFile.update()
+            return
         item = self.displayFile.takeItem(index)
         if item:
             InteractiveGraphicalSystem.log(
