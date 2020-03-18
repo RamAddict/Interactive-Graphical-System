@@ -64,9 +64,13 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.newButton.clicked.connect(lambda: begin(
             self.typeBox.setCurrentIndex(-1),
             self.nameEdit.setText(""),
-            self.componentWidget.setCurrentIndex(1)
+            self.componentWidget.setCurrentIndex(1),
+            self.componentWidget.update(),
+            self.displayFile.currentItem().setSelected(False), 
+            self.displayFile.update(),
+            self.displayFile.setCurrentRow(-1)
         ))
-        self.displayFile.currentItemChanged.connect(
+        self.displayFile.itemPressed.connect(
             lambda: self.componentWidget.setCurrentIndex(3)
         )
         # @TODO: edit selected object
@@ -132,7 +136,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.dialogBox.rejected.connect(
             lambda: self.componentWidget.setCurrentIndex(0)
         )
-        self.componentWidget.setCurrentIndex(0)
 
         # render it all
         self.show()
@@ -165,6 +168,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         InteractiveGraphicalSystem.log(
             "Added %s '%s' to Display File." % (type(obj).__name__, name)
         )
+        self.displayFile.setCurrentRow(index)
+        self.componentWidget.setCurrentWidget(self.transformPage)
         self.viewport.update()
         return index
 
@@ -182,7 +187,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     def move_object(self, current: int, offset: int):
         """Offset an object's position in the Display File."""
         pos = current + offset
-        if pos < 0 or pos >= self.displayFile.count():
+        if pos < 0 or pos >= self.displayFile.count() or current <= -1:
             return
         self.displayFile.insertItem(pos, self.displayFile.takeItem(current))
         self.displayFile.setCurrentRow(pos)

@@ -62,6 +62,7 @@ class Ui_MainWindow(object):
         self.displayFile = QListWidget(self.centralwidget)
         self.displayFile.setObjectName(u"displayFile")
         self.displayFile.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.displayFile.setSelectionRectVisible(True)
 
         self.scenelLayout.addWidget(self.displayFile)
 
@@ -183,6 +184,18 @@ class Ui_MainWindow(object):
         self.componentWidget.setObjectName(u"componentWidget")
         self.emptyPage = QWidget()
         self.emptyPage.setObjectName(u"emptyPage")
+        self.label = QLabel(self.emptyPage)
+        self.label.setObjectName(u"label")
+        self.label.setGeometry(QRect(50, 30, 151, 91))
+        font = QFont()
+        font.setFamily(u"Verdana")
+        font.setPointSize(15)
+        font.setItalic(True)
+        self.label.setFont(font)
+        self.label.setTextFormat(Qt.AutoText)
+        self.label.setScaledContents(False)
+        self.label.setAlignment(Qt.AlignCenter)
+        self.label.setWordWrap(True)
         self.componentWidget.addWidget(self.emptyPage)
         self.objectPage = QWidget()
         self.objectPage.setObjectName(u"objectPage")
@@ -201,7 +214,7 @@ class Ui_MainWindow(object):
         self.objectArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 186, 123))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 247, 261))
         self.verticalLayout = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(-1, 5, -1, -1)
@@ -210,9 +223,9 @@ class Ui_MainWindow(object):
         self.formLayout.setFormAlignment(Qt.AlignHCenter|Qt.AlignTop)
         self.nameLabel = QLabel(self.scrollAreaWidgetContents)
         self.nameLabel.setObjectName(u"nameLabel")
-        font = QFont()
-        font.setPointSize(12)
-        self.nameLabel.setFont(font)
+        font1 = QFont()
+        font1.setPointSize(12)
+        self.nameLabel.setFont(font1)
 
         self.formLayout.setWidget(0, QFormLayout.LabelRole, self.nameLabel)
 
@@ -223,7 +236,7 @@ class Ui_MainWindow(object):
 
         self.typeLabel = QLabel(self.scrollAreaWidgetContents)
         self.typeLabel.setObjectName(u"typeLabel")
-        self.typeLabel.setFont(font)
+        self.typeLabel.setFont(font1)
 
         self.formLayout.setWidget(1, QFormLayout.LabelRole, self.typeLabel)
 
@@ -349,7 +362,8 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.componentWidget.setCurrentIndex(3)
+        self.displayFile.setCurrentRow(-1)
+        self.componentWidget.setCurrentIndex(0)
         self.typeBox.setCurrentIndex(-1)
         self.tabWidget.setCurrentIndex(1)
 
@@ -367,6 +381,7 @@ class Ui_MainWindow(object):
         self.downListButton.setText(QCoreApplication.translate("MainWindow", u"Move Down", None))
         self.controlLabel.setText(QCoreApplication.translate("MainWindow", u"Window Control", None))
         self.consoleLabel.setText(QCoreApplication.translate("MainWindow", u"Console", None))
+        self.label.setText(QCoreApplication.translate("MainWindow", u"To move an object, select it on the display file first", None))
         self.objectLabel.setText(QCoreApplication.translate("MainWindow", u"Object", None))
         self.nameLabel.setText(QCoreApplication.translate("MainWindow", u"Name:", None))
         self.typeLabel.setText(QCoreApplication.translate("MainWindow", u"Type:", None))
