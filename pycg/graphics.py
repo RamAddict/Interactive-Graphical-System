@@ -1,6 +1,7 @@
 """Computer Graphics API."""
 
-from typing import Tuple
+from typing import Tuple, Iterable, Union
+from math import sqrt
 
 from utilities import pairwise
 
@@ -14,7 +15,7 @@ class Painter():
     def draw_line(self, xa: int, ya: int, xb: int, yb: int):
         # Bresenham's line algorithm, which is based on a decision parameter p
         # allowing to solve y = mx + c using only integer operations {+, -, 2*}
-        xa, ya, xb, yb = int(xa), int(ya), int(xb), int(yb)
+        xa, ya, xb, yb = int(xa), int(ya), int(xb), int(yb)  # "typing"
         dx = xb - xa
         dy = yb - ya
         sign_x = +1 if dx >= 0 else -1
@@ -60,13 +61,61 @@ class Drawable():
         raise NotImplementedError("Drawable is an abstract class.")
 
 
-class Point(Drawable):
-    def __init__(self, x, y):
-        self._coordinates = [x, y]
+class Vector:
+    def __init__(self, x, y, *coordinates: Tuple):
+        self._coordinates = [x, y] + list(coordinates)
 
-    def draw(self, painter):
-        painter.draw_pixel(round(self._coordinates[0]),
-                           round(self._coordinates[1]))
+    def __getitem__(self, key):
+        return self._coordinates[key]
+
+    def __setitem__(self, key, item):
+        self._coordinates[key] = item
+
+    def __len__(self):
+        return len(self._coordinates)
+
+    def __repr__(self):
+        return "(%s)" % str(self._coordinates)[1:-1]
+
+    def __add__(self, other: Iterable):
+        small, big = sorted((self._coordinates, other), key=len)
+        limit = len(small)
+        v = [x + small[i] if i < limit else x for i, x in enumerate(big)]
+        return Vector(*v)
+
+    def __sub__(self, other: Iterable):
+        return self + tuple(-x for x in other)
+
+    def __mul__(self, other: Union[Iterable, int, float, complex]):
+        if isinstance(other, (int, float, complex)):  # scalar product
+            return Vector(*(x * other for x in self._coordinates))
+        else:  # dot product
+            dim = min(len(self), len(other))
+            return sum(self._coordinates[i] * other[i] for i in range(dim))
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __neg__(self):
+        return self * -1
+
+    def __truediv__(self, scalar):
+        return self * 1/scalar
+
+    def __mod__(self, z):
+        return Vector(*(x % z for x in self._coordinates))
+
+    def __lshift__(self, k):
+        return Vector(*(self._coordinates[k:] + self._coordinates[:k]))
+
+    def __rshift__(self, k):
+        return Vector(*(self._coordinates[-k:] + self._coordinates[:-k]))
+
+    # @TODO: matrix multiplication (operator @)
+    # def __matmul__(self, other):
+    #     pass
+    # def __rmatmul__(self, other):
+    #     pass
 
     @property
     def x(self):
@@ -84,17 +133,24 @@ class Point(Drawable):
     def y(self, y):
         self._coordinates[1] = y
 
-    def __getitem__(self, key):
-        return self._coordinates[key]
+    @property
+    def z(self):
+        return self._coordinates[2]
 
-    def __setitem__(self, key, item):
-        self._coordinates[key] = item
+    @z.setter
+    def z(self, z):
+        self._coordinates[2] = z
 
-    def __str__(self):
-        return "{} {}".format(self.x, self.y)
+
+class Point(Drawable, Vector):
+    def __init__(self, x, y):
+        super(Point, self).__init__(x, y)
+
+    def draw(self, painter):
+        painter.draw_pixel(self.x, self.y)
 
     def __repr__(self):  # as by the Well-known text representation of geometry
-        return "POINT (%s)" % str(self)
+        return "POINT ({} {})".format(self.x, self.y)
 
 
 class Line(Drawable):
@@ -102,103 +158,119 @@ class Line(Drawable):
         self._points = [pa, pb]
 
     def draw(self, painter):
-        painter.draw_line(round(self._points[0].x), round(self._points[0].y),
-                          round(self._points[1].x), round(self._points[1].y))
+        painter.draw_line(self._points[0].x, self._points[0].y,
+                          self._points[1].x, self._points[1].y)
 
-    def __getitem__(self, key):
+    def __len__(self) -> float:
+        return sqrt((self._points[0].x - self._points[1].x)**2 +
+                    (self._points[0].y - self._points[1].y)**2)
+
+    def __getitem__(self, key: int) -> Point:
         return self._points[key]
 
-    def __setitem__(self, key, point: Point):
+    def __setitem__(self, key: int, point: Point):
         self._points[key] = point
 
-    def __str__(self):
-        return "{}, {}".format(self[0], self[1])
-
-    def __repr__(self):
-        return "LINE (%s)" % str(self)
+    def __repr__(self):  # WKT
+        return "LINESTRING ({} {}, {} {})".format(
+            self._points[0].x, self._points[0].y,
+            self._points[1].x, self._points[1].y
+        )
 
 
 class Wireframe(Drawable):
     """Polygon-like object defined by a sequence of points."""
 
-    def __init__(self, *points: Tuple[Point]):
-        self._points = list(points)
+    def __init__(self, a: Point, b: Point, c: Point, *points: Tuple[Point]):
+        self._points = [a, b, c] + list(points) + [a]
 
     def draw(self, painter):
-        for pa, pb in pairwise(self._points + [self._points[0]]):
-            painter.draw_line(round(pa.x), round(pa.y),
-                              round(pb.x), round(pb.y))
+        for pa, pb in pairwise(self._points):
+            painter.draw_line(pa.x, pa.y, pb.x, pb.y)
 
-    def __getitem__(self, key):
-        return self._points[key]
+    def __len__(self):
+        return len(self._points) - 1
 
-    def __setitem__(self, key, point: Point):
-        self._points[key] = point
+    def __getitem__(self, key: int) -> Point:
+        if key >= len(self):
+            raise IndexError("Index {} out of range.".format(key))
+        else:
+            return self._points[key]
 
-    def __str__(self):
-        return ", ".join(str(p) for p in self._points)
+    def __setitem__(self, key: int, point: Point):
+        if key >= len(self):
+            raise IndexError("Index {} out of range.".format(key))
+        else:
+            self._points[key] = point
 
-    def __repr__(self):
-        return "POLYGON (%s)" % str(self)
+    def __repr__(self):  # WKT
+        return "POLYGON ((%s))" % ", ".join(
+            "{} {}".format(p.x, p.y) for p in self._points
+        )
 
 
 class Camera(Painter):
     """Window used as reference to render objects."""
 
-    def __init__(self, viewport_width: int, viewport_height: int,
-                 painter: Painter, center: Point):
-        self._viewport_width = viewport_width  # @XXX: are these really needed?
-        self._viewport_height = viewport_height
+    def __init__(self, painter: Painter, center: Point, viewport_size: Vector):
         self.painter = painter
-        self.position = center
-        self.width = viewport_width
-        self.height = viewport_height
-        self._x_min = int(self.x - self.width/2)
-        self._y_min = int(self.y - self.height/2)
+        self._position = center
+        self._viewport_size = viewport_size
+        self._width = viewport_size.x
+        self._height = viewport_size.y
+        self._x_min = self.x - self._width/2
+        self._y_min = self.y - self._height/2
 
     def draw_pixel(self, x: int, y: int):
-        # @XXX: camera-relative transform can be optimized
-        x, y = self._transform(x - self.x, y - self.y)
+        x, y = self._to_viewport(x, y)
         self.painter.draw_pixel(x, y)
 
     def draw_line(self, xa: int, ya: int, xb: int, yb: int):
-        xa, ya = self._transform(xa - self.x, ya - self.y)
-        xb, yb = self._transform(xb - self.x, yb - self.y)
+        xa, ya = self._to_viewport(xa, ya)
+        xb, yb = self._to_viewport(xb, yb)
         self.painter.draw_line(xa, ya, xb, yb)
 
-    def _transform(self, x, y) -> Tuple[int, int]:
+    def _to_viewport(self, x, y) -> Tuple:
         """Apply the Window-to-Viewport Transformation on given coordinates."""
-        # equivalent to lerp(x, _x_min, x_min+width, 0, _viewport_width),
-        x = (x - self._x_min) * self._viewport_width / self.width
-        # _viewport_height - lerp(y, _y_min, y_min+height, 0, _viewport_height)
-        y = self._viewport_height * (1 - (y - self._y_min)/self.height)
-        return int(x), int(y)
-
-    @property
-    def zoom(self) -> float:
-        return self._viewport_width / self.width
-
-    @zoom.setter
-    def zoom(self, scale: float):
-        self.width = int(self._viewport_width / scale)
-        self.height = int(self._viewport_height / scale)
-        self._x_min = int(self.x - self.width/2)
-        self._y_min = int(self.y - self.height/2)
+        # equivalent to lerp(x, x_min, x_max, 0, viewport_width),
+        x = (x - self._x_min) * self._viewport_size.x / self._width
+        # viewport_height - lerp(y, y_min, y_max, 0, viewport_height)
+        y = self._viewport_size.y * (1 - (y - self._y_min)/self._height)
+        return x, y
 
     @property
     def x(self):
-        return self.position.x
+        return self._position.x
 
     @x.setter
     def x(self, x):
-        self.position.x = x
-        self._x_min = int(self.x - self.width/2)
+        self._position.x = x
+        self._x_min = self.x - self._width/2
 
     @property
     def y(self):
-        return self.position.y
+        return self._position.y
 
     @y.setter
     def y(self, y):
-        self.position.y = y
-        self._y_min = int(self.y - self.height/2)
+        self._position.y = y
+        self._y_min = self.y - self._height/2
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+
+    @property
+    def zoom(self) -> float:
+        return self._viewport_size.x / float(self._width)
+
+    @zoom.setter
+    def zoom(self, scale: float):
+        self._width = int(self._viewport_size.x / scale)
+        self._height = int(self._viewport_size.y / scale)
+        self._x_min = self.x - self._width/2
+        self._y_min = self.y - self._height/2

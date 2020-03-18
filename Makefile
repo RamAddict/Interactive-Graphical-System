@@ -28,3 +28,9 @@ run: $(PY_SOURCES)
 clean:
 	-@ rm -R pycg/__pycache__/
 	-@ rm -R $(QT_OBJ)/__pycache__/
+
+
+venv:
+	@ $(PYTHON) -m venv venv &&\
+	  source venv/bin/activate &&\
+	  $(PYTHON) -m pip install pyside2
