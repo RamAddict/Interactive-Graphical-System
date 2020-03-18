@@ -221,7 +221,7 @@
     <item row="2" column="1" rowspan="2">
      <widget class="QStackedWidget" name="componentWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="emptyPage">
        <widget class="QLabel" name="label">
@@ -294,8 +294,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>247</width>
-             <height>261</height>
+             <width>182</width>
+             <height>110</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">
@@ -438,8 +438,8 @@
        <widget class="QLabel" name="angle_label">
         <property name="geometry">
          <rect>
-          <x>145</x>
-          <y>140</y>
+          <x>130</x>
+          <y>120</y>
           <width>41</width>
           <height>16</height>
          </rect>
@@ -451,8 +451,8 @@
        <widget class="QLabel" name="rotate_label">
         <property name="geometry">
          <rect>
-          <x>35</x>
-          <y>120</y>
+          <x>0</x>
+          <y>100</y>
           <width>41</width>
           <height>16</height>
          </rect>
@@ -490,8 +490,8 @@
        <widget class="Line" name="line_3">
         <property name="geometry">
          <rect>
-          <x>15</x>
-          <y>210</y>
+          <x>-10</x>
+          <y>230</y>
           <width>281</width>
           <height>16</height>
          </rect>
@@ -503,18 +503,21 @@
        <widget class="QLineEdit" name="rotate_angle_input">
         <property name="geometry">
          <rect>
-          <x>185</x>
-          <y>140</y>
+          <x>180</x>
+          <y>120</y>
           <width>41</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="text">
+         <string>0</string>
         </property>
        </widget>
        <widget class="QLabel" name="axis_label">
         <property name="geometry">
          <rect>
-          <x>45</x>
-          <y>140</y>
+          <x>40</x>
+          <y>120</y>
           <width>31</width>
           <height>16</height>
          </rect>
@@ -526,8 +529,8 @@
        <widget class="QLabel" name="transate_label">
         <property name="geometry">
          <rect>
-          <x>35</x>
-          <y>10</y>
+          <x>0</x>
+          <y>0</y>
           <width>60</width>
           <height>16</height>
          </rect>
@@ -545,12 +548,15 @@
           <height>21</height>
          </rect>
         </property>
+        <property name="text">
+         <string>0</string>
+        </property>
        </widget>
        <widget class="QLabel" name="scale_label">
         <property name="geometry">
          <rect>
-          <x>35</x>
-          <y>170</y>
+          <x>0</x>
+          <y>150</y>
           <width>41</width>
           <height>16</height>
          </rect>
@@ -568,6 +574,9 @@
           <height>21</height>
          </rect>
         </property>
+        <property name="text">
+         <string>0</string>
+        </property>
         <property name="readOnly">
          <bool>true</bool>
         </property>
@@ -581,12 +590,15 @@
           <height>21</height>
          </rect>
         </property>
+        <property name="text">
+         <string>0</string>
+        </property>
        </widget>
        <widget class="QDialogButtonBox" name="trs_box_confirm">
         <property name="geometry">
          <rect>
-          <x>65</x>
-          <y>235</y>
+          <x>40</x>
+          <y>240</y>
           <width>164</width>
           <height>32</height>
          </rect>
@@ -598,8 +610,8 @@
        <widget class="Line" name="line">
         <property name="geometry">
          <rect>
-          <x>15</x>
-          <y>110</y>
+          <x>0</x>
+          <y>90</y>
           <width>281</width>
           <height>16</height>
          </rect>
@@ -611,8 +623,8 @@
        <widget class="Line" name="line_2">
         <property name="geometry">
          <rect>
-          <x>15</x>
-          <y>160</y>
+          <x>10</x>
+          <y>140</y>
           <width>281</width>
           <height>16</height>
          </rect>
@@ -624,11 +636,107 @@
        <widget class="QComboBox" name="rotate_axis_select">
         <property name="geometry">
          <rect>
-          <x>75</x>
-          <y>140</y>
+          <x>70</x>
+          <y>120</y>
           <width>51</width>
           <height>26</height>
          </rect>
+        </property>
+        <item>
+         <property name="text">
+          <string>X</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Y</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Z</string>
+         </property>
+        </item>
+       </widget>
+       <widget class="QLabel" name="scale_x_label">
+        <property name="geometry">
+         <rect>
+          <x>55</x>
+          <y>160</y>
+          <width>16</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>X:</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="scale_y_label">
+        <property name="geometry">
+         <rect>
+          <x>55</x>
+          <y>180</y>
+          <width>16</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Y:</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="scale_z_label">
+        <property name="geometry">
+         <rect>
+          <x>55</x>
+          <y>200</y>
+          <width>16</width>
+          <height>16</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Z:</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="scale_x">
+        <property name="geometry">
+         <rect>
+          <x>75</x>
+          <y>160</y>
+          <width>113</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>1</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="scale_y">
+        <property name="geometry">
+         <rect>
+          <x>75</x>
+          <y>180</y>
+          <width>113</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>1</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="scale_z">
+        <property name="geometry">
+         <rect>
+          <x>75</x>
+          <y>200</y>
+          <width>113</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>1</string>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
         </property>
        </widget>
       </widget>

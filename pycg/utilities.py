@@ -48,3 +48,11 @@ def experp(x, in_min, in_max, out_min, out_max):
 def begin(*expressions):
     """Scheme-inspired hack to allow for multiple expressions in lambdas."""
     return expressions[-1]
+
+def is_float(value):
+    """Input checker for float"""
+    try:
+        float(value)
+        return True
+    except:
+        return False
