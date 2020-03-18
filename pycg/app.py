@@ -2,13 +2,12 @@
 from sys import argv
 from math import inf
 from typing import Optional, Callable
-from PySide2.QtWidgets import *
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QListWidget
 from PySide2.QtGui import QPainter, QIcon
-from PySide2.QtCore import Qt, QSize, QRect
+from PySide2.QtCore import Qt, QSize
 
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
-from ui.transformations import Ui_trs_box
 from graphics import Point, Line, Wireframe, Painter, Drawable, Camera
 from utilities import experp, begin
 
@@ -53,11 +52,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         zoom_slide()
 
         # setting up scene controls
-
-        # This doesn't need to be currentItemChanged. 
-        self.displayFile.currentItemChanged.connect(
-            lambda : begin(self.objectArea.hide())
-        )
         self.removeButton.clicked.connect(
             lambda: self.remove_object(self.displayFile.currentRow())
         )
@@ -67,8 +61,13 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.downListButton.clicked.connect(
             lambda: self.move_object(self.displayFile.currentRow(), 1)
         )
-        self.newButton.clicked.connect(
-            lambda: begin(self.objectArea.show(), self.displayFile.currentItem().setSelected(False), self.displayFile.update())
+        self.newButton.clicked.connect(lambda: begin(
+            self.typeBox.setCurrentIndex(-1),
+            self.nameEdit.setText(""),
+            self.componentWidget.setCurrentIndex(1)
+        ))
+        self.displayFile.currentItemChanged.connect(
+            lambda: self.componentWidget.setCurrentIndex(3)
         )
         # @TODO: edit selected object
         self.editButton.setEnabled(False)
@@ -125,39 +124,16 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     points.append(p)
                 obj = Wireframe(*points)
 
-            finish_object()
             gui.add_object(obj, name, index=self.displayFile.currentRow() + 1)
-
-        def finish_object():
-            # self.objectLabel.hide() shouldnt even exist
-            self.typeBox.setCurrentIndex(-1)
-            self.nameEdit.setText("")
-            self.objectArea.hide()
+            self.componentWidget.setCurrentIndex(0)
 
         self.typeBox.currentIndexChanged.connect(new_type_select)
         self.dialogBox.accepted.connect(new_object)
-        self.dialogBox.rejected.connect(finish_object)
-        finish_object()
+        self.dialogBox.rejected.connect(
+            lambda: self.componentWidget.setCurrentIndex(0)
+        )
+        self.componentWidget.setCurrentIndex(0)
 
-        def show_TRS():
-            self.transformations_box = TransformationBox()
-            self.transformations_box.layout()
-            # self.transformations_box.setLayout(self.objectLayout)
-            self.objectLayout.addWidget(QComboBox(self.centralwidget))
-            self.objectLayout.addWidget(self.transformations_box)
-            # self.transformations_box.show()
-            # self.transformations_box.DrawChildren
-            # self.objectLayout.replaceWidget(self.objectArea, self.transformations_box)
-            # self.objectLayout.addWidget(self.transformations_box)
-            # self.objectArea.hide()
-            # self.objectLayout.setGeometry(QRect(1100, 600, 180, 120))
-            # self.transformations_box.setVisible(True)
-            # self.objectLayout.addChildWidget(self.transformations_box)
-            self.transformations_box.show()
-            # self.transformations_box.
-            self.objectLayout.update()
-
-        show_TRS()
         # render it all
         self.show()
         InteractiveGraphicalSystem.log(
@@ -194,10 +170,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
     def remove_object(self, index: int) -> object:
         """Take an object out from a certain index in the Display File."""
-        if (self.displayFile.selectedItems() == []):
-            InteractiveGraphicalSystem.log("You must select an item to remove!")
-            self.displayFile.update()
-            return
         item = self.displayFile.takeItem(index)
         if item:
             InteractiveGraphicalSystem.log(
@@ -238,13 +210,6 @@ class QtViewport(QWidget):
         for i in range(self.display_file.count()):
             self.display_file.item(i).data(Qt.UserRole).draw(self.camera)
         self.camera.painter.end()
-
-class TransformationBox(QWidget, Ui_trs_box):
-    def _init_(self):
-        super(Ui_trs_box, self).__init__()
-        self.setupUi(self)
-        self.setVisible(True)
-        self.show()
 
 
 class PointFields(QWidget, Ui_PointFields):
