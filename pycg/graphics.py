@@ -202,3 +202,15 @@ class Camera(Painter):
     def y(self, y):
         self.position.y = y
         self._y_min = int(self.y - self.height/2)
+
+def translate_object(obj: Drawable, x: float, y: float, z: float):
+    # Grabbing
+    for point in obj:
+        point.x += x
+        point.y += y
+        # point.z += z
+def scale_object(obj: Drawable, x: float, y: float, z: float):
+    # Scaling
+    for point in obj:
+        point.x *= x
+        point.y *= y
