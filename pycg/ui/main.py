@@ -21,7 +21,7 @@ class Ui_MainWindow(object):
         if MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.setEnabled(True)
-        MainWindow.resize(1280, 720)
+        MainWindow.resize(1440, 803)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -165,18 +165,13 @@ class Ui_MainWindow(object):
         self.objectLayout = QVBoxLayout()
         self.objectLayout.setSpacing(0)
         self.objectLayout.setObjectName(u"objectLayout")
-        self.objectLabel = QLabel(self.centralwidget)
-        self.objectLabel.setObjectName(u"objectLabel")
-
-        self.objectLayout.addWidget(self.objectLabel)
-
         self.objectArea = QScrollArea(self.centralwidget)
         self.objectArea.setObjectName(u"objectArea")
         self.objectArea.setEnabled(True)
         self.objectArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 314, 263))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 277, 322))
         self.verticalLayout = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(-1, 5, -1, -1)
@@ -221,12 +216,10 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.dialogBox)
 
-        self.verticalLayout.setStretch(0, 1)
         self.objectArea.setWidget(self.scrollAreaWidgetContents)
 
         self.objectLayout.addWidget(self.objectArea)
 
-        self.objectLayout.setStretch(1, 1)
 
         self.gridLayout.addLayout(self.objectLayout, 2, 1, 2, 1)
 
@@ -272,7 +265,6 @@ class Ui_MainWindow(object):
         self.upListButton.setText(QCoreApplication.translate("MainWindow", u"Move Up", None))
         self.downListButton.setText(QCoreApplication.translate("MainWindow", u"Move Down", None))
         self.controlLabel.setText(QCoreApplication.translate("MainWindow", u"Window Control", None))
-        self.objectLabel.setText(QCoreApplication.translate("MainWindow", u"Object", None))
         self.nameLabel.setText(QCoreApplication.translate("MainWindow", u"Name:", None))
         self.typeLabel.setText(QCoreApplication.translate("MainWindow", u"Type:", None))
         self.typeBox.setItemText(0, QCoreApplication.translate("MainWindow", u"Point", None))

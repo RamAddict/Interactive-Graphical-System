@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1280</width>
-    <height>720</height>
+    <width>1440</width>
+    <height>803</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -196,17 +196,10 @@
      </layout>
     </item>
     <item row="2" column="1" rowspan="2">
-     <layout class="QVBoxLayout" name="objectLayout" stretch="0,1">
+     <layout class="QVBoxLayout" name="objectLayout" stretch="0">
       <property name="spacing">
        <number>0</number>
       </property>
-      <item>
-       <widget class="QLabel" name="objectLabel">
-        <property name="text">
-         <string>Object</string>
-        </property>
-       </widget>
-      </item>
       <item>
        <widget class="QScrollArea" name="objectArea">
         <property name="enabled">
@@ -220,11 +213,11 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>314</width>
-           <height>263</height>
+           <width>277</width>
+           <height>322</height>
           </rect>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">
+         <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
           <property name="topMargin">
            <number>5</number>
           </property>
