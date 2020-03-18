@@ -34,7 +34,7 @@ class Ui_PointFields(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.yDoubleSpinBox.sizePolicy().hasHeightForWidth())
         self.yDoubleSpinBox.setSizePolicy(sizePolicy)
-        self.yDoubleSpinBox.setDecimals(4)
+        self.yDoubleSpinBox.setDecimals(0)
 
         self.yHorizontalLayout.addWidget(self.yDoubleSpinBox)
 
@@ -55,7 +55,7 @@ class Ui_PointFields(object):
         self.xDoubleSpinBox.setObjectName(u"xDoubleSpinBox")
         sizePolicy.setHeightForWidth(self.xDoubleSpinBox.sizePolicy().hasHeightForWidth())
         self.xDoubleSpinBox.setSizePolicy(sizePolicy)
-        self.xDoubleSpinBox.setDecimals(4)
+        self.xDoubleSpinBox.setDecimals(0)
 
         self.xHorizontalLayout.addWidget(self.xDoubleSpinBox)
 

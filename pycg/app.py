@@ -4,17 +4,18 @@ from math import inf
 from typing import Optional, Callable
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QListWidget
 from PySide2.QtGui import QPainter, QIcon
-from PySide2.QtCore import Qt, QSize
+from PySide2.QtCore import Qt
 
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
-from graphics import Point, Line, Wireframe, Painter, Drawable, Camera
+from graphics import Point, Line, Wireframe, Painter, Drawable, Camera, Vector
 from utilities import experp, begin
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     _console = None
 
+    @staticmethod
     def log(message):
         if InteractiveGraphicalSystem._console:
             InteractiveGraphicalSystem._console.append(str(message))
@@ -27,17 +28,15 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         # viewport setup
-        self.viewport = QtViewport(
-            self.canvasFrame, self.displayFile,
-            Camera(950, 535, QtPainter(), Point(-60, 40))
-        )
+        self.viewport = QtViewport(self.canvasFrame, self.displayFile)
         self.canvasFrame.layout().addWidget(self.viewport)
 
-        # static console setup
+        # debug console setup
         InteractiveGraphicalSystem._console = self.consoleArea
+        self.log = lambda message: InteractiveGraphicalSystem.log(message)
 
         # setting up camera pan controls
-        self._pan: int = 10  # @NOTE: camera step is adjusted by zoom
+        self._pan: int = 10
         self.upButton.clicked.connect(lambda: self.pan_camera(0, self._pan))
         self.downButton.clicked.connect(lambda: self.pan_camera(0, -self._pan))
         self.leftButton.clicked.connect(lambda: self.pan_camera(-self._pan, 0))
@@ -119,8 +118,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     points.append(p)
                 obj = Wireframe(*points)
 
+            gui.add_object(obj, name, self.displayFile.currentRow() + 1)
             finish_object()
-            gui.add_object(obj, name, index=self.displayFile.currentRow() + 1)
 
         def finish_object():
             self.objectLabel.hide()
@@ -135,9 +134,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         # render it all
         self.show()
-        InteractiveGraphicalSystem.log(
-            "Interactive Graphical System initialized."
-        )
+        self.log("Interactive Graphical System initialized.")
 
     def pan_camera(self, dx, dy):
         self.viewport.camera.x += dx
@@ -147,7 +144,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     def update_zoom(self, value, minimum, maximum):
         zoom = experp(value, minimum, maximum, 0.1, 10)
         self.viewport.camera.zoom = zoom
-        self._pan = int(10 / zoom)
+        self._pan = int(10 / zoom)  # @NOTE: camera step is adjusted by zoom
         self.viewport.update()
 
     def add_object(self, obj: Drawable, name: str, index: int = None) -> int:
@@ -161,9 +158,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         self.displayFile.insertItem(index, name)
         self.displayFile.item(index).setData(Qt.UserRole, obj)
-        InteractiveGraphicalSystem.log(
-            "Added %s '%s' to Display File." % (type(obj).__name__, name)
-        )
+        self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
         self.displayFile.setCurrentRow(index)
         self.viewport.update()
         return index
@@ -172,19 +167,17 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         """Take an object out from a certain index in the Display File."""
         item = self.displayFile.takeItem(index)
         if item:
-            InteractiveGraphicalSystem.log(
-                "Removed '%s' from Display File." % item.text()
-            )
+            self.log("Removed '%s' from Display File." % item.text())
             self.viewport.update()
             item = item.data(Qt.UserRole)
         return item
 
-    def move_object(self, current: int, offset: int):
+    def move_object(self, position: int, offset: int):
         """Offset an object's position in the Display File."""
-        pos = current + offset
+        pos = position + offset
         if pos < 0 or pos >= self.displayFile.count():
             return
-        self.displayFile.insertItem(pos, self.displayFile.takeItem(current))
+        self.displayFile.insertItem(pos, self.displayFile.takeItem(position))
         self.displayFile.setCurrentRow(pos)
         self.viewport.update()
 
@@ -192,24 +185,34 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 class QtPainter(QPainter, Painter):
     """Qt-based implementation of an abstract Painter."""
 
-    def draw_pixel(self, x: int, y: int):
+    def draw_pixel(self, x, y):
         self.drawPoint(x, y)
 
-    def draw_line(self, xa: int, ya: int, xb: int, yb: int):
+    def draw_line(self, xa, ya, xb, yb):
         self.drawLine(xa, ya, xb, yb)
 
 
 class QtViewport(QWidget):
-    def __init__(self, parent, objects: QListWidget, _qt_cam: Camera):
+    def __init__(self, parent, objects: QListWidget):
         super().__init__(parent)
-        self.display_file = objects
-        self.camera = _qt_cam
+        self._display_file = objects
+        self._size = Vector(950, 535)
+        self.camera = Camera(QtPainter(), Point(-60, 40), self._size)
 
     def paintEvent(self, event):
         self.camera.painter.begin(self)
-        for i in range(self.display_file.count()):
-            self.display_file.item(i).data(Qt.UserRole).draw(self.camera)
+        for i in range(self._display_file.count()):
+            self._display_file.item(i).data(Qt.UserRole).draw(self.camera)
         self.camera.painter.end()
+        return super().paintEvent(event)
+
+    def resizeEvent(self, event):
+        InteractiveGraphicalSystem.log(
+            "Viewport resized to {}x{}".format(self.width(), self.height())
+        )
+        self._size.x = self.width()
+        self._size.y = self.height()
+        return super().resizeEvent(event)
 
 
 class PointFields(QWidget, Ui_PointFields):
@@ -221,7 +224,8 @@ class PointFields(QWidget, Ui_PointFields):
         self._has_action = False
 
     def to_point(self) -> Point:
-        return Point(self.xDoubleSpinBox.value(), self.yDoubleSpinBox.value())
+        return Point(int(self.xDoubleSpinBox.value()),
+                     int(self.yDoubleSpinBox.value()))
 
     def set_action(self, action: Optional[Callable[[], None]]):
         """Set procedure to be executed when the action button is clicked."""
@@ -243,8 +247,6 @@ class PointFields(QWidget, Ui_PointFields):
         icon = QIcon()
         if QIcon.hasThemeIcon(icon_name):
             icon = QIcon.fromTheme(icon_name)
-        else:
-            icon.addFile(u".", QSize(), QIcon.Normal, QIcon.Off)
         self.actionButton.setIcon(icon)
 
     def set_active(self, active: bool):
@@ -256,7 +258,7 @@ class PointFields(QWidget, Ui_PointFields):
 if __name__ == '__main__':
     app = QApplication(argv)
 
-    gui = InteractiveGraphicalSystem()  # @NOTE: gui variable is needed
+    gui = InteractiveGraphicalSystem()  # @NOTE: variable is needed
 
     gui.add_object(Line(Point(-950, 0), Point(1605, 3)), "lhor")
     gui.add_object(Wireframe(Point(100, 0),
