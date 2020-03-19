@@ -83,7 +83,6 @@ class Ui_PointFields(object):
     # setupUi
 
     def retranslateUi(self, PointFields):
-        PointFields.setWindowTitle(QCoreApplication.translate("PointFields", u"Form", None))
         self.yLabel.setText(QCoreApplication.translate("PointFields", u"Y:", None))
         self.xLabel.setText(QCoreApplication.translate("PointFields", u"X:", None))
         self.actionButton.setText("")

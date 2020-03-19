@@ -26,28 +26,6 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.viewportLayout = QVBoxLayout()
-        self.viewportLayout.setSpacing(0)
-        self.viewportLayout.setObjectName(u"viewportLayout")
-        self.viewportLabel = QLabel(self.centralwidget)
-        self.viewportLabel.setObjectName(u"viewportLabel")
-        self.viewportLabel.setText(u"Viewport")
-
-        self.viewportLayout.addWidget(self.viewportLabel)
-
-        self.canvasFrame = QFrame(self.centralwidget)
-        self.canvasFrame.setObjectName(u"canvasFrame")
-        self.canvasFrame.setFrameShape(QFrame.StyledPanel)
-        self.canvasFrame.setFrameShadow(QFrame.Sunken)
-        self.gridLayout_3 = QGridLayout(self.canvasFrame)
-        self.gridLayout_3.setObjectName(u"gridLayout_3")
-
-        self.viewportLayout.addWidget(self.canvasFrame)
-
-        self.viewportLayout.setStretch(1, 1)
-
-        self.gridLayout.addLayout(self.viewportLayout, 0, 0, 3, 1)
-
         self.displayFileLayout = QVBoxLayout()
         self.displayFileLayout.setSpacing(0)
         self.displayFileLayout.setObjectName(u"displayFileLayout")
@@ -230,16 +208,51 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addLayout(self.objectLayout, 2, 1, 2, 1)
 
+        self.viewportLayout = QGridLayout()
+        self.viewportLayout.setObjectName(u"viewportLayout")
+        self.viewportLayout.setHorizontalSpacing(0)
+        self.viewportLayout.setVerticalSpacing(2)
+        self.viewportLabel = QLabel(self.centralwidget)
+        self.viewportLabel.setObjectName(u"viewportLabel")
+        self.viewportLabel.setText(u"Viewport")
+
+        self.viewportLayout.addWidget(self.viewportLabel, 0, 0, 1, 1)
+
+        self.eyePositionLabel = QLabel(self.centralwidget)
+        self.eyePositionLabel.setObjectName(u"eyePositionLabel")
+        self.eyePositionLabel.setText(u"(0, 0)")
+        self.eyePositionLabel.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.viewportLayout.addWidget(self.eyePositionLabel, 0, 1, 1, 1)
+
+        self.canvasFrame = QFrame(self.centralwidget)
+        self.canvasFrame.setObjectName(u"canvasFrame")
+        self.canvasFrame.setFrameShape(QFrame.StyledPanel)
+        self.canvasFrame.setFrameShadow(QFrame.Sunken)
+        self.gridLayout_3 = QGridLayout(self.canvasFrame)
+        self.gridLayout_3.setObjectName(u"gridLayout_3")
+        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
+
+        self.viewportLayout.addWidget(self.canvasFrame, 1, 0, 1, 2)
+
+        self.viewportLayout.setRowStretch(1, 1)
+        self.viewportLayout.setColumnStretch(0, 1)
+        self.viewportLayout.setColumnStretch(1, 1)
+
+        self.gridLayout.addLayout(self.viewportLayout, 0, 0, 3, 1)
+
         self.consoleLayout = QVBoxLayout()
         self.consoleLayout.setSpacing(0)
         self.consoleLayout.setObjectName(u"consoleLayout")
         self.consoleLabel = QLabel(self.centralwidget)
         self.consoleLabel.setObjectName(u"consoleLabel")
+        self.consoleLabel.setText(u"Console")
 
         self.consoleLayout.addWidget(self.consoleLabel)
 
         self.consoleArea = QTextBrowser(self.centralwidget)
         self.consoleArea.setObjectName(u"consoleArea")
+        self.consoleArea.setOpenLinks(False)
 
         self.consoleLayout.addWidget(self.consoleArea)
 
@@ -279,6 +292,5 @@ class Ui_MainWindow(object):
         self.typeBox.setItemText(1, QCoreApplication.translate("MainWindow", u"Line", None))
         self.typeBox.setItemText(2, QCoreApplication.translate("MainWindow", u"Wireframe", None))
 
-        self.consoleLabel.setText(QCoreApplication.translate("MainWindow", u"Console", None))
     # retranslateUi
 
