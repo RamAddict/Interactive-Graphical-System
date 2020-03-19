@@ -32,7 +32,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.viewport = QtViewport(
             self.canvasFrame,
             self.displayFile,
-            self.zoomSlider
+            self.zoomSlider,
+            self.eyePositionLabel
         )
         self.canvasFrame.layout().addWidget(self.viewport)
         self.viewport.setFocus(Qt.OtherFocusReason)
@@ -186,18 +187,21 @@ class QtViewport(QWidget):
         def draw_line(self, xa, ya, xb, yb):
             self.drawLine(xa, ya, xb, yb)
 
-    def __init__(self, parent_widget, display_file, zoomSlider):
+    def __init__(self, parent_widget, display_file, zoom_slider, eye_position):
         super().__init__(parent_widget)
         self._display_file = display_file  # modified by main window
-        self._zoomSlider = zoomSlider
+        self._zoom_slider = zoom_slider
+        self._eye_position = eye_position
+        self._size = Vector(950, 535)
         self.camera = Camera(
             QtViewport.QtPainter(),
             Point(-60, 40),
-            Vector(950, 535)
+            self._size
         )
         self._pan = 10
         self._drag_begin = None
         self.setFocusPolicy(Qt.StrongFocus)
+        self.setMouseTracking(True)
 
     def pan_camera(self, dx, dy, _normalized=True):
         """Move the camera by a certain amount of dynamically-sized steps."""
@@ -223,11 +227,10 @@ class QtViewport(QWidget):
         return super().paintEvent(event)
 
     def resizeEvent(self, event):
-        self.camera.width = self.width()
-        self.camera.height = self.height()
+        self._size.x = self.width()
+        self._size.y = self.height()
         InteractiveGraphicalSystem.log(
-            "Viewport resized to {}x{}.".format(self.camera.width,
-                                                self.camera.height)
+            "Viewport resized to {}x{}.".format(*self._size)
         )
         return super().resizeEvent(event)
 
@@ -243,21 +246,21 @@ class QtViewport(QWidget):
             self.pan_camera(1, 0)
         # window zooming, @NOTE: some coupling to GUI's slider is necessary
         elif e.key() == Qt.Key_Minus and e.modifiers() & Qt.ControlModifier:
-            step = self._zoomSlider.pageStep()
-            self._zoomSlider.setValue(self._zoomSlider.value() - step)
+            step = self._zoom_slider.pageStep()
+            self._zoom_slider.setValue(self._zoom_slider.value() - step)
         elif e.key() == Qt.Key_Equal and e.modifiers() & Qt.ControlModifier:
-            step = self._zoomSlider.pageStep()
-            self._zoomSlider.setValue(self._zoomSlider.value() + step)
+            step = self._zoom_slider.pageStep()
+            self._zoom_slider.setValue(self._zoom_slider.value() + step)
         else:
             return super().keyPressEvent(e)
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, e):
         # ctrl + mouse wheel also zooms
-        if event.modifiers() & Qt.ControlModifier:
-            step = self._zoomSlider.singleStep() * sign(event.angleDelta().y())
-            self._zoomSlider.setValue(self._zoomSlider.value() + step)
+        if e.modifiers() & Qt.ControlModifier:
+            step = self._zoom_slider.singleStep() * sign(e.angleDelta().y())
+            self._zoom_slider.setValue(self._zoom_slider.value() + step)
         else:
-            return super().wheelEvent(event)
+            return super().wheelEvent(e)
 
     def focusNextPrevChild(self, next):  # disable focus change with Tab
         return False
@@ -289,6 +292,7 @@ class QtViewport(QWidget):
                                                       self.camera.y)
             )
         else:
+            self._eye_position.setText("({}, {})".format(event.x(), event.y()))
             return super().mouseMoveEvent(event)
 
 
