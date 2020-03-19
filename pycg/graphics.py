@@ -62,7 +62,7 @@ class Drawable():
 
 
 class Vector:
-    def __init__(self, x, y, *coordinates: Tuple):
+    def __init__(self, x, y, *coordinates):
         self._coordinates = [x, y] + list(coordinates)
 
     def __getitem__(self, key):
@@ -78,20 +78,32 @@ class Vector:
         return "(%s)" % str(self._coordinates)[1:-1]
 
     def __add__(self, other: Iterable):
-        small, big = sorted((self._coordinates, other), key=len)
-        limit = len(small)
-        v = [x + small[i] if i < limit else x for i, x in enumerate(big)]
-        return Vector(*v)
+        try:
+            small, big = sorted((self._coordinates, other), key=len)
+            limit = len(small)
+            v = [x + small[i] if i < limit else x for i, x in enumerate(big)]
+            return Vector(*v)
+        except BaseException as exc:
+            raise NotImplementedError from exc
+
+    def __radd__(self, other):
+        return self + other
 
     def __sub__(self, other: Iterable):
         return self + tuple(-x for x in other)
+
+    def __rsub__(self, other):
+        return other + (-self)
 
     def __mul__(self, other: Union[Iterable, int, float, complex]):
         if isinstance(other, (int, float, complex)):  # scalar product
             return Vector(*(x * other for x in self._coordinates))
         else:  # dot product
-            dim = min(len(self), len(other))
-            return sum(self._coordinates[i] * other[i] for i in range(dim))
+            try:
+                dim = min(len(self), len(other))
+                return sum(self._coordinates[i] * other[i] for i in range(dim))
+            except BaseException as exc:
+                raise NotImplementedError from exc
 
     def __rmul__(self, other):
         return self * other
@@ -105,10 +117,10 @@ class Vector:
     def __mod__(self, z):
         return Vector(*(x % z for x in self._coordinates))
 
-    def __lshift__(self, k):
+    def __lshift__(self, k: int):
         return Vector(*(self._coordinates[k:] + self._coordinates[:k]))
 
-    def __rshift__(self, k):
+    def __rshift__(self, k: int):
         return Vector(*(self._coordinates[-k:] + self._coordinates[:-k]))
 
     # @TODO: matrix multiplication (operator @)
@@ -161,10 +173,6 @@ class Line(Drawable):
         painter.draw_line(self._points[0].x, self._points[0].y,
                           self._points[1].x, self._points[1].y)
 
-    def __len__(self) -> float:
-        return sqrt((self._points[0].x - self._points[1].x)**2 +
-                    (self._points[0].y - self._points[1].y)**2)
-
     def __getitem__(self, key: int) -> Point:
         return self._points[key]
 
@@ -177,12 +185,16 @@ class Line(Drawable):
             self._points[1].x, self._points[1].y
         )
 
+    def __len__(self) -> float:
+        return sqrt((self._points[0].x - self._points[1].x)**2 +
+                    (self._points[0].y - self._points[1].y)**2)
+
 
 class Wireframe(Drawable):
     """Polygon-like object defined by a sequence of points."""
 
-    def __init__(self, a: Point, b: Point, c: Point, *points: Tuple[Point]):
-        self._points = [a, b, c] + list(points) + [a]
+    def __init__(self, a: Point, b: Point, c: Point, *points: Point):
+        self._points = [a, b, c] + list(points) + [a]  # closed polygon
 
     def draw(self, painter):
         for pa, pb in pairwise(self._points):
@@ -218,6 +230,9 @@ class Camera(Painter):
         self._viewport_size = viewport_size
         self._width = viewport_size.x
         self._height = viewport_size.y
+        self._recalculate_corners()
+
+    def _recalculate_corners(self):
         self._x_min = self.x - self._width/2
         self._y_min = self.y - self._height/2
 
@@ -245,7 +260,7 @@ class Camera(Painter):
     @x.setter
     def x(self, x):
         self._position.x = x
-        self._x_min = self.x - self._width/2
+        self._recalculate_corners()
 
     @property
     def y(self):
@@ -254,15 +269,25 @@ class Camera(Painter):
     @y.setter
     def y(self, y):
         self._position.y = y
-        self._y_min = self.y - self._height/2
+        self._recalculate_corners()
 
     @property
     def width(self):
         return self._width
 
+    @width.setter
+    def width(self, w):
+        self._width = w
+        self._recalculate_corners()
+
     @property
     def height(self):
         return self._height
+
+    @height.setter
+    def height(self, h):
+        self._height = h
+        self._recalculate_corners()
 
     @property
     def zoom(self) -> float:
@@ -272,5 +297,4 @@ class Camera(Painter):
     def zoom(self, scale: float):
         self._width = int(self._viewport_size.x / scale)
         self._height = int(self._viewport_size.y / scale)
-        self._x_min = self.x - self._width/2
-        self._y_min = self.y - self._height/2
+        self._recalculate_corners()
