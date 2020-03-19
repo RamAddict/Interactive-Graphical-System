@@ -26,28 +26,6 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.viewportLayout = QVBoxLayout()
-        self.viewportLayout.setSpacing(0)
-        self.viewportLayout.setObjectName(u"viewportLayout")
-        self.viewportLabel = QLabel(self.centralwidget)
-        self.viewportLabel.setObjectName(u"viewportLabel")
-        self.viewportLabel.setText(u"Viewport")
-
-        self.viewportLayout.addWidget(self.viewportLabel)
-
-        self.canvasFrame = QFrame(self.centralwidget)
-        self.canvasFrame.setObjectName(u"canvasFrame")
-        self.canvasFrame.setFrameShape(QFrame.StyledPanel)
-        self.canvasFrame.setFrameShadow(QFrame.Sunken)
-        self.gridLayout_3 = QGridLayout(self.canvasFrame)
-        self.gridLayout_3.setObjectName(u"gridLayout_3")
-
-        self.viewportLayout.addWidget(self.canvasFrame)
-
-        self.viewportLayout.setStretch(1, 1)
-
-        self.gridLayout.addLayout(self.viewportLayout, 0, 0, 3, 1)
-
         self.displayFileLayout = QVBoxLayout()
         self.displayFileLayout.setSpacing(0)
         self.displayFileLayout.setObjectName(u"displayFileLayout")
@@ -118,35 +96,35 @@ class Ui_MainWindow(object):
         self.controlLayout = QGridLayout(self.controlFrame)
         self.controlLayout.setObjectName(u"controlLayout")
         self.controlLayout.setContentsMargins(20, -1, 20, -1)
-        self.upButton = QPushButton(self.controlFrame)
-        self.upButton.setObjectName(u"upButton")
-        self.upButton.setText(u"^")
+        self.upBtn = QPushButton(self.controlFrame)
+        self.upBtn.setObjectName(u"upBtn")
+        self.upBtn.setText(u"^")
 
-        self.controlLayout.addWidget(self.upButton, 0, 1, 1, 1)
+        self.controlLayout.addWidget(self.upBtn, 0, 1, 1, 1)
 
-        self.leftButton = QPushButton(self.controlFrame)
-        self.leftButton.setObjectName(u"leftButton")
-        self.leftButton.setText(u"<")
+        self.leftBtn = QPushButton(self.controlFrame)
+        self.leftBtn.setObjectName(u"leftBtn")
+        self.leftBtn.setText(u"<")
 
-        self.controlLayout.addWidget(self.leftButton, 1, 0, 1, 1)
+        self.controlLayout.addWidget(self.leftBtn, 1, 0, 1, 1)
 
-        self.rightButton = QPushButton(self.controlFrame)
-        self.rightButton.setObjectName(u"rightButton")
-        self.rightButton.setText(u">")
+        self.rightBtn = QPushButton(self.controlFrame)
+        self.rightBtn.setObjectName(u"rightBtn")
+        self.rightBtn.setText(u">")
 
-        self.controlLayout.addWidget(self.rightButton, 1, 2, 1, 1)
+        self.controlLayout.addWidget(self.rightBtn, 1, 2, 1, 1)
 
-        self.downButton = QPushButton(self.controlFrame)
-        self.downButton.setObjectName(u"downButton")
-        self.downButton.setText(u"v")
+        self.downBtn = QPushButton(self.controlFrame)
+        self.downBtn.setObjectName(u"downBtn")
+        self.downBtn.setText(u"v")
 
-        self.controlLayout.addWidget(self.downButton, 2, 1, 1, 1)
+        self.controlLayout.addWidget(self.downBtn, 2, 1, 1, 1)
 
         self.zoomSlider = QSlider(self.controlFrame)
         self.zoomSlider.setObjectName(u"zoomSlider")
+        self.zoomSlider.setFocusPolicy(Qt.WheelFocus)
         self.zoomSlider.setMinimum(0)
         self.zoomSlider.setMaximum(100)
-        self.zoomSlider.setSingleStep(10)
         self.zoomSlider.setValue(50)
         self.zoomSlider.setOrientation(Qt.Horizontal)
         self.zoomSlider.setTickPosition(QSlider.TicksBothSides)
@@ -176,7 +154,7 @@ class Ui_MainWindow(object):
         self.objectArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 314, 263))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 304, 247))
         self.verticalLayout = QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(-1, 5, -1, -1)
@@ -230,16 +208,51 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addLayout(self.objectLayout, 2, 1, 2, 1)
 
+        self.viewportLayout = QGridLayout()
+        self.viewportLayout.setObjectName(u"viewportLayout")
+        self.viewportLayout.setHorizontalSpacing(0)
+        self.viewportLayout.setVerticalSpacing(2)
+        self.viewportLabel = QLabel(self.centralwidget)
+        self.viewportLabel.setObjectName(u"viewportLabel")
+        self.viewportLabel.setText(u"Viewport")
+
+        self.viewportLayout.addWidget(self.viewportLabel, 0, 0, 1, 1)
+
+        self.eyePositionLabel = QLabel(self.centralwidget)
+        self.eyePositionLabel.setObjectName(u"eyePositionLabel")
+        self.eyePositionLabel.setText(u"(0, 0)")
+        self.eyePositionLabel.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.viewportLayout.addWidget(self.eyePositionLabel, 0, 1, 1, 1)
+
+        self.canvasFrame = QFrame(self.centralwidget)
+        self.canvasFrame.setObjectName(u"canvasFrame")
+        self.canvasFrame.setFrameShape(QFrame.StyledPanel)
+        self.canvasFrame.setFrameShadow(QFrame.Sunken)
+        self.gridLayout_3 = QGridLayout(self.canvasFrame)
+        self.gridLayout_3.setObjectName(u"gridLayout_3")
+        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
+
+        self.viewportLayout.addWidget(self.canvasFrame, 1, 0, 1, 2)
+
+        self.viewportLayout.setRowStretch(1, 1)
+        self.viewportLayout.setColumnStretch(0, 1)
+        self.viewportLayout.setColumnStretch(1, 1)
+
+        self.gridLayout.addLayout(self.viewportLayout, 0, 0, 3, 1)
+
         self.consoleLayout = QVBoxLayout()
         self.consoleLayout.setSpacing(0)
         self.consoleLayout.setObjectName(u"consoleLayout")
         self.consoleLabel = QLabel(self.centralwidget)
         self.consoleLabel.setObjectName(u"consoleLabel")
+        self.consoleLabel.setText(u"Console")
 
         self.consoleLayout.addWidget(self.consoleLabel)
 
         self.consoleArea = QTextBrowser(self.centralwidget)
         self.consoleArea.setObjectName(u"consoleArea")
+        self.consoleArea.setOpenLinks(False)
 
         self.consoleLayout.addWidget(self.consoleArea)
 
@@ -279,6 +292,5 @@ class Ui_MainWindow(object):
         self.typeBox.setItemText(1, QCoreApplication.translate("MainWindow", u"Line", None))
         self.typeBox.setItemText(2, QCoreApplication.translate("MainWindow", u"Wireframe", None))
 
-        self.consoleLabel.setText(QCoreApplication.translate("MainWindow", u"Console", None))
     # retranslateUi
 
