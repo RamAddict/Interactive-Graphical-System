@@ -54,6 +54,7 @@ def begin(*expressions):
     """Scheme-inspired hack to allow for multiple expressions in lambdas."""
     return expressions[-1]
 
+
 def is_float(value):
     """Input checker for float"""
     try:
