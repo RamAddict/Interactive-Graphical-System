@@ -45,6 +45,11 @@ def experp(x, in_min, in_max, out_min, out_max):
     return a * 2**(b * x)
 
 
+def sign(x):
+    """Get the sign of a number or 0 when it is zero."""
+    return x and (1, -1)[x < 0]
+
+
 def begin(*expressions):
     """Scheme-inspired hack to allow for multiple expressions in lambdas."""
     return expressions[-1]
