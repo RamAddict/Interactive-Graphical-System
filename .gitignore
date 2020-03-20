@@ -6,3 +6,5 @@ venv/
 
 # VSCode
 .vscode/
+
+.DS_Store

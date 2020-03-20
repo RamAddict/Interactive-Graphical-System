@@ -298,3 +298,18 @@ class Camera(Painter):
         self._width = int(self._viewport_size.x / scale)
         self._height = int(self._viewport_size.y / scale)
         self._recalculate_corners()
+
+
+def translate_object(obj: Drawable, x: float, y: float, z: float):
+    # Grabbing
+    for point in obj:
+        point.x += x
+        point.y += y
+        # point.z += z
+
+
+def scale_object(obj: Drawable, x: float, y: float, z: float):
+    # Scaling
+    for point in obj:
+        point.x *= x
+        point.y *= y

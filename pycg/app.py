@@ -8,8 +8,9 @@ from PySide2.QtCore import Qt
 
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
-from graphics import Point, Line, Wireframe, Painter, Drawable, Camera, Vector
-from utilities import experp, begin, lerp, sign
+from graphics import (Point, Line, Wireframe, Painter, Drawable, Camera,
+                      Vector, translate_object, scale_object)
+from utilities import experp, begin, lerp, sign, is_float
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
@@ -70,9 +71,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             self.typeBox.setCurrentIndex(-1),
             self.nameEdit.setText(""),
             self.componentWidget.setCurrentIndex(1),
-            self.componentWidget.update(),
+            # self.componentWidget.update(),
             self.displayFile.currentItem().setSelected(False),
-            self.displayFile.update(),
+            # self.displayFile.update(),
             self.displayFile.setCurrentRow(-1)
         ))
         self.displayFile.itemPressed.connect(
@@ -142,9 +143,69 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: self.componentWidget.setCurrentIndex(0)
         )
 
+        # set up Transform Page
+        # self.trs_box_confirm.setEnabled(False)
+        self.trs_box_confirm.accepted.connect(self.check_perform_transformations)
+        # print("clicked?"))
+        self.trs_box_confirm.rejected.connect(lambda: begin(
+            self.componentWidget.setCurrentWidget(self.emptyPage),
+            self.displayFile.currentItem().setSelected(False),
+            self.displayFile.setCurrentRow(-1)
+        ))
+
         # render it all
         self.show()
-        self.log("Interactive Graphical System initialized.")
+        InteractiveGraphicalSystem.log(
+            "Interactive Graphical System initialized."
+        )
+
+    def check_perform_transformations(self):
+        if not is_float(self.translate_x.text()):
+            InteractiveGraphicalSystem.log("translate x is fucked")
+            return
+        if not is_float(self.translate_y.text()):
+            InteractiveGraphicalSystem.log("Translate y is fucked")
+            return
+        # if not is_float(self.translate_z.text()):
+        #     InteractiveGraphicalSystem.log("Translate z is fucked")
+        #     return
+        if not(float(self.translate_x.text()) == 0 and float(self.translate_x.text()) == 0
+        and float(self.translate_x.text()) == 0):
+            translate_object(self.displayFile.currentItem().data(Qt.UserRole),
+            float(self.translate_x.text()),
+            float(self.translate_y.text()),
+            0
+            # float(self.translate_z.text())
+            )
+            self.viewport.update()
+
+        if not is_float(self.scale_x.text()):
+            InteractiveGraphicalSystem.log("Scale x is fucked")
+            return
+        if not is_float(self.scale_y.text()):
+            InteractiveGraphicalSystem.log("Scale y is fucked")
+            return
+        # if not is_float(self.scale_z.text()):
+        #     InteractiveGraphicalSystem.log("Scale z is fucked")
+        #     return
+        scale_object(self.displayFile.currentItem().data(Qt.UserRole),
+        float(self.scale_x.text()),
+        float(self.scale_y.text()),
+        #float(self.scale_z.text())
+        1)
+        self.viewport.update()
+
+
+    def pan_camera(self, dx, dy):
+        self.viewport.camera.x += dx
+        self.viewport.camera.y += dy
+        self.viewport.update()
+
+    def update_zoom(self, value, minimum, maximum):
+        zoom = experp(value, minimum, maximum, 0.1, 10)
+        self.viewport.camera.zoom = zoom
+        self._pan = int(10 / zoom)
+        self.viewport.update()
 
     def add_object(self, obj: Drawable, name: str, index: int = None) -> int:
         """Add an object to the Display File, returning its position."""
