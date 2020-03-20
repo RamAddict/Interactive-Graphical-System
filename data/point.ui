@@ -10,9 +10,6 @@
     <height>34</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>Form</string>
-  </property>
   <property name="layoutDirection">
    <enum>Qt::RightToLeft</enum>
   </property>
@@ -40,7 +37,7 @@
         </sizepolicy>
        </property>
        <property name="decimals">
-        <number>4</number>
+        <number>0</number>
        </property>
       </widget>
      </item>
@@ -69,7 +66,7 @@
         </sizepolicy>
        </property>
        <property name="decimals">
-        <number>4</number>
+        <number>0</number>
        </property>
       </widget>
      </item>
