@@ -1,8 +1,9 @@
 """Computer Graphics API."""
 
-from typing import Tuple, Iterable, Union
+from typing import Tuple
 from math import sqrt
 
+from blas import Vector
 from utilities import pairwise
 
 
@@ -61,99 +62,6 @@ class Drawable():
         raise NotImplementedError("Drawable is an abstract class.")
 
 
-class Vector:
-    def __init__(self, x, y, *coordinates):
-        self._coordinates = [x, y] + list(coordinates)
-
-    def __getitem__(self, key):
-        return self._coordinates[key]
-
-    def __setitem__(self, key, item):
-        self._coordinates[key] = item
-
-    def __len__(self):
-        return len(self._coordinates)
-
-    def __repr__(self):
-        return "(%s)" % str(self._coordinates)[1:-1]
-
-    def __add__(self, other: Iterable):
-        try:
-            small, big = sorted((self._coordinates, other), key=len)
-            limit = len(small)
-            v = [x + small[i] if i < limit else x for i, x in enumerate(big)]
-            return Vector(*v)
-        except BaseException as exc:
-            raise NotImplementedError from exc
-
-    def __radd__(self, other):
-        return self + other
-
-    def __sub__(self, other: Iterable):
-        return self + tuple(-x for x in other)
-
-    def __rsub__(self, other):
-        return other + (-self)
-
-    def __mul__(self, other: Union[Iterable, int, float, complex]):
-        if isinstance(other, (int, float, complex)):  # scalar product
-            return Vector(*(x * other for x in self._coordinates))
-        else:  # dot product
-            try:
-                dim = min(len(self), len(other))
-                return sum(self._coordinates[i] * other[i] for i in range(dim))
-            except BaseException as exc:
-                raise NotImplementedError from exc
-
-    def __rmul__(self, other):
-        return self * other
-
-    def __neg__(self):
-        return self * -1
-
-    def __truediv__(self, scalar):
-        return self * 1/scalar
-
-    def __mod__(self, z):
-        return Vector(*(x % z for x in self._coordinates))
-
-    def __lshift__(self, k: int):
-        return Vector(*(self._coordinates[k:] + self._coordinates[:k]))
-
-    def __rshift__(self, k: int):
-        return Vector(*(self._coordinates[-k:] + self._coordinates[:-k]))
-
-    # @TODO: matrix multiplication (operator @)
-    # def __matmul__(self, other):
-    #     pass
-    # def __rmatmul__(self, other):
-    #     pass
-
-    @property
-    def x(self):
-        return self._coordinates[0]
-
-    @x.setter
-    def x(self, x):
-        self._coordinates[0] = x
-
-    @property
-    def y(self):
-        return self._coordinates[1]
-
-    @y.setter
-    def y(self, y):
-        self._coordinates[1] = y
-
-    @property
-    def z(self):
-        return self._coordinates[2]
-
-    @z.setter
-    def z(self, z):
-        self._coordinates[2] = z
-
-
 class Point(Drawable, Vector):
     def __init__(self, x, y):
         super(Point, self).__init__(x, y)
@@ -181,13 +89,12 @@ class Line(Drawable):
 
     def __repr__(self):  # WKT
         return "LINESTRING ({} {}, {} {})".format(
-            self._points[0].x, self._points[0].y,
-            self._points[1].x, self._points[1].y
+            self[0].x, self[0].y,
+            self[1].x, self[1].y
         )
 
     def __len__(self) -> float:
-        return sqrt((self._points[0].x - self._points[1].x)**2 +
-                    (self._points[0].y - self._points[1].y)**2)
+        return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2)
 
 
 class Wireframe(Drawable):
@@ -245,7 +152,7 @@ class Camera(Painter):
         xb, yb = self._to_viewport(xb, yb)
         self.painter.draw_line(xa, ya, xb, yb)
 
-    def _to_viewport(self, x, y) -> Tuple:
+    def _to_viewport(self, x, y) -> Tuple:  # @XXX: private or public?
         """Apply the Window-to-Viewport Transformation on given coordinates."""
         # equivalent to lerp(x, x_min, x_max, 0, viewport_width),
         x = (x - self._x_min) * self._viewport_size.x / self._width
@@ -271,7 +178,7 @@ class Camera(Painter):
         self._position.y = y
         self._recalculate_corners()
 
-    @property
+    @property  # @XXX: perhaps width AND height are not necessary -> see FOV
     def width(self):
         return self._width
 
@@ -298,3 +205,17 @@ class Camera(Painter):
         self._width = int(self._viewport_size.x / scale)
         self._height = int(self._viewport_size.y / scale)
         self._recalculate_corners()
+
+
+def translate_object(obj: Drawable, x: float, y: float, z: float):
+    # Grabbing
+    for point in obj:
+        point.x += x
+        point.y += y
+        # point.z += z
+
+def scale_object(obj: Drawable, x: float, y: float, z: float):
+    # Scaling
+    for point in obj:
+        point.x *= x
+        point.y *= y

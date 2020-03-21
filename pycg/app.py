@@ -8,8 +8,9 @@ from PySide2.QtCore import Qt
 
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
-from graphics import Point, Line, Wireframe, Painter, Drawable, Camera, Vector
-from utilities import experp, begin, lerp, sign
+from graphics import (Point, Line, Wireframe, Painter, Drawable, Camera,
+                      Vector, translate_object, scale_object)
+from utilities import experp, begin, lerp, sign, is_float
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
@@ -49,12 +50,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.rightBtn.clicked.connect(lambda: self.viewport.pan_camera(1, 0))
 
         # zoom slider setup
-        def zoom_slide():
-            self.viewport.update_zoom(self.zoomSlider.value(),
-                                      self.zoomSlider.minimum(),
-                                      self.zoomSlider.maximum())
-        self.zoomSlider.valueChanged.connect(zoom_slide)
-        zoom_slide()
+        self.zoomSlider.valueChanged.connect(
+            lambda _: self.viewport.update_zoom(self.zoomSlider.value(),
+                                                self.zoomSlider.minimum(),
+                                                self.zoomSlider.maximum())
+        )
+        self.zoomSlider.valueChanged.emit(None)
 
         # setting up scene controls
         self.removeButton.clicked.connect(
@@ -66,8 +67,14 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.downListButton.clicked.connect(
             lambda: self.move_object(self.displayFile.currentRow(), 1)
         )
-        self.newButton.clicked.connect(
-            lambda: begin(self.objectLabel.show(), self.objectArea.show())
+        self.newButton.clicked.connect(lambda: begin(
+            self.typeBox.setCurrentIndex(-1),
+            self.nameEdit.setText(""),
+            self.componentWidget.setCurrentIndex(1),
+            self.displayFile.currentItem().setSelected(False)
+        ))
+        self.displayFile.itemPressed.connect(
+            lambda: self.componentWidget.setCurrentIndex(3)
         )
         # @TODO: edit selected object
         self.editButton.setEnabled(False)
@@ -124,23 +131,59 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     points.append(p)
                 obj = Wireframe(*points)
 
-            gui.add_object(obj, name, self.displayFile.currentRow() + 1)
-            finish_object()
-
-        def finish_object():
-            self.objectLabel.hide()
-            self.typeBox.setCurrentIndex(-1)
-            self.nameEdit.setText("")
-            self.objectArea.hide()
+            gui.add_object(obj, name, index=self.displayFile.currentRow() + 1)
+            self.componentWidget.setCurrentIndex(0)
 
         self.typeBox.currentIndexChanged.connect(new_type_select)
         self.dialogBox.accepted.connect(new_object)
-        self.dialogBox.rejected.connect(finish_object)
-        finish_object()
+        self.dialogBox.rejected.connect(
+            lambda: self.componentWidget.setCurrentIndex(0)
+        )
+
+        # @FIXME: set up transformations page
+        def check_perform_transformations():
+            if not is_float(self.translateXinput.text()):
+                InteractiveGraphicalSystem.log("translate x is fucked")
+                return
+            elif not is_float(self.translateYinput.text()):
+                InteractiveGraphicalSystem.log("Translate y is fucked")
+                return
+            elif not (float(self.translateXinput.text()) == 0 and
+                      float(self.translateYinput.text()) == 0):
+                translate_object(
+                    self.displayFile.currentItem().data(Qt.UserRole),
+                    float(self.translateXinput.text()),
+                    float(self.translateYinput.text()),
+                    0
+                )
+                self.viewport.update()
+
+            if not is_float(self.scaleXinput.text()):
+                InteractiveGraphicalSystem.log("Scale x is fucked")
+                return
+            elif not is_float(self.scaleYinput.text()):
+                InteractiveGraphicalSystem.log("Scale y is fucked")
+                return
+            else:
+                scale_object(
+                    self.displayFile.currentItem().data(Qt.UserRole),
+                    float(self.scaleXinput.text()),
+                    float(self.scaleYinput.text()),
+                    1
+                )
+                self.viewport.update()
+
+        self.transformConfirm.accepted.connect(check_perform_transformations)
+        self.transformConfirm.rejected.connect(
+            lambda: begin(self.componentWidget.setCurrentIndex(0),
+                          self.displayFile.currentItem().setSelected(False))
+        )
 
         # render it all
         self.show()
-        self.log("Interactive Graphical System initialized.")
+        InteractiveGraphicalSystem.log(
+            "Interactive Graphical System initialized."
+        )
 
     def add_object(self, obj: Drawable, name: str, index: int = None) -> int:
         """Add an object to the Display File, returning its position."""
@@ -155,6 +198,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.displayFile.item(index).setData(Qt.UserRole, obj)
         self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
         self.displayFile.setCurrentRow(index)
+        self.componentWidget.setCurrentIndex(0)
         self.viewport.update()
         return index
 
@@ -178,26 +222,22 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
 
 class QtViewport(QWidget):
-    class QtPainter(QPainter, Painter):
-        """Qt-based implementation of an abstract Painter."""
-
-        def draw_pixel(self, x, y):
-            self.drawPoint(x, y)
-
-        def draw_line(self, xa, ya, xb, yb):
-            self.drawLine(xa, ya, xb, yb)
-
     def __init__(self, parent_widget, display_file, zoom_slider, eye_position):
+        class QtPainter(QPainter, Painter):
+            """Qt-based implementation of an abstract Painter."""
+
+            def draw_pixel(self, x, y):
+                self.drawPoint(x, y)
+
+            def draw_line(self, xa, ya, xb, yb):
+                self.drawLine(xa, ya, xb, yb)
+
         super().__init__(parent_widget)
         self._display_file = display_file  # modified by main window
         self._zoom_slider = zoom_slider
         self._eye_position = eye_position
         self._size = Vector(950, 535)
-        self.camera = Camera(
-            QtViewport.QtPainter(),
-            Point(-60, 40),
-            self._size
-        )
+        self.camera = Camera(QtPainter(), Point(-60, 40), self._size)
         self._pan = 10
         self._drag_begin = None
         self.setFocusPolicy(Qt.StrongFocus)
@@ -251,8 +291,12 @@ class QtViewport(QWidget):
         elif e.key() == Qt.Key_Equal and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()
             self._zoom_slider.setValue(self._zoom_slider.value() + step)
-        else:
+        # forward (most) events to parent class
+        elif e.key() != Qt.Key_Tab:
             return super().keyPressEvent(e)
+
+    def focusNextPrevChild(self, next):  # disable focus change with Tab
+        return False
 
     def wheelEvent(self, e):
         # ctrl + mouse wheel also zooms
@@ -261,9 +305,6 @@ class QtViewport(QWidget):
             self._zoom_slider.setValue(self._zoom_slider.value() + step)
         else:
             return super().wheelEvent(e)
-
-    def focusNextPrevChild(self, next):  # disable focus change with Tab
-        return False
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MiddleButton:
@@ -365,5 +406,7 @@ if __name__ == '__main__':
     gui.add_object(Line(Point(-237, 72), Point(-118, -253)), "lar")
     gui.add_object(Line(Point(-237, 72), Point(-356, -253)), "lal")
     gui.add_object(Line(Point(-336, -103), Point(-138, -103)), "lab")
+
+    gui.displayFile.setCurrentRow(-1)
 
     exit(app.exec_())
