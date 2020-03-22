@@ -64,6 +64,14 @@ class Vector:
 
     def __rshift__(self, k: int):
         return Vector(*(self[-k:] + self[:-k]))
+    
+    def __eq__(self, other):
+        if isinstance(other, Vector) and len(self) == len(other):
+            for i in range(len(self)):
+                if self._coordinates[i] != other._coordinates[i]:
+                    return False
+            return True
+        return False
 
     # @TODO: matrix multiplication (operator @)
     # def __matmul__(self, other):
@@ -95,3 +103,62 @@ class Vector:
     @z.setter
     def z(self, z):
         self[2] = z
+
+class Matrix(Vector):
+    """Basic Matrix class. The vectors of the matrix are its columns"""
+    def __init__(self, vect, *columns):
+        self._matrix = [vect] + list(columns)
+    
+    def __eq__(self, other):
+        if isinstance(other, Matrix) and len(self) == len(other):
+            for i in range(len(self)):
+                if self._matrix[i] != other._matrix[i]:
+                    return False
+            # very pretty, but this returns a generator
+            # x = (True if other._matrix[i] == elem else False for i, elem in enumerate(self._matrix))
+            return True
+        return False
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __getitem__(self, key):
+        return self._matrix[key]
+    
+    def __setitem__(self, key, vector: Vector):
+        self._matrix[key] = vector
+    
+    def __len__(self):
+        return len(self._matrix)
+    
+    def __repr__(self):
+        return "(%s)" % str(self._matrix)[1:-1]
+
+    def __add__(self, other):
+        dim = min(len(self), len(other))
+        x = Matrix(self._matrix[0] + other._matrix[0])
+        for i in range(dim)[1:]:
+            x._matrix.append(self._matrix[i] + other._matrix[i])
+        return x
+
+    def __mul__(self, other):
+    # @FIXME change error name
+        if (len(self._matrix) != len(other[0])):
+            raise NotImplementedError()
+        new_matrix = []
+        for p in range(len(other)):
+            new_column = []
+            for j in range(len(self._matrix[0])):
+                sum = 0
+                for i, jj in enumerate(self._matrix):
+                    sum += jj[j] * other[p][i]
+                new_column.append(sum)
+            new_matrix.append(Vector(*new_column))
+        return Matrix(*new_matrix)
+
+    def center_point(self):
+        sum = self._matrix[0]
+        for vect in self._matrix[1:]:
+            sum+=vect
+        return sum
+    

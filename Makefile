@@ -24,6 +24,8 @@ gui: $(QT_OBJECTS)
 run: $(PY_SOURCES)
 	$(PYTHON) $(PY_APP)
 
+test:
+	py.test
 
 clean:
 	-@ rm -R pycg/__pycache__/
