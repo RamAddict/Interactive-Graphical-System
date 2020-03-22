@@ -152,9 +152,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                       float(self.translateYinput.text()) == 0):
                 translate_object(
                     self.displayFile.currentItem().data(Qt.UserRole),
-                    float(self.translateXinput.text()),
+                    Vector(float(self.translateXinput.text()),
                     float(self.translateYinput.text()),
-                    0
+                    0)
                 )
                 self.viewport.update()
 

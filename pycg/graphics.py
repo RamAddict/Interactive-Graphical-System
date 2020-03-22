@@ -3,7 +3,7 @@
 from typing import Tuple
 from math import sqrt
 
-from blas import Vector
+from blas import Vector, Matrix
 from utilities import pairwise
 
 
@@ -72,6 +72,12 @@ class Point(Drawable, Vector):
     def __repr__(self):  # as by the Well-known text representation of geometry
         return "POINT ({} {})".format(self.x, self.y)
 
+    def center(self):
+        return self
+
+    def transform(self, transformation: Matrix, pivot=None):
+        pivot = pivot if pivot else self.center()
+        self._coordinates = transformation * pivot
 
 class Line(Drawable):
     def __init__(self, pa: Point, pb: Point):
@@ -207,11 +213,12 @@ class Camera(Painter):
         self._recalculate_corners()
 
 
-def translate_object(obj: Drawable, x: float, y: float, z: float):
+def translate_object(obj: Drawable, vector: Vector):
     # Grabbing
     for point in obj:
-        point.x += x
-        point.y += y
+        # Matrix.toMatrix(point)
+        point.x += vector.x
+        point.y += vector.y
         # point.z += z
 
 def scale_object(obj: Drawable, x: float, y: float, z: float):
