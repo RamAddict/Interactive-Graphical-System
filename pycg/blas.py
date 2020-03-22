@@ -162,3 +162,27 @@ class Matrix(Vector):
             sum+=vect
         return sum
     
+    def translate(self, vect: Vector):
+        return self._matrix * vect
+
+    @staticmethod
+    def identity(size: int):
+        if size == 1:
+            return 1
+        elif size == 2:
+            return Matrix(Vector(1, 0), Vector(0, 1))
+        elif size == 3:
+            return Matrix(Vector(1,0,0), Vector(0,1,0), Vector(0,0,1))
+        elif size == 4:
+            return Matrix(Vector(1,0,0,0), Vector(0,1,0,0), Vector(0,0,1,0), Vector(0,0,0,1))
+        else:
+            identity = []
+            for i in range(size):
+                column = []
+                for j in range(size):
+                    if i == j:
+                        column.append(1)
+                    else:
+                        column.append(0)
+                identity.append(Vector(*column))
+            return Matrix(*identity)
