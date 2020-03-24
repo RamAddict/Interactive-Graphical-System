@@ -59,33 +59,48 @@ class Painter():
 
 class Drawable():
     def draw(self, painter: Painter):
-        raise NotImplementedError("Drawable is an abstract class.")
+        raise NotImplementedError("Method `draw` inherited from Drawable " +
+                                  "hasn't been implemented.")
 
 
-class Point(Drawable, Vector):
+class Transformable():
+    def transform(self, transformation: Matrix, pivot=None):
+        raise NotImplementedError("Method `transform` inherited from " +
+                                  "Transformable hasn't been implemented.")
+
+
+class Entity(Transformable, Drawable):
+    """Common interface for all graphical objects."""
+    pass
+
+
+class Point(Vector, Entity):
     def __init__(self, x, y):
         super(Point, self).__init__(x, y)
 
     def draw(self, painter):
         painter.draw_pixel(self.x, self.y)
 
+    # @FIXME: translate to origin before transformation
+    def transform(self, transformation: Matrix, pivot=None):
+        pivot = pivot or self
+        self._coordinates = transformation * pivot
+
     def __repr__(self):  # as by the Well-known text representation of geometry
         return "POINT ({} {})".format(self.x, self.y)
 
-    def center(self):
-        return self
 
-    def transform(self, transformation: Matrix, pivot=None):
-        pivot = pivot if pivot else self.center()
-        self._coordinates = transformation * pivot
-
-class Line(Drawable):
+class Line(Entity):
     def __init__(self, pa: Point, pb: Point):
         self._points = [pa, pb]
 
     def draw(self, painter):
         painter.draw_line(self._points[0].x, self._points[0].y,
                           self._points[1].x, self._points[1].y)
+
+    def transform(self, transformation: Matrix, pivot=None):
+        # @TODO: line transform
+        pass
 
     def __getitem__(self, key: int) -> Point:
         return self._points[key]
@@ -103,7 +118,7 @@ class Line(Drawable):
         return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2)
 
 
-class Wireframe(Drawable):
+class Wireframe(Entity):
     """Polygon-like object defined by a sequence of points."""
 
     def __init__(self, a: Point, b: Point, c: Point, *points: Point):
@@ -112,6 +127,10 @@ class Wireframe(Drawable):
     def draw(self, painter):
         for pa, pb in pairwise(self._points):
             painter.draw_line(pa.x, pa.y, pb.x, pb.y)
+
+    def transform(self, transformation: Matrix, pivot=None):
+        # @TODO: wireframe transform
+        pass
 
     def __len__(self):
         return len(self._points) - 1
@@ -134,7 +153,7 @@ class Wireframe(Drawable):
         )
 
 
-class Camera(Painter):
+class Camera(Painter):  # @XXX: make Camera drawable and transformable?
     """Window used as reference to render objects."""
 
     def __init__(self, painter: Painter, center: Point, viewport_size: Vector):
@@ -184,7 +203,8 @@ class Camera(Painter):
         self._position.y = y
         self._recalculate_corners()
 
-    @property  # @XXX: perhaps width AND height are not necessary -> see FOV
+    # @XXX: perhaps width AND height are not necessary -> see FOV
+    @property
     def width(self):
         return self._width
 

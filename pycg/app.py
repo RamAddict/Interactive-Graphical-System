@@ -8,9 +8,9 @@ from PySide2.QtCore import Qt
 
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
-from graphics import (Point, Line, Wireframe, Painter, Drawable, Camera,
-                      Vector, translate_object, scale_object)
-from utilities import experp, begin, lerp, sign, is_float
+from graphics import (Point, Line, Wireframe, Painter, Camera, Entity, Vector,
+                      translate_object, scale_object)
+from utilities import experp, begin, lerp, sign, to_float
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
@@ -108,7 +108,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             ))
             return extra
 
-        def new_object() -> Optional[Drawable]:
+        def new_object():
             # @TODO: improve parameter validation (name conflict, valid fields)
             if self.typeBox.currentIndex() < 0:
                 return
@@ -131,7 +131,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     points.append(p)
                 obj = Wireframe(*points)
 
-            gui.add_object(obj, name, index=self.displayFile.currentRow() + 1)
+            gui.insert_object(obj, name, self.displayFile.currentRow() + 1)
             self.componentWidget.setCurrentIndex(0)
 
         self.typeBox.currentIndexChanged.connect(new_type_select)
@@ -142,10 +142,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         # @FIXME: set up transformations page
         def check_perform_transformations():
-            if not is_float(self.translateXinput.text()):
+            if not to_float(self.translateXinput.text()):
                 InteractiveGraphicalSystem.log("translate x is fucked")
                 return
-            elif not is_float(self.translateYinput.text()):
+            elif not to_float(self.translateYinput.text()):
                 InteractiveGraphicalSystem.log("Translate y is fucked")
                 return
             elif not (float(self.translateXinput.text()) == 0 and
@@ -153,15 +153,15 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 translate_object(
                     self.displayFile.currentItem().data(Qt.UserRole),
                     Vector(float(self.translateXinput.text()),
-                    float(self.translateYinput.text()),
-                    0)
+                           float(self.translateYinput.text()),
+                           0)
                 )
                 self.viewport.update()
 
-            if not is_float(self.scaleXinput.text()):
+            if not to_float(self.scaleXinput.text()):
                 InteractiveGraphicalSystem.log("Scale x is fucked")
                 return
-            elif not is_float(self.scaleYinput.text()):
+            elif not to_float(self.scaleYinput.text()):
                 InteractiveGraphicalSystem.log("Scale y is fucked")
                 return
             else:
@@ -185,8 +185,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             "Interactive Graphical System initialized."
         )
 
-    def add_object(self, obj: Drawable, name: str, index: int = None) -> int:
-        """Add an object to the Display File, returning its position."""
+    def insert_object(self, obj: Entity, name: str, index: int = None) -> int:
+        """Put an object in the Display File, returning its position."""
 
         n = self.displayFile.count()
         if index and (index < 0 or index > n):
@@ -202,7 +202,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.viewport.update()
         return index
 
-    def remove_object(self, index: int) -> object:
+    def remove_object(self, index: int) -> Entity:
         """Take an object out from a certain index in the Display File."""
         item = self.displayFile.takeItem(index)
         if item:
@@ -385,27 +385,27 @@ if __name__ == '__main__':
 
     gui = InteractiveGraphicalSystem()  # @NOTE: variable is needed
 
-    gui.add_object(Line(Point(-950, 0), Point(1605, 3)), "lhor")
-    gui.add_object(Wireframe(Point(100, 0),
-                             Point(475, 250),
-                             Point(300, 133),
-                             Point(478, 75),
-                             Point(696, 134),
-                             Point(475, 250),
-                             Point(950, 0)),
-                   "wmmc")
-    gui.add_object(Line(Point(220, 75), Point(80, 135)), "lve")
-    gui.add_object(Line(Point(80, 135), Point(-40, 83)), "lvw")
-    gui.add_object(Wireframe(Point(-575, 0),
-                             Point(-475, 135),
-                             Point(-220, 152),
-                             Point(-130, 300),
-                             Point(0, 0)),
-                   "wmt")
-    gui.add_object(Point(-130, 297), "ppmt")
-    gui.add_object(Line(Point(-237, 72), Point(-118, -253)), "lar")
-    gui.add_object(Line(Point(-237, 72), Point(-356, -253)), "lal")
-    gui.add_object(Line(Point(-336, -103), Point(-138, -103)), "lab")
+    gui.insert_object(Line(Point(-950, 0), Point(1605, 3)), "lhor")
+    gui.insert_object(Wireframe(Point(100, 0),
+                                Point(475, 250),
+                                Point(300, 133),
+                                Point(478, 75),
+                                Point(696, 134),
+                                Point(475, 250),
+                                Point(950, 0)),
+                      "wmmc")
+    gui.insert_object(Line(Point(220, 75), Point(80, 135)), "lve")
+    gui.insert_object(Line(Point(80, 135), Point(-40, 83)), "lvw")
+    gui.insert_object(Wireframe(Point(-575, 0),
+                                Point(-475, 135),
+                                Point(-220, 152),
+                                Point(-130, 300),
+                                Point(0, 0)),
+                      "wmt")
+    gui.insert_object(Point(-130, 297), "ppmt")
+    gui.insert_object(Line(Point(-237, 72), Point(-118, -253)), "lar")
+    gui.insert_object(Line(Point(-237, 72), Point(-356, -253)), "lal")
+    gui.insert_object(Line(Point(-336, -103), Point(-138, -103)), "lab")
 
     gui.displayFile.setCurrentRow(-1)
 
