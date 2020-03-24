@@ -215,11 +215,17 @@ class Camera(Painter):
 
 def translate_object(obj: Drawable, vector: Vector):
     # Grabbing
+    tr = Matrix.identity(len(vector) +1)
+    tr = tr.translate(vector)
+    # print(tr)
     for point in obj:
-        # Matrix.toMatrix(point)
-        point.x += vector.x
-        point.y += vector.y
-        # point.z += z
+        if len(point._coordinates) != len(tr):
+            # project onto next axis
+            point._coordinates.append(0)
+        print(Matrix(Vector(*point)))
+        print(tr)
+        point = Point(*((tr * Matrix(point))._matrix[0]._coordinates[:-1]))
+
 
 def scale_object(obj: Drawable, x: float, y: float, z: float):
     # Scaling
