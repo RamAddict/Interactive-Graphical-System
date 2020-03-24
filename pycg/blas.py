@@ -163,7 +163,11 @@ class Matrix(Vector):
         return sum
     
     def translate(self, vect: Vector):
-        return self._matrix * vect
+        # insert coordinates into last line
+        identity = self.identity(len(vect)+1)
+        for j, i in enumerate(identity[:-1]):
+            i[-1] = vect[j]
+        return self._matrix * identity
 
     @staticmethod
     def identity(size: int):
