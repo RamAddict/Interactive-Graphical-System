@@ -11,6 +11,7 @@ QT_OBJECTS = $(patsubst $(QT_SRC)/%.ui, $(QT_OBJ)/%.py, $(QT_SOURCES))
 
 
 default:
+	@ make test
 	@ make gui
 	@ make run
 
@@ -24,9 +25,6 @@ gui: $(QT_OBJECTS)
 run: $(PY_SOURCES)
 	$(PYTHON) $(PY_APP)
 
-test:
-	py.test
 
-clean:
-	-@ rm -R pycg/__pycache__/
-	-@ rm -R $(QT_OBJ)/__pycache__/
+test:
+	python -m pytest

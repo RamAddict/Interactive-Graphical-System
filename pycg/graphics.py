@@ -1,6 +1,6 @@
 """Computer Graphics API."""
 
-from typing import Tuple
+from typing import Tuple, Sequence
 from math import sqrt
 
 from blas import Vector, Matrix
@@ -58,7 +58,12 @@ class Painter():
 
 
 class Drawable():
+    """Common interface for all graphical objects."""
+
     def draw(self, painter: Painter):
+        raise NotImplementedError("Drawable is an abstract class.")
+
+    def transform(self, transformation: Matrix, pivot: Sequence = None):
         raise NotImplementedError("Drawable is an abstract class.")
 
 
@@ -69,29 +74,36 @@ class Point(Drawable, Vector):
     def draw(self, painter):
         painter.draw_pixel(self.x, self.y)
 
+    def transform(self, transformation: Matrix, pivot: Sequence = None):
+        pivot = pivot or self
+        transformation = transformation.homogenized(pivot)
+        self.x, self.y, _ = transformation @ Vector(self.x, self.y, 1)
+
     def __repr__(self):  # as by the Well-known text representation of geometry
         return "POINT ({} {})".format(self.x, self.y)
 
-    def center(self):
-        return self
-
-    def transform(self, transformation: Matrix, pivot=None):
-        pivot = pivot if pivot else self.center()
-        self._coordinates = transformation * pivot
 
 class Line(Drawable):
     def __init__(self, pa: Point, pb: Point):
         self._points = [pa, pb]
-
-    def draw(self, painter):
-        painter.draw_line(self._points[0].x, self._points[0].y,
-                          self._points[1].x, self._points[1].y)
 
     def __getitem__(self, key: int) -> Point:
         return self._points[key]
 
     def __setitem__(self, key: int, point: Point):
         self._points[key] = point
+
+    def draw(self, painter):
+        painter.draw_line(self[0].x, self[0].y, self[1].x, self[1].y)
+
+    def transform(self, transformation: Matrix, pivot: Sequence = None):
+        pivot = pivot or self.middle()
+        transformation = transformation.homogenized(pivot)
+        for p in self:
+            p.x, p.y, _ = transformation @ Vector(p.x, p.y, 1)
+
+    def middle(self) -> Point:
+        return (self[0] + self[1]) / 2
 
     def __repr__(self):  # WKT
         return "LINESTRING ({} {}, {} {})".format(
@@ -109,10 +121,6 @@ class Wireframe(Drawable):
     def __init__(self, a: Point, b: Point, c: Point, *points: Point):
         self._points = [a, b, c] + list(points) + [a]  # closed polygon
 
-    def draw(self, painter):
-        for pa, pb in pairwise(self._points):
-            painter.draw_line(pa.x, pa.y, pb.x, pb.y)
-
     def __len__(self):
         return len(self._points) - 1
 
@@ -128,9 +136,25 @@ class Wireframe(Drawable):
         else:
             self._points[key] = point
 
+    def draw(self, painter):
+        for pa, pb in pairwise(self):
+            painter.draw_line(pa.x, pa.y, pb.x, pb.y)
+
+    def transform(self, transformation: Matrix, pivot: Sequence = None):
+        pivot = pivot or self.center()
+        transformation = transformation.homogenized(pivot)
+        for p in self:
+            p.x, p.y, _ = transformation @ Vector(p.x, p.y, 1)
+
+    def center(self) -> Point:
+        s = Point(0, 0)
+        for p in self:
+            s += p
+        return s / len(self)
+
     def __repr__(self):  # WKT
         return "POLYGON ((%s))" % ", ".join(
-            "{} {}".format(p.x, p.y) for p in self._points
+            "{} {}".format(p.x, p.y) for p in self
         )
 
 
@@ -158,7 +182,7 @@ class Camera(Painter):
         xb, yb = self._to_viewport(xb, yb)
         self.painter.draw_line(xa, ya, xb, yb)
 
-    def _to_viewport(self, x, y) -> Tuple:  # @XXX: private or public?
+    def _to_viewport(self, x, y) -> Tuple:
         """Apply the Window-to-Viewport Transformation on given coordinates."""
         # equivalent to lerp(x, x_min, x_max, 0, viewport_width),
         x = (x - self._x_min) * self._viewport_size.x / self._width
@@ -184,7 +208,8 @@ class Camera(Painter):
         self._position.y = y
         self._recalculate_corners()
 
-    @property  # @XXX: perhaps width AND height are not necessary -> see FOV
+    # @TODO: width and height are not necessary -> see FOV for a single value
+    @property
     def width(self):
         return self._width
 
@@ -211,18 +236,3 @@ class Camera(Painter):
         self._width = int(self._viewport_size.x / scale)
         self._height = int(self._viewport_size.y / scale)
         self._recalculate_corners()
-
-
-def translate_object(obj: Drawable, vector: Vector):
-    # Grabbing
-    for point in obj:
-        # Matrix.toMatrix(point)
-        point.x += vector.x
-        point.y += vector.y
-        # point.z += z
-
-def scale_object(obj: Drawable, x: float, y: float, z: float):
-    # Scaling
-    for point in obj:
-        point.x *= x
-        point.y *= y
