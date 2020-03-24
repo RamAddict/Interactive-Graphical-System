@@ -1,11 +1,14 @@
 """A custom implementation of some Basic Linear Algebra Subprograms (BLAS)."""
 
-from typing import Iterable, Union
+from typing import Sequence
+from math import cos, sin
 
 
 class Vector:
-    def __init__(self, x, y, *coordinates):
-        self._coordinates = [x, y] + list(coordinates)
+    """Structure which can be used as a column vector."""
+
+    def __init__(self, x, y, *others):
+        self._coordinates = [x, y] + list(others)
 
     def __getitem__(self, key):
         return self._coordinates[key]
@@ -17,68 +20,60 @@ class Vector:
         return len(self._coordinates)
 
     def __repr__(self):
-        return "(%s)" % str(self._coordinates)[1:-1]
+        return str(self._coordinates)
 
-    def __add__(self, other: Iterable):
+    def __add__(self, other: Sequence):
         try:
-            small, big = sorted((self, other), key=len)
-            limit = len(small)
-            v = (x + small[i] if i < limit else x for i, x in enumerate(big))
-            return Vector(*v)
+            return Vector(*[v + other[i] for i, v in enumerate(self)])
         except BaseException as exc:
             raise NotImplementedError from exc
 
     def __radd__(self, other):
         return self + other
 
-    def __sub__(self, other: Iterable):
+    def __sub__(self, other: Sequence):
         return self + tuple(-x for x in other)
 
     def __rsub__(self, other):
         return other + (-self)
 
-    def __mul__(self, other: Union[Iterable, int, float, complex]):
-        if isinstance(other, (int, float, complex)):  # scalar product
-            return Vector(*(x * other for x in self))
-        else:  # dot product
-            try:
-                dim = min(len(self), len(other))
-                return sum(self[i] * other[i] for i in range(dim))
-            except BaseException as exc:
-                raise NotImplementedError from exc
+    def __mul__(self, scalar):  # scalar product
+        try:
+            return Vector(*[scalar * x for x in self])
+        except BaseException as exc:
+            raise NotImplementedError from exc
 
     def __rmul__(self, other):
         return self * other
+
+    def __matmul__(self, other: Sequence):  # dot product
+        try:
+            return sum([v * other[i] for i, v in enumerate(self)])
+        except BaseException as exc:
+            raise NotImplementedError from exc
 
     def __neg__(self):
         return self * -1
 
     def __truediv__(self, scalar):
-        return self * 1/scalar
+        return self * (1 / scalar)
 
     def __mod__(self, z):
-        return Vector(*(x % z for x in self))
+        return Vector(*[x % z for x in self])
 
-    def __lshift__(self, k: int):
+    def __lshift__(self, k: int):  # rotate vector elements to the left
         return Vector(*(self[k:] + self[:k]))
 
-    def __rshift__(self, k: int):
+    def __rshift__(self, k: int):  # rotate vector elements to the right
         return Vector(*(self[-k:] + self[:-k]))
-    
-    def __eq__(self, other):
-        if isinstance(other, Vector) and len(self) == len(other):
-            for i in range(len(self)):
-                if self._coordinates[i] != other._coordinates[i]:
-                    return False
-            return True
-        return False
 
-    # @TODO: matrix multiplication (operator @)
-    # def __matmul__(self, other):
-    #     pass
-    #
-    # def __rmatmul__(self, other):
-    #     pass
+    def __eq__(self, other):
+        if len(self) != len(other):
+            return False
+        for i, v in enumerate(self):
+            if v != other[i]:
+                return False
+        return True
 
     @property
     def x(self):
@@ -104,85 +99,101 @@ class Vector:
     def z(self, z):
         self[2] = z
 
+
 class Matrix(Vector):
-    """Basic Matrix class. The vectors of the matrix are its columns"""
-    def __init__(self, vect, *columns):
-        self._matrix = [vect] + list(columns)
-    
-    def __eq__(self, other):
-        if isinstance(other, Matrix) and len(self) == len(other):
-            for i in range(len(self)):
-                if self._matrix[i] != other._matrix[i]:
-                    return False
-            # very pretty, but this returns a generator
-            # x = (True if other._matrix[i] == elem else False for i, elem in enumerate(self._matrix))
-            return True
-        return False
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __getitem__(self, key):
-        return self._matrix[key]
-    
-    def __setitem__(self, key, vector: Vector):
-        self._matrix[key] = vector
-    
-    def __len__(self):
-        return len(self._matrix)
-    
-    def __repr__(self):
-        return "(%s)" % str(self._matrix)[1:-1]
-
-    def __add__(self, other):
-        dim = min(len(self), len(other))
-        x = Matrix(self._matrix[0] + other._matrix[0])
-        for i in range(dim)[1:]:
-            x._matrix.append(self._matrix[i] + other._matrix[i])
-        return x
-
-    def __mul__(self, other):
-    # @FIXME change error name
-        if (len(self._matrix) != len(other[0])):
-            raise NotImplementedError()
-        new_matrix = []
-        for p in range(len(other)):
-            new_column = []
-            for j in range(len(self._matrix[0])):
-                sum = 0
-                for i, jj in enumerate(self._matrix):
-                    sum += jj[j] * other[p][i]
-                new_column.append(sum)
-            new_matrix.append(Vector(*new_column))
-        return Matrix(*new_matrix)
-
-    def center_point(self):
-        sum = self._matrix[0]
-        for vect in self._matrix[1:]:
-            sum+=vect
-        return sum
-    
-    def translate(self, vect: Vector):
-        return self._matrix * vect
+    """Matrix structured for row-major access."""
 
     @staticmethod
-    def identity(size: int):
-        if size == 1:
-            return 1
-        elif size == 2:
-            return Matrix(Vector(1, 0), Vector(0, 1))
-        elif size == 3:
-            return Matrix(Vector(1,0,0), Vector(0,1,0), Vector(0,0,1))
-        elif size == 4:
-            return Matrix(Vector(1,0,0,0), Vector(0,1,0,0), Vector(0,0,1,0), Vector(0,0,0,1))
+    def identity(n: int):
+        """Create an NxN identity Matrix."""
+        rows = []
+        for i in range(n):
+            row = []
+            for j in range(n):
+                row.append(1 if j == i else 0)
+            rows.append(row)
+        return Matrix(*rows)
+
+    @staticmethod
+    def zeros(m: int, n: int):
+        """Create an MxN Matrix filled with zeros."""
+        rows = []
+        for i in range(m):
+            rows.append([0] * n)
+        return Matrix(*rows)
+
+    def __init__(self, first: Sequence, *rest: Sequence):
+        n = len(first)
+        rows = []
+        for row in [first] + list(rest):
+            if len(row) != n:
+                raise ValueError("Matrix row length mismatch.")
+            else:
+                rows.append(row if isinstance(row, Vector) else Vector(*row))
+        super().__init__(*rows)
+
+    @property
+    def rows(self):
+        return len(self)
+
+    @property
+    def columns(self):
+        return len(self[0])
+
+    def is_square(self):
+        return self.rows == self.columns
+
+    def translated(self, tx, ty, *ts):
+        """Return a new transformation with an additional translation."""
+        t = Matrix.identity(self.rows)
+        deltas = (tx, ty) + ts
+        for i in range(t.rows - 1):
+            self[i][-1] = deltas[i]  # set last column of each row with delta
+        return t @ self
+
+    def rotated(self, theta: float):
+        """
+        Return a new transformation with an additional rotation.
+        @XXX: Only 2D rotation is implemented, so make sure matrix is 3x3.
+        """
+        cs, sn = cos(theta), sin(theta)
+        t = Matrix([cs, -sn, 0],
+                   [sn, cs,  0],
+                   [0,  0,   1])
+        return t @ self
+
+    def scaled(self, sx, sy, *ss):
+        """Return a new transformation with an additional scaling."""
+        t = Matrix.identity(self.rows)
+        scaling = (sx, sy) + ss
+        for i in range(t.rows - 1):
+            t[i][i] = scaling[i]
+        return t @ self
+
+    def homogenized(self, origin: Sequence):
+        """Return a new version of this transformation using a new origin."""
+        n = len(self)
+        dx, dy = origin[0], origin[1]
+        to_origin = Matrix.identity(n).translated(-dx, -dy)
+        back_from_origin = Matrix.identity(n).translated(dx, dy)
+        return back_from_origin @ self @ to_origin
+
+    def __matmul__(self, other):
+        if isinstance(other, Matrix):
+            m, n, p = self.rows, self.columns, other.columns
+            if other.rows != n:
+                raise ValueError("Matrix has incompatible dimensions.")
+            result = Matrix.zeros(m, p)
+            for i in range(m):
+                for j in range(p):
+                    for k in range(n):
+                        result[i][j] += self[i][k] * other[k][j]
+            return result
+        elif isinstance(other, Vector):
+            n = len(other)
+            if n != self.columns:
+                raise ValueError("Vector has incompatible dimensions.")
+            return Vector(*[line @ other for line in self])
         else:
-            identity = []
-            for i in range(size):
-                column = []
-                for j in range(size):
-                    if i == j:
-                        column.append(1)
-                    else:
-                        column.append(0)
-                identity.append(Vector(*column))
-            return Matrix(*identity)
+            raise NotImplementedError("Can't multiply Matrix by %s." %
+                                      type(other).__name__)
