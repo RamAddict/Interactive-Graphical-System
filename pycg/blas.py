@@ -61,12 +61,6 @@ class Vector:
     def __mod__(self, z):
         return Vector(*[x % z for x in self])
 
-    def __lshift__(self, k: int):  # rotate vector elements to the left
-        return Vector(*(self[k:] + self[:k]))
-
-    def __rshift__(self, k: int):  # rotate vector elements to the right
-        return Vector(*(self[-k:] + self[:-k]))
-
     def __eq__(self, other):
         if len(self) != len(other):
             return False
