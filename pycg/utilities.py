@@ -1,6 +1,6 @@
 """Miscellaneous Python utilities."""
 
-from typing import Iterable, Sequence, Generator, Tuple
+from typing import Iterable, Sequence, Generator, Tuple, Optional
 from itertools import tee
 from math import log2
 
@@ -55,10 +55,9 @@ def begin(*expressions):
     return expressions[-1]
 
 
-def is_float(value):
-    """Input checker for float"""
+def to_float(value) -> Optional[float]:
+    """Input checker for float."""
     try:
-        float(value)
-        return True
-    except:
-        return False
+        return float(value)
+    except BaseException:
+        return None
