@@ -1,6 +1,10 @@
-from random import randrange, randint
+from random import randint
+from math import pi
 
 from pycg.blas import Vector, Matrix
+
+
+tolerance = 1e-10
 
 
 def test_vector_access():
@@ -40,13 +44,6 @@ def test_vector_product():
     b = Vector(4, -2, -1)
     assert a @ b == a @ b
     assert a @ b == 3
-
-
-def test_vector_rotation():
-    v = Vector(*range(10))
-    x = randrange(1, 10)
-    assert v == (v >> x) << x
-    assert v == (v << x) >> x
 
 
 def test_matrix_access():
@@ -91,3 +88,20 @@ def test_matrix_multiply():
          [139, 154]]
     assert a @ b == c
     assert a @ b != b @ a
+
+
+def test_matrix_transformations():
+    v = Vector(5, 4, 1)
+    t = Matrix.identity(3).translated(2, 1)
+    assert t @ v == [7, 5, 1]
+
+    v = Vector(10, 0, 1)
+    t = Matrix.identity(3).rotated(pi / 2)
+    x, y, h = t @ v
+    assert h == 1
+    assert abs(x - 0) < tolerance
+    assert abs(y - 10) < tolerance
+
+    v = Vector(4, 2, 1)
+    t = Matrix.identity(3).scaled(-1, 3)
+    assert t @ v == [-4, 6, 1]
