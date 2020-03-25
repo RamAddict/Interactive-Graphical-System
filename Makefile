@@ -2,6 +2,7 @@ PYTHON = python3
 PY_APP = pycg/app.py
 PY_SRC = pycg
 PY_SOURCES = $(wildcard $(PY_SRC)/*.py)
+CURR_DIR = $(shell pwd)
 
 QT_COMPILER = pyside2-uic
 QT_SRC = data
@@ -28,3 +29,7 @@ run: $(PY_SOURCES)
 
 test:
 	python -m pytest
+
+submission:
+	cd ..
+	tar -zcvf submission.tar.gz $(CURR_DIR)
