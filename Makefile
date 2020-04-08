@@ -23,13 +23,28 @@ $(QT_OBJ)/%.py: $(QT_SRC)/%.ui
 gui: $(QT_OBJECTS)
 
 
-run: $(PY_SOURCES)
+run:
 	$(PYTHON) $(PY_APP)
 
 
 test:
-	python -m pytest
+	@ pytest
+
 
 submission:
-	cd ..
-	tar -zcvf submission.tar.gz $(CURR_DIR)
+	@ make submission.zip
+
+clean:
+	-@ rm -r $(PY_SRC)/__pycache__
+	-@ rm -r $(PY_SRC)/tests/__pycache__
+	-@ rm -r $(QT_OBJ)/__pycache__
+
+submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md
+	@ make clean
+	@ mkdir PyCG
+	@ cp -r $(PY_SRC) PyCG
+	@ cp -r $(QT_SRC) PyCG
+	@ cp Makefile PyCG
+	@ cp README.md PyCG
+	@ zip -r submission.zip PyCG
+	@ rm -r PyCG

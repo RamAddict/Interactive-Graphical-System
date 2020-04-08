@@ -1,7 +1,7 @@
 """Computer Graphics API."""
 
 from typing import Tuple, Sequence
-from math import sqrt
+from math import sqrt, cos, sin
 
 from blas import Vector, Matrix
 from utilities import pairwise
@@ -57,13 +57,79 @@ class Painter():
                     p += DX2
 
 
+class Transformation:
+    """
+    Representation of Transformations in 2D Homogeneous Coordinates.
+
+    Methods such as `translate`, `rotate` and `scale` modify the calling object
+    and return it afterwards, allowing for chaining. eg:
+
+        t = Transformation().translate(x, y).rotate(theta).scale(sx, sy)
+
+    These operations should be considered comutative, and are applied all at
+    once using a pivot Point.
+    """
+
+    def __init__(self):
+        self.translation = Vector(0, 0)
+        self.rotation = 0
+        self.scaling = Vector(1, 1)
+
+    def translate(self, tx, ty):
+        self.translation += (tx, ty)
+        return self
+
+    def rotate(self, theta: float):
+        self.rotation += theta
+        return self
+
+    def scale(self, sx, sy=None):
+        self.scaling.x *= sx
+        self.scaling.y *= sy or sx
+        return self
+
+    @staticmethod
+    def _translation(deltas: Sequence) -> Matrix:
+        t = Matrix.identity(3)
+        for i in range(t.rows - 1):
+            t[i][-1] = deltas[i]  # apply delta to last column of each row
+        return t
+
+    @staticmethod
+    def _rotation(theta: float) -> Matrix:
+        cs, sn = cos(theta), sin(theta)
+        return Matrix([cs, -sn, 0],
+                      [sn, cs,  0],
+                      [0,  0,   1])
+
+    @staticmethod
+    def _scaling(scales: Sequence) -> Matrix:
+        t = Matrix.identity(3)
+        for i in range(t.rows - 1):
+            t[i][i] = scales[i]  # modify each diagonal to the scaling
+        return t
+
+    def matrix(self, pivot=None) -> Matrix:
+        """
+        Gets the 3x3 Matrix that performs this transformation on vectors.
+        If a pivot is not specified, it defaults to (0, 0).
+        """
+        pivot = pivot or Point(0, 0)
+        to_origin = Transformation._translation(-pivot)
+        back_from_origin = Transformation._translation(pivot)
+        t = Transformation._translation(self.translation)
+        r = Transformation._rotation(self.rotation)
+        s = Transformation._scaling(self.scaling)
+        return back_from_origin @ t @ r @ s @ to_origin
+
+
 class Drawable():
     """Common interface for all graphical objects."""
 
     def draw(self, painter: Painter):
         raise NotImplementedError("Drawable is an abstract class.")
 
-    def transform(self, transformation: Matrix, pivot: Sequence = None):
+    def transform(self, transformations: Transformation, pivot=None):
         raise NotImplementedError("Drawable is an abstract class.")
 
 
@@ -74,10 +140,10 @@ class Point(Drawable, Vector):
     def draw(self, painter):
         painter.draw_pixel(self.x, self.y)
 
-    def transform(self, transformation: Matrix, pivot: Sequence = None):
+    def transform(self, transformations: Transformation, pivot=None):
         pivot = pivot or self
-        transformation = transformation.homogenized(pivot)
-        self.x, self.y, _ = transformation @ Vector(self.x, self.y, 1)
+        matrix = transformations.matrix(pivot)
+        self.x, self.y, _ = matrix @ Vector(self.x, self.y, 1)
 
     def __repr__(self):  # as by the Well-known text representation of geometry
         return "POINT ({} {})".format(self.x, self.y)
@@ -96,11 +162,11 @@ class Line(Drawable):
     def draw(self, painter):
         painter.draw_line(self[0].x, self[0].y, self[1].x, self[1].y)
 
-    def transform(self, transformation: Matrix, pivot: Sequence = None):
+    def transform(self, transformations: Transformation, pivot: Point = None):
         pivot = pivot or self.middle()
-        transformation = transformation.homogenized(pivot)
+        matrix = transformations.matrix(pivot)
         for p in self:
-            p.x, p.y, _ = transformation @ Vector(p.x, p.y, 1)
+            p.x, p.y, _ = matrix @ Vector(p.x, p.y, 1)
 
     def middle(self) -> Point:
         return (self[0] + self[1]) / 2
@@ -137,14 +203,14 @@ class Wireframe(Drawable):
             self._points[key] = point
 
     def draw(self, painter):
-        for pa, pb in pairwise(self):
+        for pa, pb in pairwise(self._points):
             painter.draw_line(pa.x, pa.y, pb.x, pb.y)
 
-    def transform(self, transformation: Matrix, pivot: Sequence = None):
+    def transform(self, transformations: Transformation, pivot: Point = None):
         pivot = pivot or self.center()
-        transformation = transformation.homogenized(pivot)
+        matrix = transformations.matrix(pivot)
         for p in self:
-            p.x, p.y, _ = transformation @ Vector(p.x, p.y, 1)
+            p.x, p.y, _ = matrix @ Vector(p.x, p.y, 1)
 
     def center(self) -> Point:
         s = Point(0, 0)
