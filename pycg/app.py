@@ -8,9 +8,10 @@ from PySide2.QtCore import Qt
 
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
-from graphics import Point, Line, Wireframe, Painter, Camera, Drawable
+from graphics import (Point, Line, Wireframe, Painter, Camera, Drawable,
+                      Transformation)
 from utilities import experp, begin, lerp, sign, to_float
-from blas import Vector, Matrix
+from blas import Vector
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
@@ -142,25 +143,14 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         # @FIXME: set up transformations page
         def check_perform_transformations():
-            obj = self.displayFile.currentItem().data(Qt.UserRole)
-            matrix = Matrix.identity(3)
-
-            theta = to_float(self.angleInput.text()) or 0
-            if theta != 0:
-                matrix = matrix.rotated(theta)
-
-            sx = to_float(self.scaleXinput.text()) or 1
-            sy = to_float(self.scaleYinput.text()) or 1
-            if sx * sy != 1:
-                matrix = matrix.scaled(sx, sy)
-
-            # @XXX: translation must go last
             tx = to_float(self.translateXinput.text()) or 0
             ty = to_float(self.translateYinput.text()) or 0
-            if tx + ty != 0:
-                matrix = matrix.translated(tx, ty)
-
-            obj.transform(matrix)
+            theta = to_float(self.angleInput.text()) or 0
+            sx = to_float(self.scaleXinput.text()) or 1
+            sy = to_float(self.scaleYinput.text()) or 1
+            t = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
+            drawable = self.displayFile.currentItem().data(Qt.UserRole)
+            drawable.transform(t)
             self.viewport.update()
 
         self.transformConfirm.accepted.connect(check_perform_transformations)
