@@ -254,7 +254,7 @@
     <item row="2" column="1" rowspan="2">
      <widget class="QStackedWidget" name="componentWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="emptyPage">
        <widget class="QLabel" name="instructionsLabel">
@@ -274,7 +274,7 @@
          </font>
         </property>
         <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use the scene buttons to manipulate the Display File.&lt;/p&gt;&lt;p&gt;The Window may be controlled using either the provided buttons, or mouse and keyboard bindings.&lt;/p&gt;&lt;p&gt;Select an object in the Display File to apply transformations to it.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:normal;&quot;&gt;Use the scene buttons to manipulate the Display File and its drawable objects.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:normal;&quot;&gt;The Window may be controlled using either the provided buttons, or mouse and keyboard bindings (WASD, Ctrl + -/=/Wheel, Middle Click &amp;amp; Drag).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -324,8 +324,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>186</width>
-             <height>123</height>
+             <width>294</width>
+             <height>271</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">
@@ -407,83 +407,45 @@
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tabbedPage">
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QTabWidget" name="tabWidget">
-          <property name="tabPosition">
-           <enum>QTabWidget::North</enum>
-          </property>
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <property name="usesScrollButtons">
-           <bool>false</bool>
-          </property>
-          <widget class="QWidget" name="translateTab">
-           <attribute name="title">
-            <string>Translate</string>
-           </attribute>
-          </widget>
-          <widget class="QWidget" name="rotateTab">
-           <attribute name="title">
-            <string>Rotate</string>
-           </attribute>
-          </widget>
-          <widget class="QWidget" name="scaleTab">
-           <attribute name="title">
-            <string>Scale</string>
-           </attribute>
-          </widget>
-         </widget>
-        </item>
-       </layout>
-      </widget>
       <widget class="QWidget" name="transformPage">
        <widget class="QLabel" name="translateXlabel">
         <property name="geometry">
          <rect>
           <x>85</x>
-          <y>10</y>
+          <y>5</y>
           <width>16</width>
-          <height>16</height>
+          <height>21</height>
          </rect>
         </property>
         <property name="text">
          <string>X:</string>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
        </widget>
        <widget class="QLabel" name="angleLabel">
         <property name="geometry">
          <rect>
-          <x>65</x>
-          <y>105</y>
-          <width>41</width>
-          <height>16</height>
+          <x>20</x>
+          <y>115</y>
+          <width>56</width>
+          <height>21</height>
          </rect>
         </property>
         <property name="text">
-         <string>Angle:</string>
+         <string>Angle: °</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
         </property>
        </widget>
        <widget class="QLabel" name="rotateLabel">
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>95</y>
-          <width>41</width>
+          <y>85</y>
+          <width>42</width>
           <height>16</height>
          </rect>
         </property>
@@ -491,38 +453,28 @@
          <string>Rotate</string>
         </property>
        </widget>
-       <widget class="QLabel" name="translateZlabel">
-        <property name="geometry">
-         <rect>
-          <x>85</x>
-          <y>55</y>
-          <width>16</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Z:</string>
-        </property>
-       </widget>
        <widget class="QLabel" name="translateYlabel">
         <property name="geometry">
          <rect>
           <x>85</x>
-          <y>35</y>
+          <y>30</y>
           <width>16</width>
-          <height>16</height>
+          <height>21</height>
          </rect>
         </property>
         <property name="text">
          <string>Y:</string>
         </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
        </widget>
-       <widget class="Line" name="line_3">
+       <widget class="Line" name="line">
         <property name="geometry">
          <rect>
-          <x>10</x>
-          <y>215</y>
-          <width>286</width>
+          <x>0</x>
+          <y>65</y>
+          <width>296</width>
           <height>16</height>
          </rect>
         </property>
@@ -533,9 +485,9 @@
        <widget class="QLineEdit" name="angleInput">
         <property name="geometry">
          <rect>
-          <x>105</x>
-          <y>100</y>
-          <width>41</width>
+          <x>75</x>
+          <y>115</y>
+          <width>56</width>
           <height>21</height>
          </rect>
         </property>
@@ -543,17 +495,20 @@
          <string>0</string>
         </property>
        </widget>
-       <widget class="QLabel" name="axisLabel">
+       <widget class="QLabel" name="pivotLabel">
         <property name="geometry">
          <rect>
-          <x>165</x>
-          <y>105</y>
-          <width>31</width>
-          <height>16</height>
+          <x>140</x>
+          <y>110</y>
+          <width>41</width>
+          <height>26</height>
          </rect>
         </property>
         <property name="text">
-         <string>Axis:</string>
+         <string>Pivot:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
         </property>
        </widget>
        <widget class="QLabel" name="transateLabel">
@@ -585,30 +540,14 @@
        <widget class="QLabel" name="scaleLabel">
         <property name="geometry">
          <rect>
-          <x>15</x>
-          <y>140</y>
-          <width>41</width>
+          <x>10</x>
+          <y>160</y>
+          <width>42</width>
           <height>16</height>
          </rect>
         </property>
         <property name="text">
          <string>Scale</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="translateZinput">
-        <property name="geometry">
-         <rect>
-          <x>105</x>
-          <y>55</y>
-          <width>113</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>0</string>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
         </property>
        </widget>
        <widget class="QLineEdit" name="translateYinput">
@@ -628,7 +567,7 @@
         <property name="geometry">
          <rect>
           <x>65</x>
-          <y>235</y>
+          <y>255</y>
           <width>164</width>
           <height>32</height>
          </rect>
@@ -637,11 +576,11 @@
          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
         </property>
        </widget>
-       <widget class="Line" name="line">
+       <widget class="Line" name="line_3">
         <property name="geometry">
          <rect>
-          <x>5</x>
-          <y>80</y>
+          <x>0</x>
+          <y>230</y>
           <width>296</width>
           <height>16</height>
          </rect>
@@ -653,8 +592,8 @@
        <widget class="Line" name="line_2">
         <property name="geometry">
          <rect>
-          <x>5</x>
-          <y>125</y>
+          <x>0</x>
+          <y>145</y>
           <width>296</width>
           <height>16</height>
          </rect>
@@ -663,28 +602,26 @@
          <enum>Qt::Horizontal</enum>
         </property>
        </widget>
-       <widget class="QComboBox" name="axisSelect">
+       <widget class="QComboBox" name="pivotSelect">
         <property name="geometry">
          <rect>
-          <x>200</x>
-          <y>100</y>
-          <width>51</width>
+          <x>185</x>
+          <y>110</y>
+          <width>96</width>
           <height>26</height>
          </rect>
         </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
         <item>
          <property name="text">
-          <string>X</string>
+          <string>Center</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>Y</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Z</string>
+          <string>Origin</string>
          </property>
         </item>
        </widget>
@@ -692,46 +629,39 @@
         <property name="geometry">
          <rect>
           <x>85</x>
-          <y>145</y>
+          <y>175</y>
           <width>16</width>
-          <height>16</height>
+          <height>21</height>
          </rect>
         </property>
         <property name="text">
          <string>X:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
         </property>
        </widget>
        <widget class="QLabel" name="scaleYlabel">
         <property name="geometry">
          <rect>
           <x>85</x>
-          <y>170</y>
+          <y>200</y>
           <width>16</width>
-          <height>16</height>
+          <height>21</height>
          </rect>
         </property>
         <property name="text">
          <string>Y:</string>
         </property>
-       </widget>
-       <widget class="QLabel" name="scaleZlabel">
-        <property name="geometry">
-         <rect>
-          <x>85</x>
-          <y>190</y>
-          <width>16</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Z:</string>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
         </property>
        </widget>
        <widget class="QLineEdit" name="scaleXinput">
         <property name="geometry">
          <rect>
           <x>105</x>
-          <y>140</y>
+          <y>175</y>
           <width>113</width>
           <height>21</height>
          </rect>
@@ -744,29 +674,13 @@
         <property name="geometry">
          <rect>
           <x>105</x>
-          <y>165</y>
+          <y>200</y>
           <width>113</width>
           <height>21</height>
          </rect>
         </property>
         <property name="text">
          <string>1</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="scaleZinput">
-        <property name="geometry">
-         <rect>
-          <x>105</x>
-          <y>190</y>
-          <width>113</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>1</string>
-        </property>
-        <property name="readOnly">
-         <bool>true</bool>
         </property>
        </widget>
       </widget>
