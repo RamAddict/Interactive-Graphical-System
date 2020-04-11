@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from sys import argv
-from math import inf
+from math import inf, pi
 from typing import Optional, Callable
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
 from PySide2.QtGui import QPainter, QIcon
@@ -31,12 +31,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         # viewport setup
-        self.viewport = QtViewport(
-            self.canvasFrame,
-            self.displayFile,
-            self.zoomSlider,
-            self.eyePositionLabel
-        )
+        self.viewport = QtViewport(self.canvasFrame,
+                                   self.displayFile,
+                                   self.zoomSlider,
+                                   self.eyePositionLabel)
         self.canvasFrame.layout().addWidget(self.viewport)
         self.viewport.setFocus(Qt.OtherFocusReason)
 
@@ -54,31 +52,23 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.zoomSlider.valueChanged.connect(
             lambda _: self.viewport.update_zoom(self.zoomSlider.value(),
                                                 self.zoomSlider.minimum(),
-                                                self.zoomSlider.maximum())
-        )
+                                                self.zoomSlider.maximum()))
         self.zoomSlider.valueChanged.emit(None)
 
         # setting up scene controls
         self.removeButton.clicked.connect(
-            lambda: self.remove_object(self.displayFile.currentRow())
-        )
+            lambda: self.remove_object(self.displayFile.currentRow()))
         self.upListButton.clicked.connect(
-            lambda: self.move_object(self.displayFile.currentRow(), -1)
-        )
+            lambda: self.move_object(self.displayFile.currentRow(), -1))
         self.downListButton.clicked.connect(
-            lambda: self.move_object(self.displayFile.currentRow(), 1)
-        )
+            lambda: self.move_object(self.displayFile.currentRow(), 1))
         self.newButton.clicked.connect(lambda: begin(
+            self.componentWidget.setCurrentWidget(self.objectPage),
             self.typeBox.setCurrentIndex(-1),
-            self.nameEdit.setText(""),
-            self.componentWidget.setCurrentIndex(1),
-            self.displayFile.currentItem().setSelected(False)
+            self.nameEdit.setText("")
         ))
-        self.displayFile.itemPressed.connect(
-            lambda: self.componentWidget.setCurrentIndex(3)
-        )
-        # @TODO: edit selected object
-        self.editButton.setEnabled(False)
+        self.editButton.clicked.connect(
+            lambda: self.componentWidget.setCurrentWidget(self.transformPage))
 
         def new_type_select(index: int):
             # clean all fields after 'name' and 'type'
@@ -110,7 +100,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             return extra
 
         def new_object():
-            # @TODO: improve parameter validation (name conflict, valid fields)
+            # @TODO: perform parameter validation (name conflict, valid fields)
             if self.typeBox.currentIndex() < 0:
                 return
 
@@ -133,37 +123,34 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 obj = Wireframe(*points)
 
             gui.insert_object(obj, name, self.displayFile.currentRow() + 1)
-            self.componentWidget.setCurrentIndex(0)
+            self.componentWidget.setCurrentWidget(self.emptyPage)
 
         self.typeBox.currentIndexChanged.connect(new_type_select)
         self.dialogBox.accepted.connect(new_object)
         self.dialogBox.rejected.connect(
-            lambda: self.componentWidget.setCurrentIndex(0)
-        )
+            lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
-        # @FIXME: set up transformations page
+        # @TODO: improve transformations dialogue UX
         def check_perform_transformations():
             tx = to_float(self.translateXinput.text()) or 0
             ty = to_float(self.translateYinput.text()) or 0
-            theta = to_float(self.angleInput.text()) or 0
+            theta = (to_float(self.angleInput.text()) or 0) * pi/180
             sx = to_float(self.scaleXinput.text()) or 1
             sy = to_float(self.scaleYinput.text()) or 1
             t = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
+            # @FIXME: rotation pivot applies to the whole transformation
+            pivot = Point(0, 0) if self.pivotSelect.currentText() == 'Origin' else None
             drawable = self.displayFile.currentItem().data(Qt.UserRole)
-            drawable.transform(t)
+            drawable.transform(t, pivot)
             self.viewport.update()
 
         self.transformConfirm.accepted.connect(check_perform_transformations)
         self.transformConfirm.rejected.connect(
-            lambda: begin(self.componentWidget.setCurrentIndex(0),
-                          self.displayFile.currentItem().setSelected(False))
-        )
+            lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
         # render it all
         self.show()
-        InteractiveGraphicalSystem.log(
-            "Interactive Graphical System initialized."
-        )
+        self.log("Interactive Graphical System initialized.")
 
     def insert_object(self, obj: Drawable, name, index: int = None) -> int:
         """Put an object in the Display File, returning its position."""
@@ -178,7 +165,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.displayFile.item(index).setData(Qt.UserRole, obj)
         self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
         self.displayFile.setCurrentRow(index)
-        self.componentWidget.setCurrentIndex(0)
+        self.componentWidget.setCurrentWidget(self.emptyPage)
         self.viewport.update()
         return index
 
@@ -250,8 +237,7 @@ class QtViewport(QWidget):
         self._size.x = self.width()
         self._size.y = self.height()
         InteractiveGraphicalSystem.log(
-            "Viewport resized to {}x{}.".format(*self._size)
-        )
+            "Viewport resized to {}x{}.".format(*self._size))
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
@@ -310,8 +296,7 @@ class QtViewport(QWidget):
             self.pan_camera(-dx, dy, _normalized=False)
             InteractiveGraphicalSystem.log(
                 "Window dragged to ({}, {})w.".format(self.camera.x,
-                                                      self.camera.y)
-            )
+                                                      self.camera.y))
         else:
             self._eye_position.setText("({}, {})".format(event.x(), event.y()))
             return super().mouseMoveEvent(event)

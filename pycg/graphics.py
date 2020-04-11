@@ -114,13 +114,15 @@ class Transformation:
         Gets the 3x3 Matrix that performs this transformation on vectors.
         If a pivot is not specified, it defaults to (0, 0).
         """
-        pivot = pivot or Point(0, 0)
-        to_origin = Transformation._translation(-pivot)
-        back_from_origin = Transformation._translation(pivot)
         t = Transformation._translation(self.translation)
         r = Transformation._rotation(self.rotation)
         s = Transformation._scaling(self.scaling)
-        return back_from_origin @ t @ r @ s @ to_origin
+        if pivot:
+            to_origin = Transformation._translation(-pivot)
+            back_from_origin = Transformation._translation(pivot)
+            return back_from_origin @ t @ r @ s @ to_origin
+        else:
+            return t @ r @ s
 
 
 class Drawable():
@@ -172,10 +174,8 @@ class Line(Drawable):
         return (self[0] + self[1]) / 2
 
     def __repr__(self):  # WKT
-        return "LINESTRING ({} {}, {} {})".format(
-            self[0].x, self[0].y,
-            self[1].x, self[1].y
-        )
+        return "LINESTRING ({} {}, {} {})".format(self[0].x, self[0].y,
+                                                  self[1].x, self[1].y)
 
     def __len__(self) -> float:
         return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2)
@@ -220,8 +220,7 @@ class Wireframe(Drawable):
 
     def __repr__(self):  # WKT
         return "POLYGON ((%s))" % ", ".join(
-            "{} {}".format(p.x, p.y) for p in self
-        )
+            "{} {}".format(p.x, p.y) for p in self)
 
 
 class Camera(Painter):
@@ -274,7 +273,6 @@ class Camera(Painter):
         self._position.y = y
         self._recalculate_corners()
 
-    # @TODO: width and height are not necessary -> see FOV for a single value
     @property
     def width(self):
         return self._width
