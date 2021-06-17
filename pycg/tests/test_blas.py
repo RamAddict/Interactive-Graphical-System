@@ -35,10 +35,10 @@ def test_vector_algebra():
     assert c / 2 == a
 
 
-def test_vector_product():
+def test_vector_dot_product():
     a = Vector(1, 3, -5)
     b = Vector(4, -2, -1)
-    assert a @ b == a @ b
+    assert a @ b == b @ a
     assert a @ b == 3
 
 
