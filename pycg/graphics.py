@@ -1,7 +1,7 @@
 """Computer Graphics API."""
 
 from typing import Tuple, Sequence
-from math import sqrt, cos, sin
+from math import sqrt, cos, sin, radians
 
 from blas import Vector, Matrix
 from utilities import pairwise
