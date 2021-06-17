@@ -68,8 +68,27 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             self.typeBox.setCurrentIndex(-1),
             self.nameEdit.setText("")
         ))
+        def enableRotateLabels():
+            if "Custom" in self.pivotSelect.currentText():
+                self.rotateXInput.setEnabled(True)
+                self.rotateYInput.setEnabled(True)
+            else:
+                self.rotateXInput.setEnabled(False)
+                self.rotateYInput.setEnabled(False)
+
+        # if edit btn is clicked but nothing is selected in the display file, then do nothing
         self.editButton.clicked.connect(
-            lambda: self.componentWidget.setCurrentWidget(self.transformPage))
+            lambda: begin(
+            self.consoleArea.append("Please select an object from the list") if self.displayFile.currentRow() < 0 
+            else self.componentWidget.setCurrentWidget(self.transformPage)
+            )
+            )
+        
+        self.pivotSelect.currentIndexChanged.connect(
+            lambda: begin(
+                enableRotateLabels()
+                )
+        )
 
         def new_type_select(index: int):
             # clean all fields after 'name' and 'type'
@@ -139,8 +158,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             sx = to_float(self.scaleXinput.text()) or 1
             sy = to_float(self.scaleYinput.text()) or 1
             t = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
-            # FIXME: rotation pivot applies to the whole transformation
-            pivot = Point(0, 0) if self.pivotSelect.currentText() == 'Origin' else None
+            # Get the correct pivot from dropdown box
+            if "Custom" in self.pivotSelect.currentText():
+                pivot = Point(to_float(self.rotateXInput.text()), to_float(self.rotateYInput.text()))
+            else:
+                pivot = Point(0, 0) if self.pivotSelect.currentText() == 'Origin' else None
             drawable = self.displayFile.currentItem().data(Qt.UserRole)
             drawable.transform(t, pivot)
             self.viewport.update()

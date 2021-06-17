@@ -324,8 +324,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>186</width>
-             <height>123</height>
+             <width>309</width>
+             <height>268</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">
@@ -427,9 +427,9 @@
        <widget class="QLabel" name="angleLabel">
         <property name="geometry">
          <rect>
-          <x>20</x>
-          <y>110</y>
-          <width>56</width>
+          <x>50</x>
+          <y>60</y>
+          <width>50</width>
           <height>21</height>
          </rect>
         </property>
@@ -444,7 +444,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>90</y>
+          <y>40</y>
           <width>42</width>
           <height>16</height>
          </rect>
@@ -456,9 +456,9 @@
        <widget class="QLabel" name="translateYlabel">
         <property name="geometry">
          <rect>
-          <x>80</x>
-          <y>30</y>
-          <width>16</width>
+          <x>150</x>
+          <y>5</y>
+          <width>20</width>
           <height>21</height>
          </rect>
         </property>
@@ -473,7 +473,7 @@
         <property name="geometry">
          <rect>
           <x>5</x>
-          <y>75</y>
+          <y>30</y>
           <width>296</width>
           <height>16</height>
          </rect>
@@ -485,9 +485,9 @@
        <widget class="QLineEdit" name="angleInput">
         <property name="geometry">
          <rect>
-          <x>75</x>
-          <y>110</y>
-          <width>56</width>
+          <x>100</x>
+          <y>60</y>
+          <width>40</width>
           <height>21</height>
          </rect>
         </property>
@@ -499,8 +499,8 @@
         <property name="geometry">
          <rect>
           <x>140</x>
-          <y>105</y>
-          <width>41</width>
+          <y>57</y>
+          <width>50</width>
           <height>26</height>
          </rect>
         </property>
@@ -515,7 +515,7 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>5</y>
+          <y>0</y>
           <width>60</width>
           <height>16</height>
          </rect>
@@ -529,7 +529,7 @@
          <rect>
           <x>100</x>
           <y>5</y>
-          <width>113</width>
+          <width>40</width>
           <height>21</height>
          </rect>
         </property>
@@ -553,9 +553,9 @@
        <widget class="QLineEdit" name="translateYinput">
         <property name="geometry">
          <rect>
-          <x>100</x>
-          <y>30</y>
-          <width>113</width>
+          <x>170</x>
+          <y>5</y>
+          <width>40</width>
           <height>21</height>
          </rect>
         </property>
@@ -580,7 +580,7 @@
         <property name="geometry">
          <rect>
           <x>5</x>
-          <y>220</y>
+          <y>200</y>
           <width>296</width>
           <height>16</height>
          </rect>
@@ -605,9 +605,9 @@
        <widget class="QComboBox" name="pivotSelect">
         <property name="geometry">
          <rect>
-          <x>185</x>
-          <y>105</y>
-          <width>96</width>
+          <x>183</x>
+          <y>56</y>
+          <width>110</width>
           <height>26</height>
          </rect>
         </property>
@@ -617,6 +617,11 @@
         <item>
          <property name="text">
           <string>Center</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Custom Point</string>
          </property>
         </item>
         <item>
@@ -644,8 +649,8 @@
        <widget class="QLabel" name="scaleYlabel">
         <property name="geometry">
          <rect>
-          <x>80</x>
-          <y>175</y>
+          <x>150</x>
+          <y>150</y>
           <width>16</width>
           <height>21</height>
          </rect>
@@ -662,7 +667,7 @@
          <rect>
           <x>100</x>
           <y>150</y>
-          <width>113</width>
+          <width>40</width>
           <height>21</height>
          </rect>
         </property>
@@ -673,14 +678,78 @@
        <widget class="QLineEdit" name="scaleYinput">
         <property name="geometry">
          <rect>
-          <x>100</x>
-          <y>175</y>
-          <width>113</width>
+          <x>170</x>
+          <y>150</y>
+          <width>40</width>
           <height>21</height>
          </rect>
         </property>
         <property name="text">
          <string>1</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="rotateXLabel">
+        <property name="geometry">
+         <rect>
+          <x>80</x>
+          <y>100</y>
+          <width>16</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>X:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+       <widget class="QLabel" name="rotateYLabel">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>100</y>
+          <width>20</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Y:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="rotateXInput">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="geometry">
+         <rect>
+          <x>100</x>
+          <y>100</y>
+          <width>40</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="rotateYInput">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="geometry">
+         <rect>
+          <x>170</x>
+          <y>100</y>
+          <width>40</width>
+          <height>21</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>0</string>
         </property>
        </widget>
       </widget>
