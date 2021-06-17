@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from sys import argv
-from math import inf, pi
+from math import inf, pi, radians
 from typing import Optional, Callable
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
 from PySide2.QtGui import QPainter, QIcon
@@ -134,7 +134,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         def check_perform_transformations():
             tx = to_float(self.translateXinput.text()) or 0
             ty = to_float(self.translateYinput.text()) or 0
-            theta = (to_float(self.angleInput.text()) or 0) * pi/180
+            theta = radians((to_float(self.angleInput.text()) or 0))
             sx = to_float(self.scaleXinput.text()) or 1
             sy = to_float(self.scaleYinput.text()) or 1
             t = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
