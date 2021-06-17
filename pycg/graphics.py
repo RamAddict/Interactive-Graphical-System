@@ -118,9 +118,9 @@ class Transformation:
         r = Transformation._rotation(self.rotation)
         s = Transformation._scaling(self.scaling)
         if pivot:
-            to_origin = Transformation._translation(-pivot)
-            back_from_origin = Transformation._translation(pivot)
-            return back_from_origin @ t @ r @ s @ to_origin
+            to_pivot_point = Transformation._translation(-pivot)
+            back_from_pivot_point = Transformation._translation(pivot)
+            return back_from_pivot_point @ t @ r @ s @ to_pivot_point
         else:
             return t @ r @ s
 
@@ -226,9 +226,9 @@ class Wireframe(Drawable):
 class Camera(Painter):
     """Window used as reference to render objects."""
 
-    def __init__(self, painter: Painter, center: Point, viewport_size: Vector):
+    def __init__(self, painter: Painter, position: Point, viewport_size: Vector):
         self.painter = painter
-        self._position = center
+        self._position = position
         self._viewport_size = viewport_size
         self._width = viewport_size.x
         self._height = viewport_size.y
@@ -247,7 +247,7 @@ class Camera(Painter):
         xb, yb = self._to_viewport(xb, yb)
         self.painter.draw_line(xa, ya, xb, yb)
 
-    def _to_viewport(self, x, y) -> Tuple:
+    def _to_viewport(self, x: int, y: int) -> Tuple:
         """Apply the Window-to-Viewport Transformation on given coordinates."""
         # equivalent to lerp(x, x_min, x_max, 0, viewport_width),
         x = (x - self._x_min) * self._viewport_size.x / self._width
