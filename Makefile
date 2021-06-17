@@ -1,49 +1,50 @@
-PYTHON = python3
-PY_APP = pycg/app.py
-PY_SRC = pycg
-PY_SOURCES = $(wildcard $(PY_SRC)/*.py)
-CURR_DIR = $(shell pwd)
+PYTHON := python3
+PY_APP := pycg/app.py
+PY_SRC := pycg
+PY_SOURCES := $(wildcard $(PY_SRC)/*.py)
 
-QT_COMPILER = pyside2-uic
-QT_SRC = data
-QT_OBJ = pycg/ui
-QT_SOURCES = $(wildcard $(QT_SRC)/*.ui)
-QT_OBJECTS = $(patsubst $(QT_SRC)/%.ui, $(QT_OBJ)/%.py, $(QT_SOURCES))
+# Requires PySide2's Qt UI Compiler
+QT_COMPILER := pyside2-uic
+QT_SRC := data
+QT_OBJ := pycg/ui
+QT_SOURCES := $(wildcard $(QT_SRC)/*.ui)
+QT_OBJECTS := $(patsubst $(QT_SRC)/%.ui, $(QT_OBJ)/%.py, $(QT_SOURCES))
 
 
-default:
-	@ make test
-	@ make gui
-	@ make run
+.PHONY: run test clean mostlyclean release
+
+# default
+run: $(QT_OBJECTS)
+	$(PYTHON) $(PY_APP)
+
+test:
+	$(PYTHON) -m pytest -v
+
+# does not clean the compiled PySide UI, since that is needed for releases
+mostlyclean:
+	- rm -r $(PY_SRC)/__pycache__
+	- rm -r $(QT_OBJ)/__pycache__
+	- rm -r $(PY_SRC)/tests/__pycache__
+	- rm -r ./.pytest_cache
+
+clean:
+	@ make mostlyclean
+	- rm -r $(QT_OBJECTS)
+	- rm submission.zip
+
+release: submission.zip
 
 
 $(QT_OBJ)/%.py: $(QT_SRC)/%.ui
 	$(QT_COMPILER) $< -o $@
 
-gui: $(QT_OBJECTS)
-
-
-run:
-	$(PYTHON) $(PY_APP)
-
-
-test:
-	@ python3 -m pytest
-
-submission:
-	@ make submission.zip
-
-clean:
-	-@ rm -r $(PY_SRC)/__pycache__
-	-@ rm -r $(PY_SRC)/tests/__pycache__
-	-@ rm -r $(QT_OBJ)/__pycache__
-
 submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md
-	@ make clean
-	@ mkdir PyCG
-	@ cp -r $(PY_SRC) PyCG
-	@ cp -r $(QT_SRC) PyCG
-	@ cp Makefile PyCG
-	@ cp README.md PyCG
-	@ zip -r submission.zip PyCG
-	@ rm -r PyCG
+	@ make test
+	@ make mostlyclean
+	mkdir PyCG
+	cp -r $(PY_SRC) PyCG
+	cp -r $(QT_SRC) PyCG
+	cp Makefile PyCG
+	cp README.md PyCG
+	zip -r submission.zip PyCG
+	rm -r PyCG

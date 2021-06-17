@@ -1,13 +1,8 @@
 from math import pi
-import os, sys
-currentdir = os.path.dirname(os.path.realpath(__file__))
-parentdir = os.path.dirname(currentdir)
-sys.path.append(parentdir)
-
-from graphics import Point, Line, Transformation
+from graphics import Transformation, Point, Line, Wireframe
 
 
-def test_transformations():
+def test_transformations_center_pivot():
     p = Point(5, 4)
     t = Transformation().translate(2, 1)
     p.transform(t)
@@ -22,10 +17,21 @@ def test_transformations():
     assert round(b.x) == 5
     assert round(b.y) == 5
 
-    w = Point(4, 2)
+    rect = Wireframe(Point(-1, 1), Point(1, 1), Point(1, -1), Point(-1, -1))
+    s = Transformation().scale(4, 3)
+    rect.transform(s)
+    upper_left, upper_right, lower_right, lower_left = rect
+    assert upper_left == (-4, 3)
+    assert upper_right == (4, 3)
+    assert lower_right == (4, -3)
+    assert lower_left == (-4, -3)
+
+
+def test_transformations_global_pivot():
+    p = Point(4, 2)
     s = Transformation().scale(-3)
-    w.transform(s, pivot=Point(0, 0))
-    assert w == (-12, -6)
+    p.transform(s, pivot=Point(0, 0))
+    assert p == (-12, -6)
 
     vertical_line = Line(Point(0, 0), Point(0, 300))
     translation_by_100 = Transformation().translate(100, 0)
@@ -36,10 +42,9 @@ def test_transformations():
     assert point_b.x == 100
     assert point_b.y == 300
 
-    rotate_by_90_around_origin = Transformation().rotate(pi/2)
-    vertical_line.transform(rotate_by_90_around_origin, pivot=Point(0,0))
+    rotate_by_90 = Transformation().rotate(pi/2)
+    vertical_line.transform(rotate_by_90, pivot=Point(0,0))
     point_a, point_b = vertical_line
-    print(vertical_line)
     assert round(point_a.x) == 0
     assert round(point_a.y) == 100
     assert round(point_b.x) == -300

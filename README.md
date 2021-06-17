@@ -5,16 +5,20 @@ UFSC [Computer Graphics (INE5420)](http://www.lapix.ufsc.br/ensino/computacao-gr
 
 ## Installation
 
-```shell
-$ pip install pyside2 --user
-$ pip install pytest --user # optional, only used in tests
-```
+### User
 
-Or, to prepare a virtual development environment:
+1. Download the latest [release](https://github.com/RamAddict/INE5420-CG/releases) through [GitHub](https://github.com/RamAddict/INE5420-CG).
+2. Install [Qt for Python](https://pypi.org/project/PySide2/): `pip install pyside2 --user`
+3. Execute the main [app](pycg/app.py): `python3 pycg/app.py`
+
+### Dev
+
+Run these to setup and test a development environment:
 
 ```shell
-$ python3 -m venv venv
+$ # system-specific install of pyside2-uic
+$ python -m venv venv
 $ source venv/bin/activate
-(venv) $ pip install pyside2
-(venv) $ pip install pytest
+(venv) $ pip install pyside2 pytest
+(venv) $ make clean test run
 ```

@@ -98,10 +98,9 @@ class Matrix(Vector):
 
     def __init__(self, first: Sequence, *rest: Sequence):
         convert = lambda seq: seq if isinstance(seq, Vector) else Vector(*seq)
-        n = len(first)
         rows = [convert(first)]
         for row in rest:
-            if len(row) != n:
+            if len(row) != len(first):
                 raise ValueError("Matrix row length mismatch.")
             else:
                 rows.append(convert(row))

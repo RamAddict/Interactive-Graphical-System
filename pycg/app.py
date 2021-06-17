@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+
 from sys import argv
-from math import inf, pi, radians
+from math import inf, radians
 from typing import Optional, Callable
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
 from PySide2.QtGui import QPainter, QIcon
@@ -100,14 +101,14 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             return extra
 
         def new_object():
-            # @TODO: perform parameter validation (name conflict, valid fields)
+            # TODO: perform parameter validation (name conflict, valid fields)
             if self.typeBox.currentIndex() < 0:
                 return
 
             name = self.nameEdit.text()
             typename = self.typeBox.currentText()
 
-            # QLayout.itemAt on a QFormLayout -> label, field: QLayoutItem
+            # indexes of QLayout.itemAt() depend on the order of UI elements
             obj = None
             if typename == 'Point':
                 obj = self.formLayout.itemAt(4).widget().to_point()
@@ -130,21 +131,21 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.dialogBox.rejected.connect(
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
-        # @TODO: improve transformations dialogue UX
-        def check_perform_transformations():
+        # TODO: improve transformations dialogue UX
+        def do_transformations():
             tx = to_float(self.translateXinput.text()) or 0
             ty = to_float(self.translateYinput.text()) or 0
             theta = radians((to_float(self.angleInput.text()) or 0))
             sx = to_float(self.scaleXinput.text()) or 1
             sy = to_float(self.scaleYinput.text()) or 1
             t = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
-            # @FIXME: rotation pivot applies to the whole transformation
+            # FIXME: rotation pivot applies to the whole transformation
             pivot = Point(0, 0) if self.pivotSelect.currentText() == 'Origin' else None
             drawable = self.displayFile.currentItem().data(Qt.UserRole)
             drawable.transform(t, pivot)
             self.viewport.update()
 
-        self.transformConfirm.accepted.connect(check_perform_transformations)
+        self.transformConfirm.accepted.connect(do_transformations)
         self.transformConfirm.rejected.connect(
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
@@ -223,10 +224,10 @@ class QtViewport(QWidget):
         """Update zoom within a certain range."""
         zoom = experp(value, minimum, maximum, 0.1, 10)
         self.camera.zoom = zoom
-        self._pan = 10 / zoom  # @NOTE: camera step is adjusted by zoom
+        self._pan = 10 / zoom  # NOTE: camera step is adjusted by zoom
         self.update()
 
-    def paintEvent(self, event):
+    def paintEvent(self, event):  # this is where we draw our scene
         self.camera.painter.begin(self)
         for i in range(self._display_file.count()):
             self._display_file.item(i).data(Qt.UserRole).draw(self.camera)
@@ -237,7 +238,7 @@ class QtViewport(QWidget):
         self._size.x = self.width()
         self._size.y = self.height()
         InteractiveGraphicalSystem.log(
-            "Viewport resized to {}x{}.".format(*self._size))
+            "Viewport resized to {}x{}".format(*self._size))
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
@@ -250,7 +251,7 @@ class QtViewport(QWidget):
             self.pan_camera(0, -1)
         elif e.key() == Qt.Key_D:
             self.pan_camera(1, 0)
-        # window zooming, @NOTE: some coupling to GUI's slider is necessary
+        # window zooming
         elif e.key() == Qt.Key_Minus and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()
             self._zoom_slider.setValue(self._zoom_slider.value() - step)
@@ -264,8 +265,7 @@ class QtViewport(QWidget):
     def focusNextPrevChild(self, next):  # disable focus change with Tab
         return False
 
-    def wheelEvent(self, e):
-        # ctrl + mouse wheel also zooms
+    def wheelEvent(self, e):  # ctrl + mouse wheel also zooms
         if e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.singleStep() * sign(e.angleDelta().y())
             self._zoom_slider.setValue(self._zoom_slider.value() + step)
@@ -295,10 +295,10 @@ class QtViewport(QWidget):
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
             InteractiveGraphicalSystem.log(
-                "Window dragged to ({}, {})w.".format(self.camera.x,
+                "Window dragged to ({}, {})".format(self.camera.x,
                                                       self.camera.y))
         else:
-            self._eye_position.setText("({}, {})".format(event.x(), event.y()))
+            self._eye_position.setText("[{}, {}]".format(event.x(), event.y()))
             return super().mouseMoveEvent(event)
 
 
@@ -311,13 +311,14 @@ class PointFields(QWidget, Ui_PointFields):
         self._has_action = False
 
     def to_point(self) -> Point:
+        # XXX: we're only using integer coordinates
         return Point(int(self.xDoubleSpinBox.value()),
                      int(self.yDoubleSpinBox.value()))
 
     def set_action(self, action: Optional[Callable[[], None]]):
         """Set procedure to be executed when the action button is clicked."""
 
-        # @NOTE: multiple receivers must be disconnect()ed from a signal
+        # NOTE: multiple receivers must be disconnect()ed from a signal
         if self._has_action:
             self.actionButton.clicked.disconnect()
             self._has_action = False
@@ -348,8 +349,9 @@ class PointFields(QWidget, Ui_PointFields):
 if __name__ == '__main__':
     app = QApplication(argv)
 
-    gui = InteractiveGraphicalSystem()  # @NOTE: variable is needed
+    gui = InteractiveGraphicalSystem()  # NOTE: variable is needed
 
+    # simple objects to test the app
     gui.insert_object(Line(Point(-950, 0), Point(1605, 3)), "lhor")
     gui.insert_object(Wireframe(Point(100, 0),
                                 Point(475, 250),
