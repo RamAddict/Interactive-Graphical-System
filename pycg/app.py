@@ -238,7 +238,7 @@ class QtViewport(QWidget):
         self._size.x = self.width()
         self._size.y = self.height()
         InteractiveGraphicalSystem.log(
-            "Viewport resized to {}x{}.".format(*self._size))
+            "Viewport resized to {}x{}".format(*self._size))
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
@@ -295,10 +295,10 @@ class QtViewport(QWidget):
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
             InteractiveGraphicalSystem.log(
-                "Window dragged to ({}, {})w.".format(self.camera.x,
+                "Window dragged to ({}, {})".format(self.camera.x,
                                                       self.camera.y))
         else:
-            self._eye_position.setText("({}, {})".format(event.x(), event.y()))
+            self._eye_position.setText("[{}, {}]".format(event.x(), event.y()))
             return super().mouseMoveEvent(event)
 
 
