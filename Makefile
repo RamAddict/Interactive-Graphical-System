@@ -28,8 +28,7 @@ run:
 
 
 test:
-	@ pytest
-
+	@ python3 -m pytest
 
 submission:
 	@ make submission.zip
