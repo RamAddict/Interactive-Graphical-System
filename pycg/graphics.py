@@ -30,7 +30,7 @@ class Painter():
         DX2Y2 = DX2 - DY2
 
         if abs(dx) >= abs(dy):
-            # pi = (d1-d2)*dx, d1 = y - yi, d2 = (yi + 1) - y -> pa = 2*dy - dx
+            # pi = (d1-d2)*dx, d1 = y - yi, d2 = (yi + 1) - y => p = 2*dy - dx
             p = 2*dy*sign_y - dx*sign_x
 
             # dp = 2*dy - 2*dx*inc_x
@@ -43,7 +43,7 @@ class Painter():
                 else:
                     p += DY2
         else:
-            # pi = (d1-d2)*dy, d1 = x - xi, d2 = (xi + 1) - x -> pa = 2*dx - dy
+            # pi = (d1-d2)*dy, d1 = x - xi, d2 = (xi + 1) - x => p = 2*dx - dy
             p = 2*dx*sign_x - dy*sign_y
 
             # dp = 2*dx - 2*dy*inc_y
@@ -58,8 +58,7 @@ class Painter():
 
 
 class Transformation:
-    """
-    Representation of Transformations in 2D Homogeneous Coordinates.
+    """Representation of Transformations in 2D Homogeneous Coordinates.
 
     Methods such as `translate`, `rotate` and `scale` modify the calling object
     and return it afterwards, allowing for chaining. eg:
@@ -110,8 +109,7 @@ class Transformation:
         return t
 
     def matrix(self, pivot=None) -> Matrix:
-        """
-        Gets the 3x3 Matrix that performs this transformation on vectors.
+        """Gets the 3x3 Matrix that performs this transformation on vectors.
         If a pivot is not specified, it defaults to (0, 0).
         """
         t = Transformation._translation(self.translation)

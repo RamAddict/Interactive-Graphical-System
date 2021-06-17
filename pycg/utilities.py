@@ -35,11 +35,11 @@ def lerp(x, in_min, in_max, out_min, out_max):
 def experp(x, in_min, in_max, out_min, out_max):
     """Interpolate from a linear to an exponential range."""
     # solving for y = a * exp(b * x), while knowing that
-    # x1 = in_min -> y1 = out_min and x2 = in_max -> y2 = out_max, thus
+    # x1 = in_min => y1 = out_min and x2 = in_max => y2 = out_max, thus
     # y1/y2 = exp(b * x1) / exp(b * x2) = exp(b * (x1 - x2)), then taking the
     # log of both sides: log(y1/y2) = b * (x1 - x2), so we have found b.
     b = log2(out_min / out_max) / (in_min - in_max)
-    # similarly for a, y1 = a * exp(b * x1) -> a = y1 / exp(b * x1)
+    # similarly for a, y1 = a * exp(b * x1) => a = y1 / exp(b * x1)
     a = out_min / 2**(b * in_min)
     # now we plug them into the equation (PS: base 2 is probably faster than e)
     return a * 2**(b * x)
