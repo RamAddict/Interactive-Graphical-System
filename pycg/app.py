@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
+import random
 from sys import argv
 from math import inf, radians
 from typing import Optional, Callable
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
-from PySide2.QtGui import QPainter, QIcon
+from PySide2.QtGui import QColor, QPainter, QIcon, QPen
 from PySide2.QtCore import Qt
 
 from ui.main import Ui_MainWindow
@@ -92,8 +93,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         def new_type_select(index: int):
             # clean all fields after 'name' and 'type'
-            while self.formLayout.rowCount() > 2:
-                self.formLayout.removeRow(2)
+            while self.formLayout.rowCount() > 3:
+                self.formLayout.removeRow(3)
 
             typename = self.typeBox.itemText(index)
             if typename == 'Point':
@@ -130,14 +131,14 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             # indexes of QLayout.itemAt() depend on the order of UI elements
             obj = None
             if typename == 'Point':
-                obj = self.formLayout.itemAt(4).widget().to_point()
+                obj = self.formLayout.itemAt(6).widget().to_point()
             elif typename == 'Line':
-                pa = self.formLayout.itemAt(4).widget().to_point()
-                pb = self.formLayout.itemAt(5).widget().to_point()
+                pa = self.formLayout.itemAt(6).widget().to_point()
+                pb = self.formLayout.itemAt(7).widget().to_point()
                 obj = Line(pa, pb)
             elif typename == 'Wireframe':
                 points = []
-                for i in range(4, self.formLayout.count() - 1):
+                for i in range(6, self.formLayout.count() - 1):
                     p = self.formLayout.itemAt(i).widget().to_point()
                     points.append(p)
                 obj = Wireframe(*points)
@@ -184,6 +185,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         elif index is None:
             index = n
 
+        # set color
+        obj.color = str(hex(abs(random.randint(0,16777215) - 6777215))) if self.colorEdit.text() == "" else self.colorEdit.text()
         self.displayFile.insertItem(index, name)
         self.displayFile.item(index).setData(Qt.UserRole, obj)
         self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
@@ -252,7 +255,9 @@ class QtViewport(QWidget):
     def paintEvent(self, event):  # this is where we draw our scene
         self.camera.painter.begin(self)
         for i in range(self._display_file.count()):
-            self._display_file.item(i).data(Qt.UserRole).draw(self.camera)
+            model = self._display_file.item(i).data(Qt.UserRole)
+            self.camera.painter.setPen(QPen(QColor(int(model.color, 0))))
+            model.draw(self.camera)
         self.camera.painter.end()
         return super().paintEvent(event)
 
