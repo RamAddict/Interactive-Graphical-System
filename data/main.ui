@@ -101,6 +101,9 @@
       </property>
       <item>
        <widget class="QLabel" name="controlLabel">
+        <property name="toolTip">
+         <string>Camera</string>
+        </property>
         <property name="text">
          <string>Window Controls</string>
         </property>
@@ -254,7 +257,7 @@
     <item row="2" column="1" rowspan="2">
      <widget class="QStackedWidget" name="componentWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="emptyPage">
        <widget class="QLabel" name="instructionsLabel">
@@ -268,9 +271,7 @@
         </property>
         <property name="font">
          <font>
-          <family>Verdana</family>
-          <pointsize>15</pointsize>
-          <italic>true</italic>
+          <pointsize>14</pointsize>
          </font>
         </property>
         <property name="text">
@@ -283,12 +284,12 @@
          <bool>true</bool>
         </property>
         <property name="margin">
-         <number>5</number>
+         <number>4</number>
         </property>
        </widget>
       </widget>
       <widget class="QWidget" name="objectPage">
-       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <layout class="QVBoxLayout" name="objectLayout" stretch="0,1">
         <property name="spacing">
          <number>0</number>
         </property>
@@ -324,8 +325,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>309</width>
-             <height>268</height>
+             <width>306</width>
+             <height>249</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
@@ -350,15 +351,19 @@
                </widget>
               </item>
               <item row="0" column="1">
-               <widget class="QLineEdit" name="nameEdit"/>
+               <widget class="QLineEdit" name="nameEdit">
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
               </item>
               <item row="1" column="1">
                <widget class="QLineEdit" name="colorEdit">
-                <property name="text">
-                 <string>0x220088</string>
+                <property name="inputMask">
+                 <string>\#HHHHHH</string>
                 </property>
-                <property name="alignment">
-                 <set>Qt::AlignJustify|Qt::AlignVCenter</set>
+                <property name="text">
+                 <string>#000000</string>
                 </property>
                </widget>
               </item>
@@ -389,7 +394,6 @@
                 <property name="font">
                  <font>
                   <pointsize>12</pointsize>
-                  <italic>false</italic>
                  </font>
                 </property>
                 <property name="text">
@@ -413,9 +417,6 @@
             </item>
             <item>
              <widget class="QDialogButtonBox" name="dialogBox">
-              <property name="layoutDirection">
-               <enum>Qt::LeftToRight</enum>
-              </property>
               <property name="standardButtons">
                <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
               </property>
@@ -434,11 +435,16 @@
        <widget class="QLabel" name="translateXlabel">
         <property name="geometry">
          <rect>
-          <x>80</x>
-          <y>5</y>
+          <x>95</x>
+          <y>25</y>
           <width>16</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>X:</string>
@@ -450,11 +456,16 @@
        <widget class="QLabel" name="angleLabel">
         <property name="geometry">
          <rect>
-          <x>50</x>
-          <y>60</y>
-          <width>50</width>
+          <x>30</x>
+          <y>90</y>
+          <width>66</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Angle: °</string>
@@ -466,8 +477,8 @@
        <widget class="QLabel" name="rotateLabel">
         <property name="geometry">
          <rect>
-          <x>10</x>
-          <y>40</y>
+          <x>15</x>
+          <y>65</y>
           <width>42</width>
           <height>16</height>
          </rect>
@@ -479,11 +490,16 @@
        <widget class="QLabel" name="translateYlabel">
         <property name="geometry">
          <rect>
-          <x>150</x>
-          <y>5</y>
+          <x>165</x>
+          <y>25</y>
           <width>20</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Y:</string>
@@ -492,12 +508,12 @@
          <set>Qt::AlignCenter</set>
         </property>
        </widget>
-       <widget class="Line" name="line">
+       <widget class="Line" name="line_1">
         <property name="geometry">
          <rect>
           <x>5</x>
-          <y>30</y>
-          <width>296</width>
+          <y>50</y>
+          <width>306</width>
           <height>16</height>
          </rect>
         </property>
@@ -508,11 +524,14 @@
        <widget class="QLineEdit" name="angleInput">
         <property name="geometry">
          <rect>
-          <x>100</x>
-          <y>60</y>
+          <x>95</x>
+          <y>90</y>
           <width>40</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhPreferNumbers</set>
         </property>
         <property name="text">
          <string>0</string>
@@ -522,10 +541,15 @@
         <property name="geometry">
          <rect>
           <x>140</x>
-          <y>57</y>
+          <y>85</y>
           <width>50</width>
           <height>26</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Pivot:</string>
@@ -537,8 +561,8 @@
        <widget class="QLabel" name="transateLabel">
         <property name="geometry">
          <rect>
-          <x>10</x>
-          <y>0</y>
+          <x>15</x>
+          <y>10</y>
           <width>60</width>
           <height>16</height>
          </rect>
@@ -550,11 +574,19 @@
        <widget class="QLineEdit" name="translateXinput">
         <property name="geometry">
          <rect>
-          <x>100</x>
-          <y>5</y>
+          <x>115</x>
+          <y>25</y>
           <width>40</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhPreferNumbers</set>
         </property>
         <property name="text">
          <string>0</string>
@@ -563,8 +595,8 @@
        <widget class="QLabel" name="scaleLabel">
         <property name="geometry">
          <rect>
-          <x>10</x>
-          <y>150</y>
+          <x>15</x>
+          <y>160</y>
           <width>42</width>
           <height>16</height>
          </rect>
@@ -576,11 +608,19 @@
        <widget class="QLineEdit" name="translateYinput">
         <property name="geometry">
          <rect>
-          <x>170</x>
-          <y>5</y>
+          <x>185</x>
+          <y>25</y>
           <width>40</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhPreferNumbers</set>
         </property>
         <property name="text">
          <string>0</string>
@@ -598,13 +638,16 @@
         <property name="standardButtons">
          <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
         </property>
+        <property name="centerButtons">
+         <bool>true</bool>
+        </property>
        </widget>
        <widget class="Line" name="line_3">
         <property name="geometry">
          <rect>
           <x>5</x>
-          <y>200</y>
-          <width>296</width>
+          <y>215</y>
+          <width>306</width>
           <height>16</height>
          </rect>
         </property>
@@ -616,8 +659,8 @@
         <property name="geometry">
          <rect>
           <x>5</x>
-          <y>135</y>
-          <width>296</width>
+          <y>145</y>
+          <width>306</width>
           <height>16</height>
          </rect>
         </property>
@@ -628,8 +671,8 @@
        <widget class="QComboBox" name="pivotSelect">
         <property name="geometry">
          <rect>
-          <x>183</x>
-          <y>56</y>
+          <x>195</x>
+          <y>85</y>
           <width>110</width>
           <height>26</height>
          </rect>
@@ -644,23 +687,28 @@
         </item>
         <item>
          <property name="text">
-          <string>Custom Point</string>
+          <string>Origin</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>Origin</string>
+          <string>Custom</string>
          </property>
         </item>
        </widget>
        <widget class="QLabel" name="scaleXlabel">
         <property name="geometry">
          <rect>
-          <x>80</x>
-          <y>150</y>
+          <x>95</x>
+          <y>165</y>
           <width>16</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>X:</string>
@@ -672,11 +720,16 @@
        <widget class="QLabel" name="scaleYlabel">
         <property name="geometry">
          <rect>
-          <x>150</x>
-          <y>150</y>
+          <x>165</x>
+          <y>165</y>
           <width>16</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
         </property>
         <property name="text">
          <string>Y:</string>
@@ -688,11 +741,19 @@
        <widget class="QLineEdit" name="scaleXinput">
         <property name="geometry">
          <rect>
-          <x>100</x>
-          <y>150</y>
+          <x>115</x>
+          <y>165</y>
           <width>40</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhPreferNumbers</set>
         </property>
         <property name="text">
          <string>1</string>
@@ -701,11 +762,19 @@
        <widget class="QLineEdit" name="scaleYinput">
         <property name="geometry">
          <rect>
-          <x>170</x>
-          <y>150</y>
+          <x>185</x>
+          <y>165</y>
           <width>40</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>12</pointsize>
+         </font>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhPreferNumbers</set>
         </property>
         <property name="text">
          <string>1</string>
@@ -714,8 +783,8 @@
        <widget class="QLabel" name="rotateXLabel">
         <property name="geometry">
          <rect>
-          <x>80</x>
-          <y>100</y>
+          <x>95</x>
+          <y>120</y>
           <width>16</width>
           <height>21</height>
          </rect>
@@ -730,8 +799,8 @@
        <widget class="QLabel" name="rotateYLabel">
         <property name="geometry">
          <rect>
-          <x>150</x>
-          <y>100</y>
+          <x>165</x>
+          <y>120</y>
           <width>20</width>
           <height>21</height>
          </rect>
@@ -749,11 +818,14 @@
         </property>
         <property name="geometry">
          <rect>
-          <x>100</x>
-          <y>100</y>
+          <x>115</x>
+          <y>120</y>
           <width>40</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhPreferNumbers</set>
         </property>
         <property name="text">
          <string>0</string>
@@ -765,11 +837,14 @@
         </property>
         <property name="geometry">
          <rect>
-          <x>170</x>
-          <y>100</y>
+          <x>185</x>
+          <y>120</y>
           <width>40</width>
           <height>21</height>
          </rect>
+        </property>
+        <property name="inputMethodHints">
+         <set>Qt::ImhPreferNumbers</set>
         </property>
         <property name="text">
          <string>0</string>
