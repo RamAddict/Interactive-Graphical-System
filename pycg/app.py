@@ -69,30 +69,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             self.typeBox.setCurrentIndex(-1),
             self.nameEdit.setText("")
         ))
-        def enableRotateLabels():
-            if "Custom" in self.pivotSelect.currentText():
-                self.rotateXInput.setEnabled(True)
-                self.rotateYInput.setEnabled(True)
-            else:
-                self.rotateXInput.setEnabled(False)
-                self.rotateYInput.setEnabled(False)
-
-        # if edit btn is clicked but nothing is selected in the display file, then do nothing
-        self.editButton.clicked.connect(
-            lambda: begin(
-            self.consoleArea.append("Please select an object from the list") if self.displayFile.currentRow() < 0 
-            else self.componentWidget.setCurrentWidget(self.transformPage)
-            )
-            )
-        
-        self.pivotSelect.currentIndexChanged.connect(
-            lambda: begin(
-                enableRotateLabels()
-                )
-        )
+        self.editButton.clicked.connect(  # ensures something is selected
+            lambda: None if self.displayFile.currentRow() < 0
+            else self.componentWidget.setCurrentWidget(self.transformPage))
 
         def new_type_select(index: int):
-            # clean all fields after 'name' and 'type'
+            # clean all fields after 'name', 'color' and 'type'
             while self.formLayout.rowCount() > 3:
                 self.formLayout.removeRow(3)
 
@@ -143,7 +125,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     points.append(p)
                 obj = Wireframe(*points)
 
-            gui.insert_object(obj, name, self.displayFile.currentRow() + 1)
+            gui.insert_object(obj, name,
+                              index=self.displayFile.currentRow() + 1,
+                              color=self.colorEdit.text())
             self.componentWidget.setCurrentWidget(self.emptyPage)
 
         self.typeBox.currentIndexChanged.connect(new_type_select)
@@ -159,34 +143,42 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             sx = to_float(self.scaleXinput.text()) or 1
             sy = to_float(self.scaleYinput.text()) or 1
             t = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
-            # Get the correct pivot from dropdown box
-            if "Custom" in self.pivotSelect.currentText():
-                pivot = Point(to_float(self.rotateXInput.text()), to_float(self.rotateYInput.text()))
-            else:
-                pivot = Point(0, 0) if self.pivotSelect.currentText() == 'Origin' else None
+            # get the correct pivot from dropdown box
+            pivot = None
+            if self.pivotSelect.currentText() == 'Origin':
+                pivot = Point(0, 0)
+            elif self.pivotSelect.currentText() == 'Custom':
+                pivot = Point(to_float(self.rotateXInput.text()),
+                              to_float(self.rotateYInput.text()))
             drawable = self.displayFile.currentItem().data(Qt.UserRole)
             drawable.transform(t, pivot)
             self.viewport.update()
 
+        def enableRotateLabels():
+            custom = self.pivotSelect.currentText() == 'Custom'
+            self.rotateXInput.setEnabled(custom)
+            self.rotateYInput.setEnabled(custom)
+
         self.transformConfirm.accepted.connect(do_transformations)
         self.transformConfirm.rejected.connect(
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
+        self.pivotSelect.currentIndexChanged.connect(enableRotateLabels)
 
         # render it all
         self.show()
         self.log("Interactive Graphical System initialized.")
 
-    def insert_object(self, obj: Drawable, name, index: int = None) -> int:
+    def insert_object(self, obj: Drawable, name,
+                      index: int = None, color: str = None) -> int:
         """Put an object in the Display File, returning its position."""
 
         n = self.displayFile.count()
         if index and (index < 0 or index > n):
-            raise IndexError("Invalid Display File index: %d" & index)
+            raise IndexError("Invalid Display File index: %d" % index)
         elif index is None:
             index = n
 
-        # set color
-        obj.color = str(hex(abs(random.randint(0,16777215) - 6777215))) if self.colorEdit.text() == "" else self.colorEdit.text()
+        obj.color = color or Qt.black
         self.displayFile.insertItem(index, name)
         self.displayFile.item(index).setData(Qt.UserRole, obj)
         self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
@@ -254,9 +246,11 @@ class QtViewport(QWidget):
 
     def paintEvent(self, event):  # this is where we draw our scene
         self.camera.painter.begin(self)
+        self.camera.painter.fillRect(  # camera view background
+            0, 0, self.width(), self.height(), Qt.white)
         for i in range(self._display_file.count()):
             model = self._display_file.item(i).data(Qt.UserRole)
-            self.camera.painter.setPen(QPen(QColor(int(model.color, 0))))
+            self.camera.painter.setPen(QColor(model.color))
             model.draw(self.camera)
         self.camera.painter.end()
         return super().paintEvent(event)
@@ -323,7 +317,7 @@ class QtViewport(QWidget):
             self.pan_camera(-dx, dy, _normalized=False)
             InteractiveGraphicalSystem.log(
                 "Window dragged to ({}, {})".format(self.camera.x,
-                                                      self.camera.y))
+                                                    self.camera.y))
         else:
             self._eye_position.setText("[{}, {}]".format(event.x(), event.y()))
             return super().mouseMoveEvent(event)
