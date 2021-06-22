@@ -1,7 +1,7 @@
 """Computer Graphics API."""
 
+from math import sqrt, cos, sin
 from typing import Tuple, Sequence
-from math import sqrt, cos, sin, radians
 
 from blas import Vector, Matrix
 from utilities import pairwise
@@ -16,7 +16,7 @@ class Painter():
     def draw_line(self, xa: int, ya: int, xb: int, yb: int):
         # Bresenham's line algorithm, which is based on a decision parameter p
         # allowing to solve y = mx + c using only integer operations {+, -, 2*}
-        xa, ya, xb, yb = int(xa), int(ya), int(xb), int(yb)  # "typing"
+        xa, ya, xb, yb = int(xa), int(ya), int(xb), int(yb)  # coerce to int
         dx = xb - xa
         dy = yb - ya
         sign_x = +1 if dx >= 0 else -1
@@ -65,7 +65,7 @@ class Transformation:
 
         t = Transformation().translate(x, y).rotate(theta).scale(sx, sy)
 
-    These operations should be considered comutative, and are applied all at
+    These operations should be considered commutative, and are applied all at
     once using a pivot Point.
     """
 
