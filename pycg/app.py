@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 
-import random
-from sys import argv
 from math import inf, radians
+from sys import argv
 from typing import Optional, Callable
+
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
-from PySide2.QtGui import QColor, QPainter, QIcon, QPen
+from PySide2.QtGui import QPainter, QIcon, QColor
 from PySide2.QtCore import Qt
 
-from ui.main import Ui_MainWindow
-from ui.point import Ui_PointFields
+from blas import Vector
 from graphics import (Point, Line, Wireframe, Painter, Camera, Drawable,
                       Transformation)
 from utilities import experp, begin, lerp, sign, to_float
-from blas import Vector
+from ui.main import Ui_MainWindow
+from ui.point import Ui_PointFields
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):

@@ -1,8 +1,8 @@
 """Miscellaneous Python utilities."""
 
-from typing import Iterable, Sequence, Generator, Tuple, Optional
 from itertools import tee
 from math import log2
+from typing import Iterable, Sequence, Generator, Tuple, Optional
 
 
 def grouped(iterable: Iterable, n: int) -> Generator[Tuple, None, None]:
