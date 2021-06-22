@@ -4,7 +4,7 @@ from math import inf, radians
 from sys import argv
 from typing import Optional, Callable
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QColorDialog
 from PySide2.QtGui import QPainter, QIcon, QColor
 from PySide2.QtCore import Qt
 
@@ -67,7 +67,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.newButton.clicked.connect(lambda: begin(
             self.componentWidget.setCurrentWidget(self.objectPage),
             self.typeBox.setCurrentIndex(-1),
-            self.nameEdit.setText("")
+            self.nameEdit.setText(""),
+            self.colorEdit.setText("#00A1d0")
         ))
         self.editButton.clicked.connect(  # ensures something is selected
             lambda: None if self.displayFile.currentRow() < 0
@@ -109,6 +110,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
             name = self.nameEdit.text()
             typename = self.typeBox.currentText()
+            color = self.colorEdit.text()
 
             # indexes of QLayout.itemAt() depend on the order of UI elements
             obj = None
@@ -127,15 +129,18 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
             gui.insert_object(obj, name,
                               index=self.displayFile.currentRow() + 1,
-                              color=self.colorEdit.text())
+                              color=color)
             self.componentWidget.setCurrentWidget(self.emptyPage)
 
         self.typeBox.currentIndexChanged.connect(new_type_select)
+        self.colorEdit.returnPressed.connect(  # TODO: add a button for this
+            lambda: self.colorEdit.setText(
+                QColorDialog.getColor(initial=QColor(self.colorEdit.text()))
+                            .name()))
         self.dialogBox.accepted.connect(new_object)
         self.dialogBox.rejected.connect(
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
-        # TODO: improve transformations dialogue UX
         def do_transformations():
             tx = to_float(self.translateXinput.text()) or 0
             ty = to_float(self.translateYinput.text()) or 0
@@ -178,7 +183,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         elif index is None:
             index = n
 
-        obj.color = color or Qt.black
+        obj.color = color or '#000000'
         self.displayFile.insertItem(index, name)
         self.displayFile.item(index).setData(Qt.UserRole, obj)
         self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
@@ -246,7 +251,7 @@ class QtViewport(QWidget):
 
     def paintEvent(self, event):  # this is where we draw our scene
         self.camera.painter.begin(self)
-        self.camera.painter.fillRect(  # camera view background
+        self.camera.painter.fillRect(  # XXX: camera view background
             0, 0, self.width(), self.height(), Qt.white)
         for i in range(self._display_file.count()):
             model = self._display_file.item(i).data(Qt.UserRole)
@@ -332,7 +337,6 @@ class PointFields(QWidget, Ui_PointFields):
         self._has_action = False
 
     def to_point(self) -> Point:
-        # XXX: we're only using integer coordinates
         return Point(int(self.xDoubleSpinBox.value()),
                      int(self.yDoubleSpinBox.value()))
 
