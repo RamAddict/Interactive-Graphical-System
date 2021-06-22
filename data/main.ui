@@ -325,8 +325,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>306</width>
-             <height>249</height>
+             <width>186</width>
+             <height>161</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
@@ -456,8 +456,8 @@
        <widget class="QLabel" name="angleLabel">
         <property name="geometry">
          <rect>
-          <x>30</x>
-          <y>90</y>
+          <x>15</x>
+          <y>85</y>
           <width>66</width>
           <height>21</height>
          </rect>
@@ -524,8 +524,8 @@
        <widget class="QLineEdit" name="angleInput">
         <property name="geometry">
          <rect>
-          <x>95</x>
-          <y>90</y>
+          <x>80</x>
+          <y>85</y>
           <width>40</width>
           <height>21</height>
          </rect>
@@ -540,8 +540,8 @@
        <widget class="QLabel" name="pivotLabel">
         <property name="geometry">
          <rect>
-          <x>140</x>
-          <y>85</y>
+          <x>130</x>
+          <y>80</y>
           <width>50</width>
           <height>26</height>
          </rect>
@@ -671,9 +671,9 @@
        <widget class="QComboBox" name="pivotSelect">
         <property name="geometry">
          <rect>
-          <x>195</x>
-          <y>85</y>
-          <width>110</width>
+          <x>185</x>
+          <y>80</y>
+          <width>101</width>
           <height>26</height>
          </rect>
         </property>
