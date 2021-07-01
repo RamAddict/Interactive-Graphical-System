@@ -325,8 +325,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>186</width>
-             <height>161</height>
+             <width>194</width>
+             <height>142</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
@@ -855,6 +855,36 @@
     </item>
    </layout>
   </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>true</bool>
+   </attribute>
+   <addaction name="action_save"/>
+   <addaction name="separator"/>
+   <addaction name="action_load"/>
+  </widget>
+  <action name="action_save">
+   <property name="text">
+    <string>save</string>
+   </property>
+   <property name="toolTip">
+    <string>save world to .obj</string>
+   </property>
+  </action>
+  <action name="action_load">
+   <property name="text">
+    <string>load</string>
+   </property>
+   <property name="toolTip">
+    <string>load .obj file</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>
