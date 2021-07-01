@@ -11,7 +11,7 @@ from PySide2.QtCore import Qt
 from blas import Vector
 from graphics import (Point, Line, Wireframe, Painter, Camera, Drawable,
                       Transformation)
-from utilities import experp, begin, lerp, sign, to_float
+from utilities import experp, begin, sign, to_float
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
 
@@ -226,8 +226,7 @@ class QtViewport(QWidget):
         self._display_file = display_file  # modified by main window
         self._zoom_slider = zoom_slider
         self._eye_position = eye_position
-        self._size = Vector(950, 535)
-        self.camera = Camera(QtPainter(), Point(-60, 40), self._size)
+        self.camera = Camera(QtPainter(), Vector(self.width(), self.height()))
         self._pan = 10
         self._drag_begin = None
         self.setFocusPolicy(Qt.StrongFocus)
@@ -261,10 +260,9 @@ class QtViewport(QWidget):
         return super().paintEvent(event)
 
     def resizeEvent(self, event):
-        self._size.x = self.width()
-        self._size.y = self.height()
+        self.camera.viewport_size = (self.width(), self.height())
         InteractiveGraphicalSystem.log(
-            "Viewport resized to {}x{}".format(*self._size))
+            "Viewport resized to {}x{}".format(self.width(), self.height()))
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
@@ -315,9 +313,9 @@ class QtViewport(QWidget):
             # compute motion vector and update drag initial position
             delta = (event.x(), event.y()) - self._drag_begin
             self._drag_begin += delta
-            # adjust delta to window size
-            dx = int(lerp(delta.x, 0, self.width(), 0, self.camera.width))
-            dy = int(lerp(delta.y, 0, self.height(), 0, self.camera.height))
+            # adjust delta based on window zoom
+            dx = delta.x / self.camera.zoom
+            dy = delta.y / self.camera.zoom
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
             InteractiveGraphicalSystem.log(
