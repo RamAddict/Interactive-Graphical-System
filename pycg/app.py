@@ -233,10 +233,14 @@ class QtViewport(QWidget):
         self.setMouseTracking(True)
 
     def pan_camera(self, dx, dy, _normalized=True):
-        """Move the camera by a certain amount of dynamically-sized steps."""
+        """Move the camera by a certain amount of dynamically-sized steps.
+        Takes the camera tilt into account, such that movement is view-aligned.
+        """
         if _normalized:
             dx = int(dx * self._pan)
             dy = int(dy * self._pan)
+        align = Transformation().rotate(self.camera.angle).matrix()
+        dx, dy, _ = align @ Vector(dx, dy, 1)
         self.camera.x += dx
         self.camera.y += dy
         self.update()
@@ -246,6 +250,11 @@ class QtViewport(QWidget):
         zoom = experp(value, minimum, maximum, 0.1, 10)
         self.camera.zoom = zoom
         self._pan = 10 / zoom  # NOTE: camera step is adjusted by zoom
+        self.update()
+
+    def tilt_view(self, theta: float):
+        """Tilt the camera view by the given amount."""
+        self.camera.angle += theta
         self.update()
 
     def paintEvent(self, event):  # this is where we draw our scene
@@ -282,6 +291,11 @@ class QtViewport(QWidget):
         elif e.key() == Qt.Key_Equal and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()
             self._zoom_slider.setValue(self._zoom_slider.value() + step)
+        # window rotation TODO: add buttons for this
+        elif e.key() == Qt.Key_Q:
+            self.tilt_view(radians(15))
+        elif e.key() == Qt.Key_E:
+            self.tilt_view(radians(-15))
         # forward (most) events to parent class
         elif e.key() != Qt.Key_Tab:
             return super().keyPressEvent(e)
