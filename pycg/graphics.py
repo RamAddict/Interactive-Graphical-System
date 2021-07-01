@@ -224,34 +224,45 @@ class Wireframe(Drawable):
 class Camera(Painter):
     """Window used as reference to render objects."""
 
-    def __init__(self, painter: Painter, position: Point, viewport_size: Vector):
+    def __init__(self, painter: Painter, viewport_size: Vector):
         self.painter = painter
-        self._position = position
         self._viewport_size = viewport_size
-        self._width = viewport_size.x
-        self._height = viewport_size.y
-        self._recalculate_corners()
-
-    def _recalculate_corners(self):
-        self._x_min = self.x - self._width/2
-        self._y_min = self.y - self._height/2
+        self._position = Point(0, 0)
+        self._zoom = 1.0
+        self._angle = 0
+        self._dirty = True
+        self._world_to_screen = None
 
     def draw_pixel(self, x: int, y: int):
-        x, y = self._to_viewport(x, y)
+        x, y, _ = self._viewport_matrix() @ Vector(x, y, 1)
         self.painter.draw_pixel(x, y)
 
     def draw_line(self, xa: int, ya: int, xb: int, yb: int):
-        xa, ya = self._to_viewport(xa, ya)
-        xb, yb = self._to_viewport(xb, yb)
+        to_viewport = self._viewport_matrix()
+        xa, ya, _ = to_viewport @ Vector(xa, ya, 1)
+        xb, yb, _ = to_viewport @ Vector(xb, yb, 1)
         self.painter.draw_line(xa, ya, xb, yb)
 
-    def _to_viewport(self, x: int, y: int) -> Tuple:
-        """Apply the Window-to-Viewport Transformation on given coordinates."""
-        # equivalent to lerp(x, x_min, x_max, 0, viewport_width),
-        x = (x - self._x_min) * self._viewport_size.x / self._width
-        # viewport_height - lerp(y, y_min, y_max, 0, viewport_height)
-        y = self._viewport_size.y * (1 - (y - self._y_min)/self._height)
-        return x, y
+    def _viewport_matrix(self) -> Matrix:
+        # only recompute matrixes if camera changed
+        if self._dirty:
+            half_size = self._viewport_size / 2
+
+            center = Transformation().translate(-self.x, -self.y).matrix()
+            align = Transformation().rotate(-self.angle).matrix()
+            scaling = half_size / self.zoom
+            normalize = Transformation().scale(1/scaling.x, 1/scaling.y).matrix()
+            world_to_view = normalize @ align @ center
+
+            resize = Transformation().scale(half_size.x, half_size.y).matrix()
+            corner = Transformation().translate(half_size.x, -half_size.y).matrix()
+            invert_y = Transformation().scale(1, -1).matrix()
+            view_to_screen = invert_y @ corner @ resize
+
+            self._dirty = False
+            self._world_to_screen = view_to_screen @ world_to_view
+
+        return self._world_to_screen
 
     @property
     def x(self):
@@ -260,7 +271,7 @@ class Camera(Painter):
     @x.setter
     def x(self, x):
         self._position.x = x
-        self._recalculate_corners()
+        self._dirty = True
 
     @property
     def y(self):
@@ -269,32 +280,34 @@ class Camera(Painter):
     @y.setter
     def y(self, y):
         self._position.y = y
-        self._recalculate_corners()
-
-    @property
-    def width(self):
-        return self._width
-
-    @width.setter
-    def width(self, w):
-        self._width = w
-        self._recalculate_corners()
-
-    @property
-    def height(self):
-        return self._height
-
-    @height.setter
-    def height(self, h):
-        self._height = h
-        self._recalculate_corners()
+        self._dirty = True
 
     @property
     def zoom(self) -> float:
-        return self._viewport_size.x / float(self._width)
+        return self._zoom
 
     @zoom.setter
     def zoom(self, scale: float):
-        self._width = int(self._viewport_size.x / scale)
-        self._height = int(self._viewport_size.y / scale)
-        self._recalculate_corners()
+        if scale <= 0:
+            raise ValueError("Camera zoom should be strictly positive.")
+        self._zoom = scale
+        self._dirty = True
+
+    @property
+    def angle(self) -> float:
+        return self._angle
+
+    @angle.setter
+    def angle(self, theta: float):
+        self._angle = theta
+        self._dirty = True
+
+    @property
+    def viewport_size(self) -> Vector:
+        return self._viewport_size
+
+    @viewport_size.setter
+    def viewport_size(self, size: Tuple[int, int]):
+        w, h = size
+        self._viewport_size = Vector(w, h)
+        self._dirty = True
