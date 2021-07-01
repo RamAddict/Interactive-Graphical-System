@@ -28,6 +28,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             print(message)
 
     def __init__(self):
+        self.display_file = dict()
         # imported Qt UI setup
         super(InteractiveGraphicalSystem, self).__init__()
         self.setupUi(self)
@@ -73,6 +74,17 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.editButton.clicked.connect(  # ensures something is selected
             lambda: None if self.displayFile.currentRow() < 0
             else self.componentWidget.setCurrentWidget(self.transformPage))
+
+        # setting up save action
+        for action in self.toolBar.actions():
+            if action.text() == "save":
+                action.triggered.connect(lambda: begin(
+                    self.consoleArea.append("bruh")
+                ))
+            if action.text() == "load":
+                action.triggered.connect(lambda: begin(
+                    self.consoleArea.append("podre")
+                ))
 
         def new_type_select(index: int):
             # clean all fields after 'name', 'color' and 'type'
@@ -157,6 +169,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                               to_float(self.rotateYInput.text()))
             drawable = self.displayFile.currentItem().data(Qt.UserRole)
             drawable.transform(t, pivot)
+            self.display_file[self.displayFile.currentItem().text()] = drawable
             self.viewport.update()
 
         def enableRotateLabels():
@@ -176,6 +189,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     def insert_object(self, obj: Drawable, name,
                       index: int = None, color: str = None) -> int:
         """Put an object in the Display File, returning its position."""
+
+        if name not in self.display_file:
+            self.display_file[name] = obj
+        else:
+            self.consoleArea.append("Object with that name already present, reverting...")
+            return -1
 
         n = self.displayFile.count()
         if index and (index < 0 or index > n):
