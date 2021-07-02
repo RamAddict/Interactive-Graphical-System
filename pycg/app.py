@@ -5,7 +5,7 @@ from sys import argv
 from typing import Optional, Callable
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QColorDialog
-from PySide2.QtGui import QPainter, QIcon, QColor
+from PySide2.QtGui import QPainter, QIcon, QColor, QPixmap
 from PySide2.QtCore import Qt
 
 from blas import Vector
@@ -44,11 +44,15 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         InteractiveGraphicalSystem._console = self.consoleArea
         self.log = lambda message: InteractiveGraphicalSystem.log(message)
 
-        # setting up camera pan controls
+        # setting up camera controls
         self.upBtn.clicked.connect(lambda: self.viewport.pan_camera(0, 1))
         self.downBtn.clicked.connect(lambda: self.viewport.pan_camera(0, -1))
         self.leftBtn.clicked.connect(lambda: self.viewport.pan_camera(-1, 0))
         self.rightBtn.clicked.connect(lambda: self.viewport.pan_camera(1, 0))
+        self.tiltRightBtn.clicked.connect(
+            lambda: self.viewport.tilt_view(radians(-15)))
+        self.tiltLeftBtn.clicked.connect(
+            lambda: self.viewport.tilt_view(radians(15)))
 
         # zoom slider setup
         self.zoomSlider.valueChanged.connect(
@@ -68,9 +72,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             self.componentWidget.setCurrentWidget(self.objectPage),
             self.typeBox.setCurrentIndex(-1),
             self.nameEdit.setText(""),
-            self.colorEdit.setText("#00A1d0")
         ))
-        self.editButton.clicked.connect(  # ensures something is selected
+        self.transformButton.clicked.connect(  # ensures something is selected
             lambda: None if self.displayFile.currentRow() < 0
             else self.componentWidget.setCurrentWidget(self.transformPage))
 
@@ -132,11 +135,17 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                               color=color)
             self.componentWidget.setCurrentWidget(self.emptyPage)
 
+        def pick_color(override: str = None):
+            color = QColor(override) if override else \
+                    QColorDialog.getColor(initial=QColor(self.colorEdit.text()))
+            self.colorEdit.setText(color.name())
+            pixmap = QPixmap(100, 100)
+            pixmap.fill(color)
+            self.colorEdit.setIcon(QIcon(pixmap))
+
         self.typeBox.currentIndexChanged.connect(new_type_select)
-        self.colorEdit.returnPressed.connect(  # TODO: add a button for this
-            lambda: self.colorEdit.setText(
-                QColorDialog.getColor(initial=QColor(self.colorEdit.text()))
-                            .name()))
+        self.colorEdit.clicked.connect(pick_color)
+        pick_color('#01A1d0')
         self.dialogBox.accepted.connect(new_object)
         self.dialogBox.rejected.connect(
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
@@ -291,7 +300,7 @@ class QtViewport(QWidget):
         elif e.key() == Qt.Key_Equal and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()
             self._zoom_slider.setValue(self._zoom_slider.value() + step)
-        # window rotation TODO: add buttons for this
+        # window rotation
         elif e.key() == Qt.Key_Q:
             self.tilt_view(radians(15))
         elif e.key() == Qt.Key_E:
