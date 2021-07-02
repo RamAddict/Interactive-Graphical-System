@@ -35,9 +35,18 @@ def test_write():
 
     other = many_objs.write_obj("dude,STOP");
     assert obj.write_obj("dude,STOP", True) == other
+    # required in the next test
+    many_objs.write_all_display_file("output.obj")
 
-    # write = many_objs.write_all_display_file("./output.obj")
+def test_read_obj():
+    many_objs = ObjDescriptor({"dude,STOP": Wireframe(Point(-575, 0),
+                                Point(-475, 135),
+                                Point(-220, 152),
+                                Point(-130, 300),
+                                Point(0, 0)),
+                        "stop": Line(Point(0, 22), Point(0, 310)),
+                        "pointer": Point(0, 10)})
+    objs_read = ObjDescriptor({}).read_obj_file("output.obj")
+    assert objs_read == many_objs.display_file
 
-    #TODO Finish reading files:
-        #TODO read files, deal with path issue, create window to insert name in gui
-# test_write()
+test_read_obj()

@@ -52,8 +52,6 @@ class ObjDescriptor:
     def write_all_display_file(self, file_name: str):
         if file_name == "" or file_name == "." or file_name == "..":
             file_name = "output.obj"
-        else:
-            file_name += ".obj"
         self.reset_counter()
         vertices = ""
         structure = ""
@@ -66,3 +64,25 @@ class ObjDescriptor:
         file.write(structure)
         
         file.close()
+    
+    def read_obj_file(self, path: str) -> Dict[str, Drawable]:
+        line_to_point_map = [None]
+        file = open(path, "r")
+        for line in file.readlines():
+            line_array = line.strip("\n").split(" ")
+            if line_array[0] == 'v':
+                line_to_point_map.append(Point(float(line_array[1]), float(line_array[2])))
+            elif line_array[0] == 'o':
+                object_name = line_array[1]
+                self.display_file[object_name] = Drawable()
+            # elif line_array[0] == 'usemtl':
+                # object_color = line_array[1]
+                # self.display_file[object_name].color = object_color
+            elif line_array[0] == 'p':
+                self.display_file[object_name] = line_to_point_map[int(line_array[1])]
+            elif line_array[0] == 'l' or line_array[0] == 'f':
+                if len(line_array[1:]) > 2:
+                    self.display_file[object_name] = Wireframe(*[line_to_point_map[int(p)] for p in line_array[1:]])
+                else:
+                    self.display_file[object_name] = Line(*[line_to_point_map[int(p)] for p in line_array[1:]])
+        return self.display_file

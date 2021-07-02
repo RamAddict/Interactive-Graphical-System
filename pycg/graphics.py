@@ -175,6 +175,11 @@ class Line(Drawable):
         return "LINESTRING ({} {}, {} {})".format(self[0].x, self[0].y,
                                                   self[1].x, self[1].y)
 
+    def __eq__(self, o: object) -> bool:
+        for p1,p2 in zip(self, o):
+            if p1 != p2:
+                return False
+        return True
     def __len__(self) -> float:
         return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2)
 
@@ -183,7 +188,10 @@ class Wireframe(Drawable):
     """Polygon-like object defined by a sequence of points."""
 
     def __init__(self, a: Point, b: Point, c: Point, *points: Point):
-        self._points = [a, b, c] + list(points) + [a]  # closed polygon
+        if points[-1] == a:
+            self._points = [a, b, c] + list(points)    # already closed polygon
+        else:
+            self._points = [a, b, c] + list(points) + [a]  # close open polygon
 
     def __len__(self):
         return len(self._points) - 1
@@ -219,6 +227,12 @@ class Wireframe(Drawable):
     def __repr__(self):  # WKT
         return "POLYGON ((%s))" % ", ".join(
             "{} {}".format(p.x, p.y) for p in self)
+    
+    def __eq__(self, o: object) -> bool:
+        for p1,p2 in zip(self, o):
+            if p1 != p2:
+                return False
+        return True
 
 
 class Camera(Painter):

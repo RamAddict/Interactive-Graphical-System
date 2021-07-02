@@ -18,7 +18,7 @@ run: $(QT_OBJECTS)
 	$(PYTHON) $(PY_APP)
 
 test:
-	$(PYTHON) -m pytest -v
+	$(PYTHON) -m pytest -vv
 
 # does not clean the compiled PySide UI, since that is needed for releases
 mostlyclean:
