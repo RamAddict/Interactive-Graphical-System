@@ -5,13 +5,13 @@ from sys import argv
 from typing import Optional, Callable
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QColorDialog
-from PySide2.QtGui import QPainter, QIcon, QColor
+from PySide2.QtGui import QPainter, QIcon, QColor, QPixmap
 from PySide2.QtCore import Qt
 
 from blas import Vector
 from graphics import (Point, Line, Wireframe, Painter, Camera, Drawable,
                       Transformation)
-from utilities import experp, begin, lerp, sign, to_float
+from utilities import experp, begin, sign, to_float
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
 
@@ -44,11 +44,15 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         InteractiveGraphicalSystem._console = self.consoleArea
         self.log = lambda message: InteractiveGraphicalSystem.log(message)
 
-        # setting up camera pan controls
+        # setting up camera controls
         self.upBtn.clicked.connect(lambda: self.viewport.pan_camera(0, 1))
         self.downBtn.clicked.connect(lambda: self.viewport.pan_camera(0, -1))
         self.leftBtn.clicked.connect(lambda: self.viewport.pan_camera(-1, 0))
         self.rightBtn.clicked.connect(lambda: self.viewport.pan_camera(1, 0))
+        self.tiltRightBtn.clicked.connect(
+            lambda: self.viewport.tilt_view(radians(-15)))
+        self.tiltLeftBtn.clicked.connect(
+            lambda: self.viewport.tilt_view(radians(15)))
 
         # zoom slider setup
         self.zoomSlider.valueChanged.connect(
@@ -68,9 +72,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             self.componentWidget.setCurrentWidget(self.objectPage),
             self.typeBox.setCurrentIndex(-1),
             self.nameEdit.setText(""),
-            self.colorEdit.setText("#00A1d0")
         ))
-        self.editButton.clicked.connect(  # ensures something is selected
+        self.transformButton.clicked.connect(  # ensures something is selected
             lambda: None if self.displayFile.currentRow() < 0
             else self.componentWidget.setCurrentWidget(self.transformPage))
 
@@ -132,11 +135,17 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                               color=color)
             self.componentWidget.setCurrentWidget(self.emptyPage)
 
+        def pick_color(override: str = None):
+            color = QColor(override) if override else \
+                    QColorDialog.getColor(initial=QColor(self.colorEdit.text()))
+            self.colorEdit.setText(color.name())
+            pixmap = QPixmap(100, 100)
+            pixmap.fill(color)
+            self.colorEdit.setIcon(QIcon(pixmap))
+
         self.typeBox.currentIndexChanged.connect(new_type_select)
-        self.colorEdit.returnPressed.connect(  # TODO: add a button for this
-            lambda: self.colorEdit.setText(
-                QColorDialog.getColor(initial=QColor(self.colorEdit.text()))
-                            .name()))
+        self.colorEdit.clicked.connect(pick_color)
+        pick_color('#01A1d0')
         self.dialogBox.accepted.connect(new_object)
         self.dialogBox.rejected.connect(
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
@@ -226,18 +235,21 @@ class QtViewport(QWidget):
         self._display_file = display_file  # modified by main window
         self._zoom_slider = zoom_slider
         self._eye_position = eye_position
-        self._size = Vector(950, 535)
-        self.camera = Camera(QtPainter(), Point(-60, 40), self._size)
+        self.camera = Camera(QtPainter(), Vector(self.width(), self.height()))
         self._pan = 10
         self._drag_begin = None
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMouseTracking(True)
 
     def pan_camera(self, dx, dy, _normalized=True):
-        """Move the camera by a certain amount of dynamically-sized steps."""
+        """Move the camera by a certain amount of dynamically-sized steps.
+        Takes the camera tilt into account, such that movement is view-aligned.
+        """
         if _normalized:
             dx = int(dx * self._pan)
             dy = int(dy * self._pan)
+        align = Transformation().rotate(self.camera.angle).matrix()
+        dx, dy, _ = align @ Vector(dx, dy, 1)
         self.camera.x += dx
         self.camera.y += dy
         self.update()
@@ -247,6 +259,11 @@ class QtViewport(QWidget):
         zoom = experp(value, minimum, maximum, 0.1, 10)
         self.camera.zoom = zoom
         self._pan = 10 / zoom  # NOTE: camera step is adjusted by zoom
+        self.update()
+
+    def tilt_view(self, theta: float):
+        """Tilt the camera view by the given amount."""
+        self.camera.angle += theta
         self.update()
 
     def paintEvent(self, event):  # this is where we draw our scene
@@ -261,10 +278,9 @@ class QtViewport(QWidget):
         return super().paintEvent(event)
 
     def resizeEvent(self, event):
-        self._size.x = self.width()
-        self._size.y = self.height()
+        self.camera.viewport_size = (self.width(), self.height())
         InteractiveGraphicalSystem.log(
-            "Viewport resized to {}x{}".format(*self._size))
+            "Viewport resized to {}x{}".format(self.width(), self.height()))
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
@@ -284,6 +300,11 @@ class QtViewport(QWidget):
         elif e.key() == Qt.Key_Equal and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()
             self._zoom_slider.setValue(self._zoom_slider.value() + step)
+        # window rotation
+        elif e.key() == Qt.Key_Q:
+            self.tilt_view(radians(15))
+        elif e.key() == Qt.Key_E:
+            self.tilt_view(radians(-15))
         # forward (most) events to parent class
         elif e.key() != Qt.Key_Tab:
             return super().keyPressEvent(e)
@@ -315,9 +336,9 @@ class QtViewport(QWidget):
             # compute motion vector and update drag initial position
             delta = (event.x(), event.y()) - self._drag_begin
             self._drag_begin += delta
-            # adjust delta to window size
-            dx = int(lerp(delta.x, 0, self.width(), 0, self.camera.width))
-            dy = int(lerp(delta.y, 0, self.height(), 0, self.camera.height))
+            # adjust delta based on window zoom
+            dx = delta.x / self.camera.zoom
+            dy = delta.y / self.camera.zoom
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
             InteractiveGraphicalSystem.log(
