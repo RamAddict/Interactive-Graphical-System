@@ -4,13 +4,14 @@ from math import inf, radians
 from sys import argv
 from typing import Optional, Callable
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QColorDialog
+from PySide2.QtWidgets import QApplication, QInputDialog, QLineEdit, QMainWindow, QMessageBox, QWidget, QColorDialog
 from PySide2.QtGui import QPainter, QIcon, QColor
 from PySide2.QtCore import Qt
 
 from blas import Vector
 from graphics import (Point, Line, Wireframe, Painter, Camera, Drawable,
                       Transformation)
+from obj import ObjDescriptor
 from utilities import experp, begin, lerp, sign, to_float
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
@@ -26,6 +27,24 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             console.append(str(message))
         else:
             print(message)
+
+    def handle_save_action(self):
+        def func():
+            if self.displayFile.currentRow() == -1:
+                QMessageBox.question(self, 
+                        'Message',
+                        "Please select object from display file first",
+                        QMessageBox.Ok)
+            else:
+                ObjDescriptor(
+                    {self.displayFile.currentItem().text(): 
+                        self.displayFile.currentItem().data(Qt.UserRole)}
+                        ).write_all_display_file(QInputDialog.getText(self,
+                                        "Save selected object",
+                                        "Insert fileName",
+                                        QLineEdit.Normal)[0],
+            )
+        return func
 
     def __init__(self):
         self.display_file = dict()
@@ -78,12 +97,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         # setting up save action
         for action in self.toolBar.actions():
             if action.text() == "save":
-                action.triggered.connect(lambda: begin(
-                    self.consoleArea.append("bruh")
-                ))
+                action.triggered.connect(self.handle_save_action())
             if action.text() == "load":
                 action.triggered.connect(lambda: begin(
-                    self.consoleArea.append("podre")
+                    self.consoleArea.append("Not yet implemented")
                 ))
 
         def new_type_select(index: int):
@@ -193,7 +210,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         if name not in self.display_file:
             self.display_file[name] = obj
         else:
-            self.consoleArea.append("Object with that name already present, reverting...")
+            self.consoleArea.append(
+                "Object with that name already present, reverting...")
             return -1
 
         n = self.displayFile.count()
@@ -228,6 +246,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.displayFile.insertItem(pos, self.displayFile.takeItem(position))
         self.displayFile.setCurrentRow(pos)
         self.viewport.update()
+
+    def keyPressEvent(self, e) -> None:
+        if e.key() == Qt.Key_S and e.modifiers() & Qt.ControlModifier:
+            self.handle_save_action()()
+        return super().keyPressEvent(e)
 
 
 class QtViewport(QWidget):
@@ -292,7 +315,7 @@ class QtViewport(QWidget):
             self.pan_camera(0, 1)
         elif e.key() == Qt.Key_A:
             self.pan_camera(-1, 0)
-        elif e.key() == Qt.Key_S:
+        elif e.key() == Qt.Key_S and not e.modifiers() & Qt.ControlModifier:
             self.pan_camera(0, -1)
         elif e.key() == Qt.Key_D:
             self.pan_camera(1, 0)
@@ -306,6 +329,7 @@ class QtViewport(QWidget):
         # forward (most) events to parent class
         elif e.key() != Qt.Key_Tab:
             return super().keyPressEvent(e)
+        return super().keyPressEvent(e)
 
     def focusNextPrevChild(self, next):  # disable focus change with Tab
         return False
@@ -414,10 +438,6 @@ if __name__ == '__main__':
                                 Point(0, 0)),
                       "wmt")
     gui.insert_object(Point(-130, 297), "ppmt")
-    gui.insert_object(Line(Point(-237, 72), Point(-118, -253)), "lar")
-    gui.insert_object(Line(Point(-237, 72), Point(-356, -253)), "lal")
-    gui.insert_object(Line(Point(-336, -103), Point(-138, -103)), "lab")
-
     gui.displayFile.setCurrentRow(-1)
 
     exit(app.exec_())
