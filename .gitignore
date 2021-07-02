@@ -17,3 +17,6 @@ venv/
 
 # build artifacts
 *.zip
+
+# obj
+*.obj

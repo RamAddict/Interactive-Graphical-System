@@ -4,7 +4,7 @@ from math import inf, radians
 from sys import argv
 from typing import Optional, Callable
 
-from PySide2.QtWidgets import QApplication, QInputDialog, QLineEdit, QMainWindow, QMessageBox, QWidget, QColorDialog
+from PySide2.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox, QWidget, QColorDialog
 from PySide2.QtGui import QPainter, QIcon, QColor
 from PySide2.QtCore import Qt
 
@@ -28,23 +28,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         else:
             print(message)
 
-    def handle_save_action(self):
-        def func():
-            if self.displayFile.currentRow() == -1:
-                QMessageBox.question(self, 
-                        'Message',
-                        "Please select object from display file first",
-                        QMessageBox.Ok)
-            else:
-                ObjDescriptor(
-                    {self.displayFile.currentItem().text(): 
-                        self.displayFile.currentItem().data(Qt.UserRole)}
-                        ).write_all_display_file(QInputDialog.getText(self,
-                                        "Save selected object",
-                                        "Insert fileName",
-                                        QLineEdit.Normal)[0],
-            )
-        return func
 
     def __init__(self):
         self.display_file = dict()
@@ -94,14 +77,30 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: None if self.displayFile.currentRow() < 0
             else self.componentWidget.setCurrentWidget(self.transformPage))
 
+        def handle_save_action():
+            if self.displayFile.currentRow() == -1:
+                QMessageBox.question(self, 
+                    'Message',
+                    "Please select object from display file first",
+                        QMessageBox.Ok)
+            else:
+                ObjDescriptor(
+                    {self.displayFile.currentItem().text(): 
+                        self.displayFile.currentItem().data(Qt.UserRole)}
+                        ).write_all_display_file(QFileDialog.getSaveFileName(self, "Select .obj file to save")[0],
+            )
+
+        def handle_load_action():
+            file = QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
+            if file != "":
+                new_objects = ObjDescriptor({}).read_obj_file(file)
+                for (name, obj) in new_objects.items():
+                    self.insert_object(obj, name, self.displayFile.currentRow() + 1)
+
         # setting up save action
-        for action in self.toolBar.actions():
-            if action.text() == "save":
-                action.triggered.connect(self.handle_save_action())
-            if action.text() == "load":
-                action.triggered.connect(lambda: begin(
-                    self.consoleArea.append("Not yet implemented")
-                ))
+        self.action_save.triggered.connect(handle_save_action)
+        self.action_load.triggered.connect(handle_load_action)
+        self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
 
         def new_type_select(index: int):
             # clean all fields after 'name', 'color' and 'type'
