@@ -1,4 +1,3 @@
-
 from typing import Dict, Tuple
 from graphics import Drawable, Point, Line, Wireframe
 
@@ -7,11 +6,10 @@ class ObjDescriptor:
     """Class for Writing .obj files"""
     def __init__(self, display_file: Dict[str, Drawable]):
         self.display_file = display_file
-        self.counter = 0; 
-        # file.write("# List of vertices:")
+        self.counter = 0
 
     def reset_counter(self):
-        self.counter = 0;
+        self.counter = 0
 
     def write_obj(self, object_name: str, reset_counter=False) -> Tuple:
         """
@@ -20,7 +18,7 @@ class ObjDescriptor:
         The return is ready to be written to a file
         """
         if reset_counter:
-            self.reset_counter();
+            self.reset_counter()
         drawable = self.display_file[object_name]
         vertices = ""
         old_counter = self.counter +1
@@ -62,9 +60,9 @@ class ObjDescriptor:
         file = open(file_name, 'w')
         file.write(vertices)
         file.write(structure)
-        
+
         file.close()
-    
+
     def read_obj_file(self, path: str) -> Dict[str, Drawable]:
         line_to_point_map = [None]
         file = open(path, "r")

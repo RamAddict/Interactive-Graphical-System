@@ -1,11 +1,3 @@
-# import os, sys
-
-# currentdir = os.path.dirname(os.path.realpath(__file__))
-# parentdir = os.path.dirname(currentdir)
-# sys.path.append(parentdir)
-
-
-
 from graphics import Line, Point, Wireframe
 from obj import ObjDescriptor
 
@@ -48,5 +40,3 @@ def test_read_obj():
                         "pointer": Point(0, 10)})
     objs_read = ObjDescriptor({}).read_obj_file("output.obj")
     assert objs_read == many_objs.display_file
-
-test_read_obj()
