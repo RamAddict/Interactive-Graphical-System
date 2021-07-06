@@ -2,15 +2,16 @@
 
 from math import inf, radians
 from sys import argv
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict
 
-from PySide2.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox, QWidget, QColorDialog
+from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget,
+                               QColorDialog, QFileDialog, QMessageBox)
 from PySide2.QtGui import QPainter, QIcon, QColor
 from PySide2.QtCore import Qt
 
 from blas import Vector
-from graphics import (Point, Line, Wireframe, Painter, Camera, Drawable,
-                      Transformation)
+from graphics import (Point, Line, Wireframe, Painter, Camera, Transformation,
+                      Drawable)
 from obj import ObjDescriptor
 from utilities import experp, begin, lerp, sign, to_float
 from ui.main import Ui_MainWindow
@@ -28,12 +29,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         else:
             print(message)
 
-
     def __init__(self):
-        self.display_file = dict()
         # imported Qt UI setup
         super(InteractiveGraphicalSystem, self).__init__()
         self.setupUi(self)
+
+        self.display_file: Dict[str, Drawable] = dict()
 
         # viewport setup
         self.viewport = QtViewport(self.canvasFrame,
@@ -94,8 +95,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             file = QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
             if file != "":
                 new_objects = ObjDescriptor({}).read_obj_file(file)
-                for (name, obj) in new_objects.items():
-                    self.insert_object(obj, name, self.displayFile.currentRow() + 1)
+                for name, obj in new_objects.items():
+                    self.insert_object(obj, name)
 
         # setting up save action
         self.action_save.triggered.connect(handle_save_action)
@@ -183,9 +184,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             elif self.pivotSelect.currentText() == 'Custom':
                 pivot = Point(to_float(self.rotateXInput.text()),
                               to_float(self.rotateYInput.text()))
-            drawable = self.displayFile.currentItem().data(Qt.UserRole)
+            drawable = self.display_file[self.displayFile.currentItem().text()]
             drawable.transform(t, pivot)
-            self.display_file[self.displayFile.currentItem().text()] = drawable
             self.viewport.update()
 
         def enableRotateLabels():
@@ -228,10 +228,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.viewport.update()
         return index
 
-    def remove_object(self, index: int) -> Drawable:
+    def remove_object(self, index: int) -> Optional[Drawable]:
         """Take an object out from a certain index in the Display File."""
         item = self.displayFile.takeItem(index)
-        if item:
+        if item and self.display_file.pop(item.text(), None):
             self.log("Removed '%s' from Display File." % item.text())
             self.viewport.update()
             item = item.data(Qt.UserRole)
@@ -325,9 +325,7 @@ class QtViewport(QWidget):
         elif e.key() == Qt.Key_Equal and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()
             self._zoom_slider.setValue(self._zoom_slider.value() + step)
-        # forward (most) events to parent class
-        elif e.key() != Qt.Key_Tab:
-            return super().keyPressEvent(e)
+        # also forward events to parent
         return super().keyPressEvent(e)
 
     def focusNextPrevChild(self, next):  # disable focus change with Tab

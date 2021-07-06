@@ -1,7 +1,7 @@
 """Computer Graphics API."""
 
 from math import sqrt, cos, sin
-from typing import Tuple, Sequence
+from typing import Iterable, Tuple, Sequence
 
 from blas import Vector, Matrix
 from utilities import pairwise
@@ -175,11 +175,12 @@ class Line(Drawable):
         return "LINESTRING ({} {}, {} {})".format(self[0].x, self[0].y,
                                                   self[1].x, self[1].y)
 
-    def __eq__(self, o: object) -> bool:
-        for p1,p2 in zip(self, o):
+    def __eq__(self, other: Iterable) -> bool:
+        for p1, p2 in zip(self, other):
             if p1 != p2:
                 return False
         return True
+
     def __len__(self) -> float:
         return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2)
 
@@ -227,9 +228,9 @@ class Wireframe(Drawable):
     def __repr__(self):  # WKT
         return "POLYGON ((%s))" % ", ".join(
             "{} {}".format(p.x, p.y) for p in self)
-    
-    def __eq__(self, o: object) -> bool:
-        for p1,p2 in zip(self, o):
+
+    def __eq__(self, other: Iterable) -> bool:
+        for p1, p2 in zip(self, other):
             if p1 != p2:
                 return False
         return True

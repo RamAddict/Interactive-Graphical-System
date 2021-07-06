@@ -61,4 +61,3 @@ def to_float(value) -> Optional[float]:
         return float(value)
     except BaseException:
         return None
-
