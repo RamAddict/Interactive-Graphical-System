@@ -224,7 +224,7 @@ class Wireframe(Drawable):
 class Camera(Painter):
     """Window used as reference to render objects."""
 
-    def __init__(self, painter: Painter, viewport_size: Vector):
+    def __init__(self, painter: Painter, viewport_size: Vector, offset: Vector):
         self.painter = painter
         self._viewport_size = viewport_size
         self._position = Point(0, 0)
@@ -232,16 +232,111 @@ class Camera(Painter):
         self._angle = 0
         self._dirty = True
         self._world_to_screen = None
+        self._offset = offset
+
+    def cohenSutherland(self, xa: float, ya: float, xb: float, yb: float):
+        """
+           1001 |  1000  | 1010  
+              __|________|__
+                |        |
+          0001  |  0000  | 0010
+              __|________|__
+          0101  |  0100  | 0110
+
+        """
+        left = 1
+        right = 2
+        bottom = 4
+        top = 8
+        inside = 0
+        
+        rcStart = 0
+        def calculate_rc(xa: float, ya: float):
+            code = 0
+            if xa < self.clipping_min_x:
+                code |= left
+            if ya < self.clipping_min_y:
+                code |= bottom
+            if xa > self.clipping_max_x:
+                code |= right
+            if ya > self.clipping_max_y:
+                code |= top
+            return code
+        
+        rcStart = calculate_rc(xa, ya)
+        rcEnd   = calculate_rc(xb, yb)
+        x1,y1,x2,y2 = xa,ya,xb,yb
+        accept = False
+        outside_rc = 0
+        while True:
+            if rcEnd == rcStart == inside:
+                # completely contained in window, return it
+                # return [True, xa, ya, xb, yb]
+                accept = True
+                break
+            elif (rcStart & rcEnd) != inside:
+                # completely outside window, return false
+                break
+            else:
+
+                # could be visible
+                # get at least one that is outside rectangle
+                x = xa
+                y = ya
+                if rcEnd != 0:
+                    # nOfOutsidePoints+=1
+                    outside_rc = rcEnd
+                if rcStart != 0:
+                    outside_rc = rcStart
+                    # nOfOutsidePoints+=1
+                
+                # calculate m
+                m = (yb - ya)/(xb - xa)
+
+                if outside_rc & left:
+                    x = self.clipping_min_x
+                    y = m*(self.clipping_min_x - xa) + ya
+
+                elif outside_rc & right:
+                    x = self.clipping_max_x
+                    y = m*(self.clipping_max_x - xa) + ya
+                
+                elif outside_rc & bottom:
+                    y = self.clipping_min_y
+                    x = xa + (1/m) * (self.clipping_min_y - ya)
+                
+                elif outside_rc & top:
+                    y = self.clipping_max_y
+                    x = xa + (1/m) * (self.clipping_max_y - ya)
+                
+                if outside_rc == rcStart:
+                    x1 = x
+                    y1 = y
+                    rcStart = calculate_rc(x1, y1);
+                
+                else:
+                    x2 = x
+                    y2 = y
+                    rcEnd = calculate_rc(x2, y2);
+
+        if accept:
+            return [x1, y1, x2, y2]
+        else:
+            return None
+
 
     def draw_pixel(self, x: int, y: int):
         x, y, _ = self._viewport_matrix() @ Vector(x, y, 1)
-        self.painter.draw_pixel(x, y)
+        if self.clipping_min_x <= x <= self.clipping_max_x and self.clipping_min_y <= y <= self.clipping_max_y:
+            self.painter.draw_pixel(x, y)
 
     def draw_line(self, xa: int, ya: int, xb: int, yb: int):
         to_viewport = self._viewport_matrix()
         xa, ya, _ = to_viewport @ Vector(xa, ya, 1)
         xb, yb, _ = to_viewport @ Vector(xb, yb, 1)
-        self.painter.draw_line(xa, ya, xb, yb)
+        values = self.cohenSutherland(xa, ya, xb, yb)
+        if values:
+            self.painter.draw_line(*values)
 
     def _viewport_matrix(self) -> Matrix:
         # only recompute matrixes if camera changed
@@ -311,3 +406,20 @@ class Camera(Painter):
         w, h = size
         self._viewport_size = Vector(w, h)
         self._dirty = True
+    
+    @property
+    def clipping_min_x(self) -> float:
+        return self._offset.x
+    
+    @property
+    def clipping_max_x(self) -> float:
+        return self.viewport_size.x - self._offset.x
+    
+    @property
+    def clipping_min_y(self) -> float:
+        return self._offset.y
+
+    @property
+    def clipping_max_y(self) -> float:
+        return self.viewport_size.y - self._offset.y
+    
