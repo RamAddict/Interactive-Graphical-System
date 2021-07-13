@@ -20,7 +20,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     _console = None
 
     @staticmethod
-    def log(message):
+    def log(message: str):
         console = InteractiveGraphicalSystem._console
         if console:
             console.append(str(message))
@@ -222,6 +222,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
 class QtViewport(QWidget):
     def __init__(self, parent_widget, display_file, zoom_slider, eye_position):
+
         class QtPainter(QPainter, Painter):
             """Qt-based implementation of an abstract Painter."""
 
@@ -235,7 +236,7 @@ class QtViewport(QWidget):
         self._display_file = display_file  # modified by main window
         self._zoom_slider = zoom_slider
         self._eye_position = eye_position
-        self.camera = Camera(QtPainter(), Vector(self.width(), self.height()))
+        self.camera = Camera(QtPainter(), Vector(self.width(), self.height()), Vector(40, 40, 1))
         self._pan = 10
         self._drag_begin = None
         self.setFocusPolicy(Qt.StrongFocus)
@@ -270,6 +271,9 @@ class QtViewport(QWidget):
         self.camera.painter.begin(self)
         self.camera.painter.fillRect(  # XXX: camera view background
             0, 0, self.width(), self.height(), Qt.white)
+        self.camera.painter.setPen(Qt.red)
+        self.camera.painter.drawRect(  # XXX: camera view background
+            40, 40, self.width()-80, self.height()-80)
         for i in range(self._display_file.count()):
             model = self._display_file.item(i).data(Qt.UserRole)
             self.camera.painter.setPen(QColor(model.color))
@@ -416,9 +420,6 @@ if __name__ == '__main__':
                                 Point(0, 0)),
                       "wmt")
     gui.insert_object(Point(-130, 297), "ppmt")
-    gui.insert_object(Line(Point(-237, 72), Point(-118, -253)), "lar")
-    gui.insert_object(Line(Point(-237, 72), Point(-356, -253)), "lal")
-    gui.insert_object(Line(Point(-336, -103), Point(-138, -103)), "lab")
 
     gui.displayFile.setCurrentRow(-1)
 
