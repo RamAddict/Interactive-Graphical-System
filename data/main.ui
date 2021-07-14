@@ -963,9 +963,11 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionLoad"/>
+   <addaction name="separator"/>
    <addaction name="actionSave"/>
    <addaction name="separator"/>
-   <addaction name="actionLoad"/>
+   <addaction name="actionNew"/>
   </widget>
   <action name="actionSave">
    <property name="text">
@@ -975,6 +977,11 @@
   <action name="actionLoad">
    <property name="text">
     <string>Load</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="text">
+    <string>New</string>
    </property>
   </action>
  </widget>
