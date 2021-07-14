@@ -100,13 +100,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 if path.strip() != '':
                     with wavefront_obj.open(path, 'w+') as file:
                         file.write(model, name)
-
-        def handle_load_action():
-            path = QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
-            if path.strip() != '':
-                with wavefront_obj.open(path, 'r') as file:
-                    for model, name in file:
-                        self.insert_object(model, name)
+                        self.log(f"Saved object '{name}' to '{path}'")
 
         def handle_new_action():
             new_obj = None
@@ -133,7 +127,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
         self.actionSave.triggered.connect(handle_save_action)
         self.actionSave.setShortcut(QKeySequence.Save)
-        self.actionLoad.triggered.connect(handle_load_action)
+        self.actionLoad.triggered.connect(lambda: self.load_obj())
         self.actionLoad.setShortcut(QKeySequence.Open)
         self.actionNew.triggered.connect(handle_new_action)
         self.actionNew.setShortcut(QKeySequence.New)
@@ -264,7 +258,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         obj.color = color or QPalette().color(QPalette.Foreground).name()
         self.displayFile.insertItem(index, name)
-        self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
+        self.log(f"Added {type(obj).__name__} '{name}' to Display File.")
         self.displayFile.setCurrentRow(index)
         self.componentWidget.setCurrentWidget(self.emptyPage)
         self.viewport.update()
@@ -278,7 +272,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         else:
             name = item.text()
             model = self.display_file.pop(name)
-            self.log("Removed '%s' from Display File." % name)
+            self.log(f"Removed '{name}' from Display File.")
             self.viewport.update()
             return model
 
@@ -290,6 +284,14 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.displayFile.insertItem(pos, self.displayFile.takeItem(position))
         self.displayFile.setCurrentRow(pos)
         self.viewport.update()
+
+    def load_obj(self, path: str = None):
+        """Loads drawable objects from target OBJ file in disk."""
+        path = path or QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
+        if path.strip() != '':
+            with wavefront_obj.open(path, 'r') as file:
+                for model, name in file:
+                    self.insert_object(model, name)
 
 
 class QtViewport(QWidget):
@@ -353,7 +355,7 @@ class QtViewport(QWidget):
     def resizeEvent(self, event):
         self.camera.viewport_size = (self.width(), self.height())
         InteractiveGraphicalSystem.log(
-            "Viewport resized to {}x{}".format(self.width(), self.height()))
+            f"Viewport resized to {self.width()}x{self.height()}")
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
@@ -415,8 +417,7 @@ class QtViewport(QWidget):
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
             InteractiveGraphicalSystem.log(
-                "Window dragged to ({}, {})".format(self.camera.x,
-                                                    self.camera.y))
+                "Window dragged to (%g, %g)" % (self.camera.x, self.camera.y))
         else:
             self._eye_position.setText("[{}, {}]".format(event.x(), event.y()))
             return super().mouseMoveEvent(event)
@@ -466,7 +467,13 @@ class PointFields(QWidget, Ui_PointFields):
 
 
 if __name__ == '__main__':
-    app = QApplication(argv)
-    gui = InteractiveGraphicalSystem()
-    gui.displayFile.setCurrentRow(-1)
-    exit(app.exec_())
+    if '-h' in argv:
+        print(f"Usage: {argv[0]} [<objfiles> ...] | -h")
+        exit(0)
+    else:
+        app = QApplication(argv)
+        gui = InteractiveGraphicalSystem()
+        for obj in argv[1:]:
+            gui.load_obj(obj)
+        gui.displayFile.setCurrentRow(-1)
+        exit(app.exec_())
