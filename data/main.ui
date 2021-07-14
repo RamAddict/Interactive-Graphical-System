@@ -67,9 +67,9 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="editButton">
+           <widget class="QPushButton" name="transformButton">
             <property name="text">
-             <string>Edit</string>
+             <string>Transform</string>
             </property>
            </widget>
           </item>
@@ -133,7 +133,10 @@
          <item row="0" column="1">
           <widget class="QPushButton" name="upBtn">
            <property name="text">
-            <string notr="true">^</string>
+            <string>^</string>
+           </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -142,6 +145,9 @@
            <property name="text">
             <string notr="true">&lt;</string>
            </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item row="1" column="2">
@@ -149,12 +155,18 @@
            <property name="text">
             <string notr="true">&gt;</string>
            </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item row="2" column="1">
           <widget class="QPushButton" name="downBtn">
            <property name="text">
-            <string notr="true">v</string>
+            <string>v</string>
+           </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -180,6 +192,34 @@
            </property>
            <property name="tickInterval">
             <number>5</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="tiltRightBtn">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="object-rotate-right">
+             <normaloff>.</normaloff>.</iconset>
+           </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QPushButton" name="tiltLeftBtn">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset theme="object-rotate-left">
+             <normaloff>.</normaloff>.</iconset>
+           </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -275,7 +315,7 @@
     <item row="2" column="1" rowspan="2">
      <widget class="QStackedWidget" name="componentWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="emptyPage">
        <widget class="QLabel" name="instructionsLabel">
@@ -293,7 +333,7 @@
          </font>
         </property>
         <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:normal;&quot;&gt;Use the scene buttons to manipulate the Display File and its drawable objects.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:normal;&quot;&gt;The Window may be controlled using either the provided buttons, or mouse and keyboard bindings (WASD, Ctrl + -/=/Wheel, Middle Click &amp;amp; Drag).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use the scene buttons to manipulate the Display File and its drawable objects.&lt;/p&gt;&lt;p&gt;The Window may be controlled using either the provided buttons, or mouse and keyboard bindings (WASD, QE, Ctrl + -/=/Wheel, Middle Click &amp;amp; Drag).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -375,16 +415,6 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="1">
-               <widget class="QLineEdit" name="colorEdit">
-                <property name="inputMask">
-                 <string>\#HHHHHH</string>
-                </property>
-                <property name="text">
-                 <string>#000000</string>
-                </property>
-               </widget>
-              </item>
               <item row="2" column="1">
                <widget class="QComboBox" name="typeBox">
                 <property name="currentIndex">
@@ -428,6 +458,29 @@
                 </property>
                 <property name="text">
                  <string>Type:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QToolButton" name="colorEdit">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+                <property name="icon">
+                 <iconset theme="applications-accessories">
+                  <normaloff>.</normaloff>.</iconset>
+                </property>
+                <property name="popupMode">
+                 <enum>QToolButton::InstantPopup</enum>
+                </property>
+                <property name="toolButtonStyle">
+                 <enum>Qt::ToolButtonTextBesideIcon</enum>
                 </property>
                </widget>
               </item>
