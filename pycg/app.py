@@ -6,14 +6,14 @@ from typing import Optional, Callable, Dict
 
 from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget,
                                QColorDialog, QFileDialog, QMessageBox)
-from PySide2.QtGui import QPainter, QIcon, QColor
+from PySide2.QtGui import QPainter, QIcon, QColor, QKeySequence
 from PySide2.QtCore import Qt
 
 from blas import Vector
 from graphics import (Point, Line, Wireframe, Painter, Camera, Transformation,
                       Drawable)
-from obj import ObjDescriptor
 from utilities import experp, begin, lerp, sign, to_float
+import obj as wavefront_obj
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
 
@@ -38,7 +38,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         # viewport setup
         self.viewport = QtViewport(self.canvasFrame,
-                                   self.displayFile,
+                                   self.display_file,
                                    self.zoomSlider,
                                    self.eyePositionLabel)
         self.canvasFrame.layout().addWidget(self.viewport)
@@ -79,28 +79,36 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             else self.componentWidget.setCurrentWidget(self.transformPage))
 
         def handle_save_action():
-            if self.displayFile.currentRow() == -1:
-                QMessageBox.question(self, 
-                    'Message',
-                    "Please select object from display file first",
-                        QMessageBox.Ok)
+            if self.displayFile.currentRow() < 0:
+                QMessageBox.question(
+                    self,
+                    "Message",
+                    "Please select an object before saving",
+                    QMessageBox.Ok
+                )
             else:
-                ObjDescriptor(
-                    {self.displayFile.currentItem().text(): 
-                        self.displayFile.currentItem().data(Qt.UserRole)}
-                        ).write_all_display_file(QFileDialog.getSaveFileName(self, "Select .obj file to save")[0],
-            )
+                name = self.displayFile.currentItem().text()
+                model = self.display_file[name]
+                path = QFileDialog.getSaveFileName(self, "Select .obj file to save")[0]
+                if path.strip() != '':
+                    with wavefront_obj.open(path, 'w+') as file:
+                        file.write(model, name)
 
         def handle_load_action():
-            file = QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
-            if file != "":
-                new_objects = ObjDescriptor({}).read_obj_file(file)
-                for name, obj in new_objects.items():
-                    self.insert_object(obj, name)
+            path = QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
+            if path.strip() != '':
+                with wavefront_obj.open(path, 'r') as file:
+                    for model, attributes in file:
+                        self.insert_object(
+                            model,
+                            attributes['name'],
+                            color=attributes['usemtl'],  # TODO: better usemtl
+                        )
 
         # setting up save action
-        self.action_save.triggered.connect(handle_save_action)
-        self.action_load.triggered.connect(handle_load_action)
+        self.actionSave.triggered.connect(handle_save_action)
+        self.actionSave.setShortcut(QKeySequence.Save)
+        self.actionLoad.triggered.connect(handle_load_action)
         self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
 
         def new_type_select(index: int):
@@ -133,7 +141,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             return extra
 
         def new_object():
-            # TODO: perform parameter validation (name conflict, valid fields)
             if self.typeBox.currentIndex() < 0:
                 return
 
@@ -156,9 +163,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     points.append(p)
                 obj = Wireframe(*points)
 
-            gui.insert_object(obj, name,
-                              index=self.displayFile.currentRow() + 1,
-                              color=color)
+            self.insert_object(obj, name,
+                               index=self.displayFile.currentRow() + 1,
+                               color=color)
             self.componentWidget.setCurrentWidget(self.emptyPage)
 
         self.typeBox.currentIndexChanged.connect(new_type_select)
@@ -206,22 +213,23 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                       index: int = None, color: str = None) -> int:
         """Put an object in the Display File, returning its position."""
 
-        if name not in self.display_file:
-            self.display_file[name] = obj
-        else:
-            self.consoleArea.append(
-                "Object with that name already present, reverting...")
-            return -1
-
         n = self.displayFile.count()
         if index and (index < 0 or index > n):
             raise IndexError("Invalid Display File index: %d" % index)
         elif index is None:
             index = n
 
+        # when names collide, add a counter (eg name, name1, name2, ...)
+        while name in self.display_file:
+            self.consoleArea.append(f"Renaming '{name}' on collision.")
+            prefix = name.rstrip('0123456789')
+            suffix = name[len(prefix):] if len(prefix) < len(name) else '0'
+            count = int(suffix) + 1
+            name = prefix + str(count)
+        self.display_file[name] = obj
+
         obj.color = color or '#000000'
         self.displayFile.insertItem(index, name)
-        self.displayFile.item(index).setData(Qt.UserRole, obj)
         self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
         self.displayFile.setCurrentRow(index)
         self.componentWidget.setCurrentWidget(self.emptyPage)
@@ -231,11 +239,14 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     def remove_object(self, index: int) -> Optional[Drawable]:
         """Take an object out from a certain index in the Display File."""
         item = self.displayFile.takeItem(index)
-        if item and self.display_file.pop(item.text(), None):
-            self.log("Removed '%s' from Display File." % item.text())
+        if not item:
+            return None
+        else:
+            name = item.text()
+            model = self.display_file.pop(name)
+            self.log("Removed '%s' from Display File." % name)
             self.viewport.update()
-            item = item.data(Qt.UserRole)
-        return item
+            return model
 
     def move_object(self, position: int, offset: int):
         """Offset an object's position in the Display File."""
@@ -245,11 +256,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.displayFile.insertItem(pos, self.displayFile.takeItem(position))
         self.displayFile.setCurrentRow(pos)
         self.viewport.update()
-
-    def keyPressEvent(self, e) -> None:
-        if e.key() == Qt.Key_S and e.modifiers() & Qt.ControlModifier:
-            self.handle_save_action()()
-        return super().keyPressEvent(e)
 
 
 class QtViewport(QWidget):
@@ -290,14 +296,13 @@ class QtViewport(QWidget):
         self._pan = 10 / zoom  # NOTE: camera step is adjusted by zoom
         self.update()
 
-    def paintEvent(self, event):  # this is where we draw our scene
+    def paintEvent(self, event):
         self.camera.painter.begin(self)
-        self.camera.painter.fillRect(  # XXX: camera view background
+        self.camera.painter.fillRect(  # sets background color
             0, 0, self.width(), self.height(), Qt.white)
-        for i in range(self._display_file.count()):
-            model = self._display_file.item(i).data(Qt.UserRole)
-            self.camera.painter.setPen(QColor(model.color))
-            model.draw(self.camera)
+        for drawable in self._display_file.values():  # draw the world
+            self.camera.painter.setPen(QColor(drawable.color))
+            drawable.draw(self.camera)
         self.camera.painter.end()
         return super().paintEvent(event)
 
