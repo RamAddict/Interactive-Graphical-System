@@ -2,16 +2,18 @@
 
 from math import inf, radians
 from sys import argv
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QColorDialog
-from PySide2.QtGui import QPainter, QIcon, QColor, QPixmap
+from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget,
+                               QColorDialog, QFileDialog, QMessageBox)
+from PySide2.QtGui import QPainter, QIcon, QColor, QPixmap, QKeySequence
 from PySide2.QtCore import Qt
 
 from blas import Vector
-from graphics import (Point, Line, Wireframe, Painter, Camera, Drawable,
-                      Transformation)
-from utilities import experp, begin, sign, to_float
+from graphics import (Point, Line, Wireframe, Painter, Camera, Transformation,
+                      Drawable)
+from utilities import experp, begin, lerp, sign, to_float
+import obj as wavefront_obj
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
 
@@ -32,9 +34,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         super(InteractiveGraphicalSystem, self).__init__()
         self.setupUi(self)
 
+        self.display_file: Dict[str, Drawable] = dict()
+
         # viewport setup
         self.viewport = QtViewport(self.canvasFrame,
-                                   self.displayFile,
+                                   self.display_file,
                                    self.zoomSlider,
                                    self.eyePositionLabel)
         self.canvasFrame.layout().addWidget(self.viewport)
@@ -77,6 +81,39 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: None if self.displayFile.currentRow() < 0
             else self.componentWidget.setCurrentWidget(self.transformPage))
 
+        def handle_save_action():
+            if self.displayFile.currentRow() < 0:
+                QMessageBox.question(
+                    self,
+                    "Message",
+                    "Please select an object before saving",
+                    QMessageBox.Ok
+                )
+            else:
+                name = self.displayFile.currentItem().text()
+                model = self.display_file[name]
+                path = QFileDialog.getSaveFileName(self, "Select .obj file to save")[0]
+                if path.strip() != '':
+                    with wavefront_obj.open(path, 'w+') as file:
+                        file.write(model, name)
+
+        def handle_load_action():
+            path = QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
+            if path.strip() != '':
+                with wavefront_obj.open(path, 'r') as file:
+                    for model, attributes in file:
+                        self.insert_object(
+                            model,
+                            attributes['name'],
+                            color=attributes['usemtl'],  # TODO: better usemtl
+                        )
+
+        # setting up save action
+        self.actionSave.triggered.connect(handle_save_action)
+        self.actionSave.setShortcut(QKeySequence.Save)
+        self.actionLoad.triggered.connect(handle_load_action)
+        self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
+
         def new_type_select(index: int):
             # clean all fields after 'name', 'color' and 'type'
             while self.formLayout.rowCount() > 3:
@@ -107,7 +144,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             return extra
 
         def new_object():
-            # TODO: perform parameter validation (name conflict, valid fields)
             if self.typeBox.currentIndex() < 0:
                 return
 
@@ -130,9 +166,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     points.append(p)
                 obj = Wireframe(*points)
 
-            gui.insert_object(obj, name,
-                              index=self.displayFile.currentRow() + 1,
-                              color=color)
+            self.insert_object(obj, name,
+                               index=self.displayFile.currentRow() + 1,
+                               color=color)
             self.componentWidget.setCurrentWidget(self.emptyPage)
 
         def pick_color(override: str = None):
@@ -164,7 +200,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             elif self.pivotSelect.currentText() == 'Custom':
                 pivot = Point(to_float(self.rotateXInput.text()),
                               to_float(self.rotateYInput.text()))
-            drawable = self.displayFile.currentItem().data(Qt.UserRole)
+            drawable = self.display_file[self.displayFile.currentItem().text()]
             drawable.transform(t, pivot)
             self.viewport.update()
 
@@ -192,23 +228,34 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         elif index is None:
             index = n
 
+        # when names collide, add a counter (eg name, name1, name2, ...)
+        while name in self.display_file:
+            self.consoleArea.append(f"Renaming '{name}' on collision.")
+            prefix = name.rstrip('0123456789')
+            suffix = name[len(prefix):] if len(prefix) < len(name) else '0'
+            count = int(suffix) + 1
+            name = prefix + str(count)
+        self.display_file[name] = obj
+
         obj.color = color or '#000000'
         self.displayFile.insertItem(index, name)
-        self.displayFile.item(index).setData(Qt.UserRole, obj)
         self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
         self.displayFile.setCurrentRow(index)
         self.componentWidget.setCurrentWidget(self.emptyPage)
         self.viewport.update()
         return index
 
-    def remove_object(self, index: int) -> Drawable:
+    def remove_object(self, index: int) -> Optional[Drawable]:
         """Take an object out from a certain index in the Display File."""
         item = self.displayFile.takeItem(index)
-        if item:
-            self.log("Removed '%s' from Display File." % item.text())
+        if not item:
+            return None
+        else:
+            name = item.text()
+            model = self.display_file.pop(name)
+            self.log("Removed '%s' from Display File." % name)
             self.viewport.update()
-            item = item.data(Qt.UserRole)
-        return item
+            return model
 
     def move_object(self, position: int, offset: int):
         """Offset an object's position in the Display File."""
@@ -268,12 +315,11 @@ class QtViewport(QWidget):
 
     def paintEvent(self, event):  # this is where we draw our scene
         self.camera.painter.begin(self)
-        self.camera.painter.fillRect(  # XXX: camera view background
+        self.camera.painter.fillRect(  # sets background color
             0, 0, self.width(), self.height(), Qt.white)
-        for i in range(self._display_file.count()):
-            model = self._display_file.item(i).data(Qt.UserRole)
-            self.camera.painter.setPen(QColor(model.color))
-            model.draw(self.camera)
+        for drawable in self._display_file.values():  # draw the world
+            self.camera.painter.setPen(QColor(drawable.color))
+            drawable.draw(self.camera)
         self.camera.painter.end()
         return super().paintEvent(event)
 
@@ -289,7 +335,7 @@ class QtViewport(QWidget):
             self.pan_camera(0, 1)
         elif e.key() == Qt.Key_A:
             self.pan_camera(-1, 0)
-        elif e.key() == Qt.Key_S:
+        elif e.key() == Qt.Key_S and not e.modifiers() & Qt.ControlModifier:
             self.pan_camera(0, -1)
         elif e.key() == Qt.Key_D:
             self.pan_camera(1, 0)
@@ -305,8 +351,8 @@ class QtViewport(QWidget):
             self.tilt_view(radians(15))
         elif e.key() == Qt.Key_E:
             self.tilt_view(radians(-15))
-        # forward (most) events to parent class
-        elif e.key() != Qt.Key_Tab:
+        # also forward (most) events to parent widget
+        if e.key() != Qt.Key_Tab:
             return super().keyPressEvent(e)
 
     def focusNextPrevChild(self, next):  # disable focus change with Tab
@@ -416,10 +462,6 @@ if __name__ == '__main__':
                                 Point(0, 0)),
                       "wmt")
     gui.insert_object(Point(-130, 297), "ppmt")
-    gui.insert_object(Line(Point(-237, 72), Point(-118, -253)), "lar")
-    gui.insert_object(Line(Point(-237, 72), Point(-356, -253)), "lal")
-    gui.insert_object(Line(Point(-336, -103), Point(-138, -103)), "lab")
-
     gui.displayFile.setCurrentRow(-1)
 
     exit(app.exec_())
