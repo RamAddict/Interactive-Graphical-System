@@ -15,7 +15,7 @@ QT_OBJECTS := $(patsubst $(QT_SRC)/%.ui, $(QT_OBJ)/%.py, $(QT_SOURCES))
 
 # default
 run: $(QT_OBJECTS)
-	$(PYTHON) $(PY_APP)
+	$(PYTHON) $(PY_APP) objs/scene.obj
 
 test:
 	$(PYTHON) -m pytest -vv -s
@@ -38,7 +38,7 @@ release: submission.zip
 $(QT_OBJ)/%.py: $(QT_SRC)/%.ui
 	$(QT_COMPILER) $< -o $@
 
-submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md
+submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md objs/scene.obj
 	@ make test
 	@ make mostlyclean
 	mkdir PyCG
@@ -46,5 +46,7 @@ submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md
 	cp -r $(QT_SRC) PyCG
 	cp Makefile PyCG
 	cp README.md PyCG
+	mkdir PyCG/objs
+	cp objs/scene.obj PyCG/objs
 	zip -r submission.zip PyCG
 	rm -r PyCG
