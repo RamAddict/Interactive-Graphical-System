@@ -100,8 +100,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             path = QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
             if path.strip() != '':
                 with wavefront_obj.open(path, 'r') as file:
-                    for model, attributes in file:
-                        self.insert_object(model, attributes['name'])
+                    for model, name in file:
+                        self.insert_object(model, name)
 
         # setting up save action
         self.actionSave.triggered.connect(handle_save_action)
@@ -195,7 +195,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             elif self.pivotSelect.currentText() == 'Custom':
                 pivot = Point(to_float(self.rotateXInput.text()),
                               to_float(self.rotateYInput.text()))
-            drawable = self.display_file[self.displayFile.currentItem().text()]
+            name = self.displayFile.currentItem().text()
+            drawable = self.display_file[name]
             drawable.transform(t, pivot)
             self.viewport.update()
 

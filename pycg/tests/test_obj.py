@@ -19,10 +19,10 @@ def test_rw_idempotent():
 
     with obj.open('__temp.obj', 'w+') as file:
         for name, drawable in written.items():
-            file.write(drawable, name, usemtl='purple')
+            file.write(drawable, name)
 
     with obj.open('__temp.obj') as file:
-        for read, attributes in file:
-            assert read == written[attributes['name']]
+        for read, name in file:
+            assert read == written[name]
 
     remove('__temp.obj')
