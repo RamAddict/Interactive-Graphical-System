@@ -3,9 +3,10 @@
 from math import inf, radians
 from sys import argv
 from typing import Optional, Callable, Dict
+from ast import literal_eval
 
 from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget,
-                               QColorDialog, QFileDialog, QMessageBox)
+                               QColorDialog, QFileDialog, QMessageBox, QInputDialog)
 from PySide2.QtGui import QPainter, QKeySequence, QColor, QPalette, QIcon, QPixmap
 from PySide2.QtCore import Qt
 
@@ -91,7 +92,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             else:
                 name = self.displayFile.currentItem().text()
                 model = self.display_file[name]
-                path = QFileDialog.getSaveFileName(self, "Select .obj file to save")[0]
+                path, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Select .obj file to save",
+                    name + '.obj',
+                )
                 if path.strip() != '':
                     with wavefront_obj.open(path, 'w+') as file:
                         file.write(model, name)
@@ -103,11 +108,35 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     for model, name in file:
                         self.insert_object(model, name)
 
-        # setting up save action
+        def handle_new_action():
+            new_obj = None
+            text, ok = QInputDialog.getText(
+                self,
+                "Input",
+                "Manual input in format (x1,y1),(x2,y2),...",
+            )
+            parsed = literal_eval(text)
+            if not isinstance(parsed, tuple): return
+            if len(parsed) == 2:  # single point, or tuple with 2 points
+                a, b = parsed
+                if isinstance(a, tuple):
+                    new_obj = Line(Point(*a), Point(*b))
+                elif isinstance(a, (int, float)):
+                    new_obj = Point(a, b)
+            else:
+                points = [Point(x, y) for x, y in parsed]
+                new_obj = Wireframe(*points)
+            if new_obj is not None:
+                self.insert_object(new_obj, "object")
+
+        # setting up toolbar actions
+        self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
         self.actionSave.triggered.connect(handle_save_action)
         self.actionSave.setShortcut(QKeySequence.Save)
         self.actionLoad.triggered.connect(handle_load_action)
-        self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
+        self.actionLoad.setShortcut(QKeySequence.Open)
+        self.actionNew.triggered.connect(handle_new_action)
+        self.actionNew.setShortcut(QKeySequence.New)
 
         def new_type_select(index: int):
             # clean all fields after 'name', 'color' and 'type'
@@ -438,28 +467,6 @@ class PointFields(QWidget, Ui_PointFields):
 
 if __name__ == '__main__':
     app = QApplication(argv)
-
-    gui = InteractiveGraphicalSystem()  # NOTE: variable is needed
-
-    # simple objects to test the app
-    gui.insert_object(Line(Point(-950, 0), Point(1605, 3)), "lhor")
-    gui.insert_object(Wireframe(Point(100, 0),
-                                Point(475, 250),
-                                Point(300, 133),
-                                Point(478, 75),
-                                Point(696, 134),
-                                Point(475, 250),
-                                Point(950, 0)),
-                      "wmmc")
-    gui.insert_object(Line(Point(220, 75), Point(80, 135)), "lve")
-    gui.insert_object(Line(Point(80, 135), Point(-40, 83)), "lvw")
-    gui.insert_object(Wireframe(Point(-575, 0),
-                                Point(-475, 135),
-                                Point(-220, 152),
-                                Point(-130, 300),
-                                Point(0, 0)),
-                      "wmt")
-    gui.insert_object(Point(-130, 297), "ppmt")
+    gui = InteractiveGraphicalSystem()
     gui.displayFile.setCurrentRow(-1)
-
     exit(app.exec_())
