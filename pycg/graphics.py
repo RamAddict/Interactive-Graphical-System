@@ -190,8 +190,11 @@ class Wireframe(Drawable):
 
     def __init__(self, a: Point, b: Point, c: Point, *points: Point):
         self._points = [a, b, c] + list(points)
-        if self._points[-1] != a:
-            self._points.append(a)  # close an open polygon
+        first_point = self._points[0]
+        last_point = self._points[-1]
+        if last_point != first_point:
+            x, y = first_point
+            self._points.append(Point(x, y))  # close an open polygon
 
     def __len__(self):
         return len(self._points) - 1
@@ -215,7 +218,7 @@ class Wireframe(Drawable):
     def transform(self, transformations: Transformation, pivot: Point = None):
         pivot = pivot or self.center()
         matrix = transformations.matrix(pivot)
-        for p in self:
+        for p in self._points:
             p.x, p.y, _ = matrix @ Vector(p.x, p.y, 1)
 
     def center(self) -> Point:
