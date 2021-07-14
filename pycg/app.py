@@ -6,12 +6,11 @@ from typing import Optional, Callable, Dict
 
 from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget,
                                QColorDialog, QFileDialog, QMessageBox)
-from PySide2.QtGui import QPainter, QIcon, QColor, QPixmap, QKeySequence
+from PySide2.QtGui import QPainter, QKeySequence, QColor, QPalette, QIcon, QPixmap
 from PySide2.QtCore import Qt
 
 from blas import Vector
-from graphics import (Point, Line, Wireframe, Painter, Camera, Transformation,
-                      Drawable)
+from graphics import Point, Line, Wireframe, Painter, Camera, Transformation, Drawable
 from utilities import experp, begin, lerp, sign, to_float
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
@@ -102,11 +101,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             if path.strip() != '':
                 with wavefront_obj.open(path, 'r') as file:
                     for model, attributes in file:
-                        self.insert_object(
-                            model,
-                            attributes['name'],
-                            color=attributes['usemtl'],  # TODO: better usemtl
-                        )
+                        self.insert_object(model, attributes['name'])
 
         # setting up save action
         self.actionSave.triggered.connect(handle_save_action)
@@ -181,7 +176,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         self.typeBox.currentIndexChanged.connect(new_type_select)
         self.colorEdit.clicked.connect(pick_color)
-        pick_color('#01A1d0')
+        pick_color(QPalette().color(QPalette.Foreground).name())
         self.dialogBox.accepted.connect(new_object)
         self.dialogBox.rejected.connect(
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
@@ -237,7 +232,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             name = prefix + str(count)
         self.display_file[name] = obj
 
-        obj.color = color or '#000000'
+        obj.color = color or QPalette().color(QPalette.Foreground).name()
         self.displayFile.insertItem(index, name)
         self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
         self.displayFile.setCurrentRow(index)
@@ -315,9 +310,11 @@ class QtViewport(QWidget):
 
     def paintEvent(self, event):  # this is where we draw our scene
         self.camera.painter.begin(self)
-        self.camera.painter.fillRect(  # sets background color
-            0, 0, self.width(), self.height(), Qt.white)
-        for drawable in self._display_file.values():  # draw the world
+        self.camera.painter.fillRect(
+            0, 0, self.width(), self.height(),
+            QPalette().color(QPalette.Background)
+        )
+        for drawable in self._display_file.values():
             self.camera.painter.setPen(QColor(drawable.color))
             drawable.draw(self.camera)
         self.camera.painter.end()

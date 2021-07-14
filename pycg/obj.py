@@ -39,7 +39,7 @@ class ObjFile:
     def _obj_to_drawable(self, obj: _ObjDescriptor) -> Tuple[Drawable, Dict]:
         drawable: Drawable = None
         # convert vertex indexes to actual points while building drawables
-        fix = lambda i: return i if i <= 0 else i - 1
+        fix = lambda i: i - 1 if i > 0 else i
         if obj.kind == 'point':
             v = self.vertices[fix(obj.vertex_indexes[0])]
             drawable = Point(*v)

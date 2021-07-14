@@ -383,8 +383,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>306</width>
-             <height>226</height>
+             <width>186</width>
+             <height>163</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
@@ -503,6 +503,18 @@
        </layout>
       </widget>
       <widget class="QWidget" name="transformPage">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>310</width>
+         <height>247</height>
+        </size>
+       </property>
        <widget class="QLabel" name="translateXlabel">
         <property name="geometry">
          <rect>

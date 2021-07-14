@@ -189,10 +189,9 @@ class Wireframe(Drawable):
     """Polygon-like object defined by a sequence of points."""
 
     def __init__(self, a: Point, b: Point, c: Point, *points: Point):
-        if points[-1] == a:
-            self._points = [a, b, c] + list(points)    # already closed polygon
-        else:
-            self._points = [a, b, c] + list(points) + [a]  # close open polygon
+        self._points = [a, b, c] + list(points)
+        if self._points[-1] != a:
+            self._points.append(a)  # close an open polygon
 
     def __len__(self):
         return len(self._points) - 1
