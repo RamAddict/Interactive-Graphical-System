@@ -1,6 +1,7 @@
 """Computer Graphics API."""
 
 from math import sqrt, cos, sin
+import math
 from typing import Tuple, Sequence
 
 from blas import Vector, Matrix
@@ -234,8 +235,58 @@ class Camera(Painter):
         self._world_to_screen = None
         self._offset = offset
 
+    def liangBarsky(self, xa: float, ya: float, xb: float, yb: float):
+        """
+        Liang-Barsky algorithm works by first rewriting the parametric equations like so:
+        x = x1 + u*∆x
+        y = y1 + u*∆y
+        """
+        # calculate p e q
+        x1,y1,x2,y2 = xa,ya,xb,yb
+        p1 = - (xb - xa) # -∆x
+        p2 = (xb - xa)   #  ∆x
+        p3 = - (yb - ya) # -∆y
+        p4 = (yb - ya)   #  ∆y
+        p = [None, p1, p2, p3, p4]
+
+        q1 = (xa - self.clipping_min_x)
+        q2 = (self.clipping_max_x - xa)
+        q3 = (ya - self.clipping_min_y)
+        q4 = (self.clipping_max_y - ya)
+        q = [None, q1, q2, q3, q4]
+
+        u1 = 0
+        u2 = 1
+
+        for i in range(1, 5):
+            if p[i] < 0:
+                # outside in
+                u1 = max(u1, q[i]/p[i])
+            elif p[i] > 0:
+                # inside out
+                u2 = min(u2, q[i]/p[i])
+            elif q[i] < 0:
+                    # outside
+                    return None
+
+        if (u1 > u2):
+            # line completely outside
+            return None
+        # if zero we reject u1
+        if u1 != 0:
+            x1 = xa + (u1*p2)
+            y1 = ya + (u1*p4)
+        
+        # if one we reject u2
+        if u2 != 1:
+            x2 = xa + (u2*p2)
+            y2 = ya + (u2*p4)
+        
+        return [x1, y1, x2, y2]
+
     def cohenSutherland(self, xa: float, ya: float, xb: float, yb: float):
         """
+        This method uses 4 bits and 9 quadrants to heuristically discover if lines will cross the window or not
            1001 |  1000  | 1010  
               __|________|__
                 |        |
@@ -334,7 +385,7 @@ class Camera(Painter):
         to_viewport = self._viewport_matrix()
         xa, ya, _ = to_viewport @ Vector(xa, ya, 1)
         xb, yb, _ = to_viewport @ Vector(xb, yb, 1)
-        values = self.cohenSutherland(xa, ya, xb, yb)
+        values = self.liangBarsky(xa, ya, xb, yb)
         if values:
             self.painter.draw_line(*values)
 
