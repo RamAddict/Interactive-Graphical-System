@@ -1,8 +1,7 @@
 """Computer Graphics API."""
 
 from math import sqrt, cos, sin
-import math
-from typing import Tuple, Sequence
+from typing import Iterable, Tuple, Sequence
 
 from blas import Vector, Matrix
 from utilities import pairwise
@@ -142,8 +141,7 @@ class Point(Drawable, Vector):
         painter.draw_pixel(self.x, self.y)
 
     def transform(self, transformations: Transformation, pivot=None):
-        pivot = pivot or self
-        matrix = transformations.matrix(pivot)
+        matrix = transformations.matrix(pivot=None)
         self.x, self.y, _ = matrix @ Vector(self.x, self.y, 1)
 
     def __repr__(self):  # as by the Well-known text representation of geometry
@@ -176,6 +174,12 @@ class Line(Drawable):
         return "LINESTRING ({} {}, {} {})".format(self[0].x, self[0].y,
                                                   self[1].x, self[1].y)
 
+    def __eq__(self, other: Iterable) -> bool:
+        for p1, p2 in zip(self, other):
+            if p1 != p2:
+                return False
+        return True
+
     def __len__(self) -> float:
         return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2)
 
@@ -184,7 +188,12 @@ class Wireframe(Drawable):
     """Polygon-like object defined by a sequence of points."""
 
     def __init__(self, a: Point, b: Point, c: Point, *points: Point):
-        self._points = [a, b, c] + list(points) + [a]  # closed polygon
+        self._points = [a, b, c] + list(points)
+        first_point = self._points[0]
+        last_point = self._points[-1]
+        if last_point != first_point:
+            x, y = first_point
+            self._points.append(Point(x, y))  # close an open polygon
 
     def __len__(self):
         return len(self._points) - 1
@@ -208,7 +217,7 @@ class Wireframe(Drawable):
     def transform(self, transformations: Transformation, pivot: Point = None):
         pivot = pivot or self.center()
         matrix = transformations.matrix(pivot)
-        for p in self:
+        for p in self._points:
             p.x, p.y, _ = matrix @ Vector(p.x, p.y, 1)
 
     def center(self) -> Point:
@@ -220,6 +229,12 @@ class Wireframe(Drawable):
     def __repr__(self):  # WKT
         return "POLYGON ((%s))" % ", ".join(
             "{} {}".format(p.x, p.y) for p in self)
+
+    def __eq__(self, other: Iterable) -> bool:
+        for p1, p2 in zip(self, other):
+            if p1 != p2:
+                return False
+        return True
 
 
 class Camera(Painter):
@@ -276,18 +291,18 @@ class Camera(Painter):
         if u1 != 0:
             x1 = xa + (u1*p2)
             y1 = ya + (u1*p4)
-        
+
         # if one we reject u2
         if u2 != 1:
             x2 = xa + (u2*p2)
             y2 = ya + (u2*p4)
-        
+
         return [x1, y1, x2, y2]
 
     def cohenSutherland(self, xa: float, ya: float, xb: float, yb: float):
         """
         This method uses 4 bits and 9 quadrants to heuristically discover if lines will cross the window or not
-           1001 |  1000  | 1010  
+           1001 |  1000  | 1010
               __|________|__
                 |        |
           0001  |  0000  | 0010
@@ -300,7 +315,7 @@ class Camera(Painter):
         bottom = 4
         top = 8
         inside = 0
-        
+
         rcStart = 0
         def calculate_rc(xa: float, ya: float):
             code = 0
@@ -313,7 +328,7 @@ class Camera(Painter):
             if ya > self.clipping_max_y:
                 code |= top
             return code
-        
+
         rcStart = calculate_rc(xa, ya)
         rcEnd   = calculate_rc(xb, yb)
         x1,y1,x2,y2 = xa,ya,xb,yb
@@ -340,7 +355,7 @@ class Camera(Painter):
                 if rcStart != 0:
                     outside_rc = rcStart
                     # nOfOutsidePoints+=1
-                
+
                 # calculate m
                 m = (yb - ya)/(xb - xa)
 
@@ -351,20 +366,20 @@ class Camera(Painter):
                 elif outside_rc & right:
                     x = self.clipping_max_x
                     y = m*(self.clipping_max_x - xa) + ya
-                
+
                 elif outside_rc & bottom:
                     y = self.clipping_min_y
                     x = xa + (1/m) * (self.clipping_min_y - ya)
-                
+
                 elif outside_rc & top:
                     y = self.clipping_max_y
                     x = xa + (1/m) * (self.clipping_max_y - ya)
-                
+
                 if outside_rc == rcStart:
                     x1 = x
                     y1 = y
                     rcStart = calculate_rc(x1, y1);
-                
+
                 else:
                     x2 = x
                     y2 = y
@@ -376,12 +391,12 @@ class Camera(Painter):
             return None
 
 
-    def draw_pixel(self, x: int, y: int):
+    def draw_pixel(self, x, y):
         x, y, _ = self._viewport_matrix() @ Vector(x, y, 1)
         if self.clipping_min_x <= x <= self.clipping_max_x and self.clipping_min_y <= y <= self.clipping_max_y:
             self.painter.draw_pixel(x, y)
 
-    def draw_line(self, xa: int, ya: int, xb: int, yb: int):
+    def draw_line(self, xa, ya, xb, yb):
         to_viewport = self._viewport_matrix()
         xa, ya, _ = to_viewport @ Vector(xa, ya, 1)
         xb, yb, _ = to_viewport @ Vector(xb, yb, 1)
@@ -457,15 +472,15 @@ class Camera(Painter):
         w, h = size
         self._viewport_size = Vector(w, h)
         self._dirty = True
-    
+
     @property
     def clipping_min_x(self) -> float:
         return self._offset.x
-    
+
     @property
     def clipping_max_x(self) -> float:
         return self.viewport_size.x - self._offset.x
-    
+
     @property
     def clipping_min_y(self) -> float:
         return self._offset.y
@@ -473,4 +488,3 @@ class Camera(Painter):
     @property
     def clipping_max_y(self) -> float:
         return self.viewport_size.y - self._offset.y
-    
