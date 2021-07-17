@@ -435,7 +435,7 @@ class QtViewport(QWidget):
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
         else:
-            self._eye_position.setText("[{}, {}]".format(event.x(), event.y()))
+            self._eye_position.setText(f"[{event.x()}, {event.y()}]")
             return super().mouseMoveEvent(event)
 
 
