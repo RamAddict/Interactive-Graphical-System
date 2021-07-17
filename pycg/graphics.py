@@ -148,7 +148,7 @@ class Point(Drawable, Vector):
         self.x, self.y, _ = matrix @ Vector(self.x, self.y, 1)
 
     def __repr__(self):  # as by the Well-known text representation of geometry
-        return "POINT ({} {})".format(self.x, self.y)
+        return f"POINT ({self.x} {self.y})"
 
 
 class Line(Drawable):
@@ -174,8 +174,7 @@ class Line(Drawable):
         return (self[0] + self[1]) / 2
 
     def __repr__(self):  # WKT
-        return "LINESTRING ({} {}, {} {})".format(self[0].x, self[0].y,
-                                                  self[1].x, self[1].y)
+        return f"LINESTRING ({self[0].x} {self[0].y}, {self[1].x} {self[1].y})"
 
     def __eq__(self, other: Iterable) -> bool:
         for p1, p2 in zip(self, other):
@@ -221,8 +220,7 @@ class Wireframe(Drawable):
         return average / len(points)
 
     def __repr__(self):  # WKT
-        return "POLYGON ((%s))" % ", ".join(
-            "{} {}".format(p.x, p.y) for p in self._points)
+        return f"POLYGON (({', '.join(f'{p.x} {p.y}' for p in self._points)}))"
 
     def __eq__(self, other: Iterable) -> bool:
         for p1, p2 in zip(self, other):
