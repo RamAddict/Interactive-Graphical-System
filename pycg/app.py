@@ -243,7 +243,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         n = self.displayFile.count()
         if index and (index < 0 or index > n):
-            raise IndexError("Invalid Display File index: %d" % index)
+            raise IndexError("Invalid Display File index", index)
         elif index is None:
             index = n
 
@@ -296,7 +296,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
 class QtViewport(QWidget):
     def __init__(self, parent_widget, display_file, zoom_slider, eye_position):
-
         class QtPainter(QPainter, Painter):
             """Qt-based implementation of an abstract Painter."""
 
@@ -310,7 +309,8 @@ class QtViewport(QWidget):
         self._display_file = display_file  # modified by main window
         self._zoom_slider = zoom_slider
         self._eye_position = eye_position
-        self.camera = Camera(QtPainter(), Vector(self.width(), self.height()), Vector(40, 40, 1))
+        size = Vector(self.width() - 80, self.height() - 80)
+        self.camera = Camera(QtPainter(), size, Point(40, 40))
         self._pan = 10
         self._drag_begin = None
         self.setFocusPolicy(Qt.StrongFocus)
@@ -342,19 +342,25 @@ class QtViewport(QWidget):
         self.update()
 
     def paintEvent(self, event):  # this is where we draw our scene
+        w, h = self.width(), self.height()
         self.camera.painter.begin(self)
         self.camera.painter.setRenderHint(QPainter.Antialiasing, False)
         self.camera.painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
+
+        self.camera.painter.setPen(QPalette().color(QPalette.Highlight))
+        self.camera.painter.drawRect(40, 40, w - 80, h-80)
+
         for drawable in self._display_file.values():
             self.camera.painter.setPen(QColor(drawable.color))
             drawable.draw(self.camera)
+
         self.camera.painter.end()
         return super().paintEvent(event)
 
     def resizeEvent(self, event):
-        self.camera.viewport_size = (self.width(), self.height())
-        InteractiveGraphicalSystem.log(
-            f"Viewport resized to {self.width()}x{self.height()}")
+        w, h = self.width(), self.height()
+        self.camera.viewport_size = Vector(w - 80, h - 80)
+        InteractiveGraphicalSystem.log(f"Viewport resized to {w}x{h}")
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
@@ -402,6 +408,8 @@ class QtViewport(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MiddleButton:
             self._drag_begin = None
+            InteractiveGraphicalSystem.log(
+                "Window dragged to (%g, %g)" % (self.camera.x, self.camera.y))
         else:
             return super().mouseReleaseEvent(event)
 
@@ -415,8 +423,6 @@ class QtViewport(QWidget):
             dy = delta.y / self.camera.zoom
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
-            InteractiveGraphicalSystem.log(
-                "Window dragged to (%g, %g)" % (self.camera.x, self.camera.y))
         else:
             self._eye_position.setText("[{}, {}]".format(event.x(), event.y()))
             return super().mouseMoveEvent(event)
