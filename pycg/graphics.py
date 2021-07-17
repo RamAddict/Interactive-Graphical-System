@@ -56,6 +56,9 @@ class Painter():
                 else:
                     p += DX2
 
+    def draw_polygon(self, points: Sequence[Tuple[int, int]]):
+        raise NotImplementedError("Painter is an abstract class.")
+
 
 class Transformation:
     """Representation of Transformations in 2D Homogeneous Coordinates.
@@ -185,30 +188,19 @@ class Line(Drawable):
 
 
 class Wireframe(Drawable):
-    """Polygon-like object defined by a sequence of points."""
+    """Open polygon defined by a sequence of points."""
 
-    def __init__(self, a: Point, b: Point, c: Point, *points: Point):
-        self._points = [a, b, c] + list(points)
-        first_point = self._points[0]
-        last_point = self._points[-1]
-        if last_point != first_point:
-            x, y = first_point
-            self._points.append(Point(x, y))  # close an open polygon
+    def __init__(self, points: Sequence[Point]):
+        self._points = points
 
     def __len__(self):
-        return len(self._points) - 1
+        return len(self._points)
 
     def __getitem__(self, key: int) -> Point:
-        if key >= len(self):
-            raise IndexError("Index {} out of range.".format(key))
-        else:
-            return self._points[key]
+        return self._points[key]
 
     def __setitem__(self, key: int, point: Point):
-        if key >= len(self):
-            raise IndexError("Index {} out of range.".format(key))
-        else:
-            self._points[key] = point
+        self._points[key] = point
 
     def draw(self, painter):
         for pa, pb in pairwise(self._points):
@@ -221,20 +213,32 @@ class Wireframe(Drawable):
             p.x, p.y, _ = matrix @ Vector(p.x, p.y, 1)
 
     def center(self) -> Point:
-        s = Point(0, 0)
-        for p in self:
-            s += p
-        return s / len(self)
+        # to avoid overweighting repeated points, only average over unique ones
+        points = set({(x,y) for x, y, in self._points})
+        average = Point(0, 0)
+        for x, y in points:
+            average += Point(x, y)
+        return average / len(points)
 
     def __repr__(self):  # WKT
         return "POLYGON ((%s))" % ", ".join(
-            "{} {}".format(p.x, p.y) for p in self)
+            "{} {}".format(p.x, p.y) for p in self._points)
 
     def __eq__(self, other: Iterable) -> bool:
         for p1, p2 in zip(self, other):
             if p1 != p2:
                 return False
         return True
+
+
+class Polygon(Wireframe):
+    """Filled polygon."""
+
+    def __init__(self, points: Sequence[Point]):
+        super().__init__(points)
+
+    def draw(self, painter):
+        painter.draw_polygon(self._points)
 
 
 class Camera(Painter):
@@ -269,7 +273,15 @@ class Camera(Painter):
             b = self._view_to_screen @ Vector(xb, yb, 1)
             self.painter.draw_line(a.x, a.y, b.x, b.y)
 
-    # TODO: draw_polygon (filled or not) with clipping
+    # TODO: clip polygons
+    def draw_polygon(self, points: Sequence[Tuple[int, int]]):
+        self._recompute_matrixes()
+        world_to_screen = self._view_to_screen @ self._world_to_view
+        transformed = []
+        for p in points:
+            x, y, _ = world_to_screen @ Vector(p.x, p.y, 1)
+            transformed.append((x, y))
+        self.painter.draw_polygon(transformed)
 
     def _recompute_matrixes(self):
         # only actually recompute if the camera has changed
