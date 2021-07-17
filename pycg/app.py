@@ -5,14 +5,14 @@ from sys import argv
 from typing import Optional, Callable, Dict
 from ast import literal_eval
 
-from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget,
-                               QColorDialog, QFileDialog, QMessageBox, QInputDialog)
+from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QColorDialog,
+                               QFileDialog, QMessageBox, QInputDialog)
 from PySide2.QtGui import QPainter, QKeySequence, QColor, QPalette, QIcon, QPixmap
 from PySide2.QtCore import Qt
 
 from blas import Vector
 from graphics import Point, Line, Wireframe, Painter, Camera, Transformation, Drawable
-from utilities import experp, begin, lerp, sign, to_float
+from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
@@ -300,10 +300,10 @@ class QtViewport(QWidget):
             """Qt-based implementation of an abstract Painter."""
 
             def draw_pixel(self, x, y):
-                self.drawPoint(x, y)
+                self.drawPoint(int(x), int(y))
 
             def draw_line(self, xa, ya, xb, yb):
-                self.drawLine(xa, ya, xb, yb)
+                self.drawLine(int(xa), int(ya), int(xb), int(yb))
 
         super().__init__(parent_widget)
         self._display_file = display_file  # modified by main window
@@ -320,8 +320,8 @@ class QtViewport(QWidget):
         Takes the camera tilt into account, such that movement is view-aligned.
         """
         if _normalized:
-            dx = int(dx * self._pan)
-            dy = int(dy * self._pan)
+            dx *= self._pan
+            dy *= dy * self._pan
         align = Transformation().rotate(self.camera.angle).matrix()
         dx, dy, _ = align @ Vector(dx, dy, 1)
         self.camera.x += dx
@@ -342,10 +342,8 @@ class QtViewport(QWidget):
 
     def paintEvent(self, event):  # this is where we draw our scene
         self.camera.painter.begin(self)
-        self.camera.painter.fillRect(
-            0, 0, self.width(), self.height(),
-            QPalette().color(QPalette.Background)
-        )
+        self.camera.painter.setRenderHint(QPainter.Antialiasing, False)
+        self.camera.painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
         for drawable in self._display_file.values():
             self.camera.painter.setPen(QColor(drawable.color))
             drawable.draw(self.camera)
@@ -432,8 +430,7 @@ class PointFields(QWidget, Ui_PointFields):
         self._has_action = False
 
     def to_point(self) -> Point:
-        return Point(int(self.xDoubleSpinBox.value()),
-                     int(self.yDoubleSpinBox.value()))
+        return Point(self.xDoubleSpinBox.value(), self.yDoubleSpinBox.value())
 
     def set_action(self, action: Optional[Callable[[], None]]):
         """Set procedure to be executed when the action button is clicked."""

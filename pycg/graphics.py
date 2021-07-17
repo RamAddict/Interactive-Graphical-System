@@ -141,8 +141,7 @@ class Point(Drawable, Vector):
         painter.draw_pixel(self.x, self.y)
 
     def transform(self, transformations: Transformation, pivot=None):
-        pivot = pivot or self
-        matrix = transformations.matrix(pivot)
+        matrix = transformations.matrix(pivot=None)
         self.x, self.y, _ = matrix @ Vector(self.x, self.y, 1)
 
     def __repr__(self):  # as by the Well-known text representation of geometry
@@ -250,11 +249,11 @@ class Camera(Painter):
         self._dirty = True
         self._world_to_screen = None
 
-    def draw_pixel(self, x: int, y: int):
+    def draw_pixel(self, x, y):
         x, y, _ = self._viewport_matrix() @ Vector(x, y, 1)
         self.painter.draw_pixel(x, y)
 
-    def draw_line(self, xa: int, ya: int, xb: int, yb: int):
+    def draw_line(self, xa, ya, xb, yb):
         to_viewport = self._viewport_matrix()
         xa, ya, _ = to_viewport @ Vector(xa, ya, 1)
         xb, yb, _ = to_viewport @ Vector(xb, yb, 1)
