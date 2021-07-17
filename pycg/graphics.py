@@ -240,172 +240,39 @@ class Wireframe(Drawable):
 class Camera(Painter):
     """Window used as reference to render objects."""
 
-    def __init__(self, painter: Painter, viewport_size: Vector, offset: Vector):
+    def __init__(self, painter: Painter, size: Vector, offset: Point = None):
         self.painter = painter
-        self._viewport_size = viewport_size
+        self._viewport_size = size
+        self._offset = offset or Point(0, 0)
         self._position = Point(0, 0)
         self._zoom = 1.0
         self._angle = 0
         self._dirty = True
-        self._world_to_screen = None
-        self._offset = offset
-
-    def liangBarsky(self, xa: float, ya: float, xb: float, yb: float):
-        """
-        Liang-Barsky algorithm works by first rewriting the parametric equations like so:
-        x = x1 + u*∆x
-        y = y1 + u*∆y
-        """
-        # calculate p e q
-        x1,y1,x2,y2 = xa,ya,xb,yb
-        p1 = - (xb - xa) # -∆x
-        p2 = (xb - xa)   #  ∆x
-        p3 = - (yb - ya) # -∆y
-        p4 = (yb - ya)   #  ∆y
-        p = [None, p1, p2, p3, p4]
-
-        q1 = (xa - self.clipping_min_x)
-        q2 = (self.clipping_max_x - xa)
-        q3 = (ya - self.clipping_min_y)
-        q4 = (self.clipping_max_y - ya)
-        q = [None, q1, q2, q3, q4]
-
-        u1 = 0
-        u2 = 1
-
-        for i in range(1, 5):
-            if p[i] < 0:
-                # outside in
-                u1 = max(u1, q[i]/p[i])
-            elif p[i] > 0:
-                # inside out
-                u2 = min(u2, q[i]/p[i])
-            elif q[i] < 0:
-                    # outside
-                    return None
-
-        if (u1 > u2):
-            # line completely outside
-            return None
-        # if zero we reject u1
-        if u1 != 0:
-            x1 = xa + (u1*p2)
-            y1 = ya + (u1*p4)
-
-        # if one we reject u2
-        if u2 != 1:
-            x2 = xa + (u2*p2)
-            y2 = ya + (u2*p4)
-
-        return [x1, y1, x2, y2]
-
-    def cohenSutherland(self, xa: float, ya: float, xb: float, yb: float):
-        """
-        This method uses 4 bits and 9 quadrants to heuristically discover if lines will cross the window or not
-           1001 |  1000  | 1010
-              __|________|__
-                |        |
-          0001  |  0000  | 0010
-              __|________|__
-          0101  |  0100  | 0110
-
-        """
-        left = 1
-        right = 2
-        bottom = 4
-        top = 8
-        inside = 0
-
-        rcStart = 0
-        def calculate_rc(xa: float, ya: float):
-            code = 0
-            if xa < self.clipping_min_x:
-                code |= left
-            if ya < self.clipping_min_y:
-                code |= bottom
-            if xa > self.clipping_max_x:
-                code |= right
-            if ya > self.clipping_max_y:
-                code |= top
-            return code
-
-        rcStart = calculate_rc(xa, ya)
-        rcEnd   = calculate_rc(xb, yb)
-        x1,y1,x2,y2 = xa,ya,xb,yb
-        accept = False
-        outside_rc = 0
-        while True:
-            if rcEnd == rcStart == inside:
-                # completely contained in window, return it
-                # return [True, xa, ya, xb, yb]
-                accept = True
-                break
-            elif (rcStart & rcEnd) != inside:
-                # completely outside window, return false
-                break
-            else:
-
-                # could be visible
-                # get at least one that is outside rectangle
-                x = xa
-                y = ya
-                if rcEnd != 0:
-                    # nOfOutsidePoints+=1
-                    outside_rc = rcEnd
-                if rcStart != 0:
-                    outside_rc = rcStart
-                    # nOfOutsidePoints+=1
-
-                # calculate m
-                m = (yb - ya)/(xb - xa)
-
-                if outside_rc & left:
-                    x = self.clipping_min_x
-                    y = m*(self.clipping_min_x - xa) + ya
-
-                elif outside_rc & right:
-                    x = self.clipping_max_x
-                    y = m*(self.clipping_max_x - xa) + ya
-
-                elif outside_rc & bottom:
-                    y = self.clipping_min_y
-                    x = xa + (1/m) * (self.clipping_min_y - ya)
-
-                elif outside_rc & top:
-                    y = self.clipping_max_y
-                    x = xa + (1/m) * (self.clipping_max_y - ya)
-
-                if outside_rc == rcStart:
-                    x1 = x
-                    y1 = y
-                    rcStart = calculate_rc(x1, y1);
-
-                else:
-                    x2 = x
-                    y2 = y
-                    rcEnd = calculate_rc(x2, y2);
-
-        if accept:
-            return [x1, y1, x2, y2]
-        else:
-            return None
-
+        self._world_to_view = None
+        self._view_to_screen = None
 
     def draw_pixel(self, x, y):
-        x, y, _ = self._viewport_matrix() @ Vector(x, y, 1)
-        if self.clipping_min_x <= x <= self.clipping_max_x and self.clipping_min_y <= y <= self.clipping_max_y:
+        self._recompute_matrixes()
+        x, y, _ = self._world_to_view @ Vector(x, y, 1)
+        if -1 <= x <= 1 and -1 <= y <= 1:
+            x, y, _ = self._view_to_screen @ Vector(x, y, 1)
             self.painter.draw_pixel(x, y)
 
     def draw_line(self, xa, ya, xb, yb):
-        to_viewport = self._viewport_matrix()
-        xa, ya, _ = to_viewport @ Vector(xa, ya, 1)
-        xb, yb, _ = to_viewport @ Vector(xb, yb, 1)
-        values = self.liangBarsky(xa, ya, xb, yb)
-        if values:
-            self.painter.draw_line(*values)
+        self._recompute_matrixes()
+        a = self._world_to_view @ Vector(xa, ya, 1)
+        b = self._world_to_view @ Vector(xb, yb, 1)
+        clipped = Camera._cohen_sutherland(a.x, a.y, b.x, b.y)
+        if clipped:
+            xa, ya, xb, yb = clipped
+            a = self._view_to_screen @ Vector(xa, ya, 1)
+            b = self._view_to_screen @ Vector(xb, yb, 1)
+            self.painter.draw_line(a.x, a.y, b.x, b.y)
 
-    def _viewport_matrix(self) -> Matrix:
-        # only recompute matrixes if camera changed
+    # TODO: draw_polygon (filled or not) with clipping
+
+    def _recompute_matrixes(self):
+        # only actually recompute if the camera has changed
         if self._dirty:
             half_size = self._viewport_size / 2
 
@@ -413,17 +280,15 @@ class Camera(Painter):
             align = Transformation().rotate(-self.angle).matrix()
             scaling = half_size / self.zoom
             normalize = Transformation().scale(1/scaling.x, 1/scaling.y).matrix()
-            world_to_view = normalize @ align @ center
+            self._world_to_view = normalize @ align @ center
 
             resize = Transformation().scale(half_size.x, half_size.y).matrix()
             corner = Transformation().translate(half_size.x, -half_size.y).matrix()
             invert_y = Transformation().scale(1, -1).matrix()
-            view_to_screen = invert_y @ corner @ resize
+            offset = Transformation().translate(self._offset.x, self._offset.y).matrix()
+            self._view_to_screen = offset @ invert_y @ corner @ resize
 
             self._dirty = False
-            self._world_to_screen = view_to_screen @ world_to_view
-
-        return self._world_to_screen
 
     @property
     def x(self):
@@ -473,18 +338,122 @@ class Camera(Painter):
         self._viewport_size = Vector(w, h)
         self._dirty = True
 
-    @property
-    def clipping_min_x(self) -> float:
-        return self._offset.x
+    @staticmethod
+    def _liang_barsky(xa: float, ya: float, xb: float, yb: float):
+        # we assume input coordinates are normalized
+        x_min, x_max = (-1, 1)
+        y_min, y_max = (-1, 1)
 
-    @property
-    def clipping_max_x(self) -> float:
-        return self.viewport_size.x - self._offset.x
+        # compute distance from window borders
+        qs = (
+            xa - x_min, # left
+            x_max - xa, # right
+            ya - y_min, # bottom
+            y_max - ya, # up
+        )
 
-    @property
-    def clipping_min_y(self) -> float:
-        return self._offset.y
+        # also the displacements
+        dx = xb - xa
+        dy = yb - ya
+        ps = (-dx, dx, -dy, dy)
 
-    @property
-    def clipping_max_y(self) -> float:
-        return self.viewport_size.y - self._offset.y
+        # when any p == 0, the line is parallel to one side of the window, in
+        # which case we can quickly tell whether the line is completely outside
+        for p, q in zip(ps, qs):
+            if p == 0 and q < 0:
+                return []
+
+        # for all other cases, we take an argument u in [0,1] and consider
+        # x = xa + u*dx        and        y = yb + u*dy
+        u1, u2 = 0, 1
+
+        # update parameters
+        for p, q in zip(ps, qs):
+            if p < 0:    # out -> in
+                u1 = max(u1, q / p)
+            elif p > 0:  # in -> out
+                u2 = min(u2, q / p)
+        else:
+            if u1 > u2:  # line completely outside
+                return []
+
+        # by default, assume no clipping
+        x1, y1, x2, y2 = xa, ya, xb, yb
+
+        # if zero we reject u1
+        if u1 != 0:
+            x1 = xa + u1*dx
+            y1 = ya + u1*dy
+
+        # if one we reject u2
+        if u2 != 1:
+            x2 = xa + u2*dx
+            y2 = ya + u2*dy
+
+        return [x1, y1, x2, y2]
+    # TODO: let the user choose which method to use
+    @staticmethod
+    def _cohen_sutherland(xa: float, ya: float, xb: float, yb: float):
+        # we assume input coordinates are normalized
+        x_min, x_max = (-1, 1)
+        y_min, y_max = (-1, 1)
+
+        # This method uses 4 bits and 9 quadrants to heuristically discover if
+        # lines will cross the window or not
+        #    1001 |  1000  | 1010
+        #       __|________|__
+        #         |        |
+        #   0001  |  0000  | 0010
+        #       __|________|__
+        #         |        |
+        #   0101  |  0100  | 0110
+        left = 0b001
+        right = 0b0010
+        bottom = 0b100
+        top = 0b1000
+        inside = 0b000
+
+        def calculate_rc(x: float, y: float):
+            code = 0
+            if x < x_min: code |= left
+            if y < y_min: code |= bottom
+            if x > x_max: code |= right
+            if y > y_max: code |= top
+            return code
+
+        rcStart = calculate_rc(xa, ya)
+        rcEnd   = calculate_rc(xb, yb)
+        x1, y1, x2, y2 = xa, ya, xb, yb
+        while True:
+            if rcEnd == rcStart == inside:  # completely contained
+                return [x1, y1, x2, y2]
+            elif (rcStart & rcEnd) != 0:  # completely outside
+                return []
+
+            # could be visible. get at least one that is outside the window
+            x, y = 0, 0
+            outside_rc = rcEnd if rcEnd != inside else rcStart
+
+            # used to calculate m and 1/m
+            dy = yb - ya
+            dx = xb - xa
+
+            if outside_rc & left:
+                x = x_min
+                y = ya + dy/dx * (x_min - xa)
+            elif outside_rc & right:
+                x = x_max
+                y = ya + dy/dx * (x_max - xa)
+            elif outside_rc & bottom:
+                y = y_min
+                x = xa + dx/dy * (y_min - ya)
+            elif outside_rc & top:
+                y = y_max
+                x = xa + dx/dy * (y_max - ya)
+
+            if outside_rc == rcStart:
+                x1, y1 = x, y
+                rcStart = calculate_rc(x1, y1)
+            else:
+                x2, y2 = x, y
+                rcEnd = calculate_rc(x2, y2)
