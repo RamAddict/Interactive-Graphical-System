@@ -1,5 +1,5 @@
 from math import pi
-from graphics import Transformation, Point, Line, Wireframe
+from graphics import Transformation, Point, Line, Polygon
 
 
 def test_transformations_center_pivot():
@@ -17,7 +17,7 @@ def test_transformations_center_pivot():
     assert round(b.x) == 5
     assert round(b.y) == 5
 
-    rect = Wireframe(Point(-1, 1), Point(1, 1), Point(1, -1), Point(-1, -1))
+    rect = Polygon([Point(-1, 1), Point(1, 1), Point(1, -1), Point(-1, -1)])
     s = Transformation().scale(4, 3)
     rect.transform(s)
     upper_left, upper_right, lower_right, lower_left = rect

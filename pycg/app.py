@@ -2,16 +2,18 @@
 
 from math import inf, radians
 from sys import argv
-from typing import Optional, Callable, Dict
+from typing import Optional, Callable, Dict, Sequence, Tuple
 from ast import literal_eval
 
 from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QColorDialog,
                                QFileDialog, QMessageBox, QInputDialog)
-from PySide2.QtGui import QPainter, QKeySequence, QColor, QPalette, QIcon, QPixmap
-from PySide2.QtCore import Qt
+from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
+                           QPixmap, QPolygon)
+from PySide2.QtCore import Qt, QPoint
 
 from blas import Vector
-from graphics import Point, Line, Wireframe, Painter, Camera, Transformation, Drawable
+from graphics import (Painter, Camera, Transformation, Drawable, Point, Line,
+                      Wireframe, Polygon)
 from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
@@ -119,7 +121,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     new_obj = Point(a, b)
             else:
                 points = [Point(x, y) for x, y in parsed]
-                new_obj = Wireframe(*points)
+                if points[-1] == points[0]: new_obj = Polygon(points)
+                else: new_obj = Wireframe(points)
             if new_obj is not None:
                 self.insert_object(new_obj, "object")
 
@@ -143,7 +146,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             elif typename == 'Line':
                 self.formLayout.addRow(PointFields())
                 self.formLayout.addRow(PointFields())
-            elif typename == 'Wireframe':
+            elif typename in ('Wireframe', 'Polygon'):
                 self.formLayout.addRow(PointFields())
                 self.formLayout.addRow(PointFields())
                 self.formLayout.addRow(PointFields())
@@ -177,12 +180,13 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 pa = self.formLayout.itemAt(6).widget().to_point()
                 pb = self.formLayout.itemAt(7).widget().to_point()
                 obj = Line(pa, pb)
-            elif typename == 'Wireframe':
+            elif typename in ('Wireframe', 'Polygon'):
                 points = []
                 for i in range(6, self.formLayout.count() - 1):
                     p = self.formLayout.itemAt(i).widget().to_point()
                     points.append(p)
-                obj = Wireframe(*points)
+                if typename == 'Polygon': obj = Polygon(points)
+                else: obj = Wireframe(points)
 
             self.insert_object(obj, name,
                                index=self.displayFile.currentRow() + 1,
@@ -305,6 +309,11 @@ class QtViewport(QWidget):
             def draw_line(self, xa, ya, xb, yb):
                 self.drawLine(int(xa), int(ya), int(xb), int(yb))
 
+            def draw_polygon(self, points: Sequence[Tuple]):
+                self.drawPolygon(QPolygon([
+                    QPoint(int(x), int(y)) for x, y in points
+                ]))
+
         super().__init__(parent_widget)
         self._display_file = display_file  # modified by main window
         self._zoom_slider = zoom_slider
@@ -343,18 +352,20 @@ class QtViewport(QWidget):
 
     def paintEvent(self, event):  # this is where we draw our scene
         w, h = self.width(), self.height()
-        self.camera.painter.begin(self)
-        self.camera.painter.setRenderHint(QPainter.Antialiasing, False)
-        self.camera.painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
+        painter = self.camera.painter
+        painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
 
-        self.camera.painter.setPen(QPalette().color(QPalette.Highlight))
-        self.camera.painter.drawRect(40, 40, w - 80, h-80)
+        painter.setPen(QPalette().color(QPalette.Highlight))
+        painter.drawRect(40, 40, w - 80, h-80)
 
         for drawable in self._display_file.values():
-            self.camera.painter.setPen(QColor(drawable.color))
+            painter.setPen(QColor(drawable.color))
+            painter.setBrush(QColor(drawable.color))
             drawable.draw(self.camera)
 
-        self.camera.painter.end()
+        painter.end()
         return super().paintEvent(event)
 
     def resizeEvent(self, event):

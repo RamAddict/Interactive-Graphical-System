@@ -15,8 +15,8 @@ v 950 0 1.0 1.0
 o horizon
 l 1 2
 o mountain
-l 3 4 5 6 7 3
+f 3 4 5 6 7
 o peak
 p 6
 o snow_mountain
-f 8 9 10 11 12 13 14
+l 8 9 10 11 12 13 14 8

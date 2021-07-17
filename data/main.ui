@@ -383,8 +383,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>186</width>
-             <height>163</height>
+             <width>306</width>
+             <height>226</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
@@ -433,6 +433,11 @@
                 <item>
                  <property name="text">
                   <string>Wireframe</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Polygon</string>
                  </property>
                 </item>
                </widget>

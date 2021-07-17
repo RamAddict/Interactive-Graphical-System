@@ -2,7 +2,7 @@ import builtins
 from os import path
 from typing import Sequence, Tuple, Dict, Generator
 
-from graphics import Drawable, Point, Line, Wireframe
+from graphics import Drawable, Point, Line, Polygon, Wireframe
 
 
 class _ObjDescriptor:
@@ -43,9 +43,10 @@ class ObjFile:
             a = self._vertices[obj.vertex_indexes[0]]
             b = self._vertices[obj.vertex_indexes[1]]
             drawable = Line(Point(*a), Point(*b))
-        elif obj.kind == 'wireframe':
+        elif obj.kind in ('wireframe', 'polygon'):
             points = [Point(*(self._vertices[v])) for v in obj.vertex_indexes]
-            drawable = Wireframe(*points)
+            if obj.kind == 'polygon': drawable = Polygon(points)
+            else: drawable = Wireframe(points)
         return drawable, obj.name
 
     def read(self) -> Sequence[Tuple[Drawable, Dict]]:
@@ -70,7 +71,7 @@ class ObjFile:
             n = len(self._vertices) - 1
             obj.vertex_indexes = [n - 1, n]
         elif isinstance(drawable, Wireframe):
-            obj.kind = 'wireframe'
+            obj.kind = 'polygon' if isinstance(drawable, Polygon) else 'wireframe'
             for p in drawable:
                 self._vertices.append(Point(*p))
                 obj.vertex_indexes.append(len(self._vertices) - 1)
@@ -130,9 +131,14 @@ def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], Sequence[Point]]:
             assert current_obj is not None
             current_obj.kind = 'point'
             current_obj.vertex_indexes.append(int(body[0]))
-        elif head in ('l', 'f'):
+        elif head == 'l':
             assert current_obj is not None
             current_obj.kind = 'wireframe' if len(body) > 2 else 'line'
+            for v in body:
+                current_obj.vertex_indexes.append(int(v))
+        elif head == 'f':
+            assert current_obj is not None
+            current_obj.kind = 'polygon'
             for v in body:
                 current_obj.vertex_indexes.append(int(v))
 
@@ -159,5 +165,8 @@ def _dump_objs(file, descriptors: _ObjDescriptor, vertices: Sequence[Point]):
             a, b = obj.vertex_indexes
             file.write(f"l {a} {b}\n")
         elif kind == 'wireframe':
+            file.write(" ".join(["l"] + [str(v) for v in obj.vertex_indexes]))
+            file.write("\n")
+        elif kind == 'polygon':
             file.write(" ".join(["f"] + [str(v) for v in obj.vertex_indexes]))
             file.write("\n")
