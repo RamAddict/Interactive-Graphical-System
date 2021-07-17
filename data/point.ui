@@ -37,7 +37,7 @@
         </sizepolicy>
        </property>
        <property name="decimals">
-        <number>0</number>
+        <number>2</number>
        </property>
       </widget>
      </item>
@@ -66,7 +66,7 @@
         </sizepolicy>
        </property>
        <property name="decimals">
-        <number>0</number>
+        <number>2</number>
        </property>
       </widget>
      </item>

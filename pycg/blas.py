@@ -2,109 +2,17 @@
 
 from typing import Sequence, Callable
 
-
-class Vector:
-    """Structure which can be used as a column vector."""
-
-    def __init__(self, x, y, *others):
-        self._coordinates = [x, y] + list(others)
-
-    def __getitem__(self, key):
-        return self._coordinates[key]
-
-    def __setitem__(self, key, item):
-        self._coordinates[key] = item
-
-    def __len__(self):
-        return len(self._coordinates)
-
-    def __repr__(self):
-        return str(self._coordinates)
-
-    def __add__(self, other: Sequence):
-        try:
-            return Vector(*tuple(v + other[i] for i, v in enumerate(self)))
-        except BaseException as exc:
-            raise NotImplementedError from exc
-
-    def __radd__(self, other):
-        return self + other
-
-    def __sub__(self, other: Sequence):
-        return self + tuple(-x for x in other)
-
-    def __rsub__(self, other):
-        return other + (-self)
-
-    def __mul__(self, scalar):  # scalar product
-        try:
-            return Vector(*tuple(scalar * x for x in self))
-        except BaseException as exc:
-            raise NotImplementedError from exc
-
-    def __rmul__(self, other):
-        return self * other
-
-    def __matmul__(self, other: Sequence):  # dot product
-        try:
-            return sum(tuple(v * other[i] for i, v in enumerate(self)))
-        except BaseException as exc:
-            raise NotImplementedError from exc
-
-    def __neg__(self):
-        return self * -1
-
-    def __truediv__(self, scalar):
-        return self * (1 / scalar)
-
-    def __mod__(self, z):
-        return Vector(*tuple(x % z for x in self))
-
-    def __eq__(self, other):
-        if len(self) != len(other):
-            return False
-        for i, v in enumerate(self):
-            if v != other[i]:
-                return False
-        return True
-
-    @property
-    def x(self):
-        return self[0]
-
-    @x.setter
-    def x(self, x):
-        self[0] = x
-
-    @property
-    def y(self):
-        return self[1]
-
-    @y.setter
-    def y(self, y):
-        self[1] = y
-
-    @property
-    def z(self):
-        return self[2]
-
-    @z.setter
-    def z(self, z):
-        self[2] = z
+import numpy as np
 
 
-class Matrix(Vector):
+class Matrix:
     """Matrix structured for row-major access."""
 
     def __init__(self, first: Sequence, *rest: Sequence):
-        convert = lambda seq: seq if isinstance(seq, Vector) else Vector(*seq)
-        rows = [convert(first)]
-        for row in rest:
-            if len(row) != len(first):
-                raise ValueError("Matrix row length mismatch.")
-            else:
-                rows.append(convert(row))
-        super().__init__(*rows)
+        if isinstance(first, np.ndarray):
+            self._matrix = first
+        else:
+            self._matrix = np.array([first] + list(rest), np.float32)
 
     @staticmethod
     def from_lists(rows: Sequence):
@@ -138,25 +46,87 @@ class Matrix(Vector):
     def columns(self):
         return len(self[0])
 
-    def is_square(self):
-        return self.rows == self.columns
+    def __getitem__(self, key):
+        return self._matrix[key]
+
+    def __setitem__(self, key, item):
+        self._matrix[key] = item
+
+    def __len__(self):
+        return len(self._matrix)
+
+    def __repr__(self):
+        return str(self._matrix)
+
+    def __add__(self, other):
+        if not isinstance(other, Matrix):
+            other = Matrix(*other)
+        return Matrix(self._matrix + other._matrix)
+
+    def __radd__(self, other):
+        return self + other
+
+    def __sub__(self, other):
+        if not isinstance(other, Matrix):
+            other = Matrix(*other)
+        return Matrix(self._matrix - other._matrix)
+
+    def __rsub__(self, other):
+        return other + (-self)
+
+    def __mul__(self, scalar):  # scalar product
+        return Matrix(self._matrix * scalar)
+
+    def __rmul__(self, other):
+        return self * other
 
     def __matmul__(self, other):
-        if isinstance(other, Matrix):
-            m, n, p = self.rows, self.columns, other.columns
-            if other.rows != n:
-                raise ValueError("Matrix has incompatible dimensions.")
-            result = Matrix.zeros(m, p)
-            for i in range(m):
-                for j in range(p):
-                    for k in range(n):
-                        result[i][j] += self[i][k] * other[k][j]
-            return result
-        elif isinstance(other, Vector):
-            n = len(other)
-            if n != self.columns:
-                raise ValueError("Vector has incompatible dimensions.")
-            return Vector(*[line @ other for line in self])
-        else:
-            raise NotImplementedError("Can't multiply Matrix by %s." %
-                                      type(other).__name__)
+        if not isinstance(other, Matrix):
+            other = Matrix(*other)
+        product = self._matrix @ other._matrix
+        return product if isinstance(product, np.float32) else Matrix(product)
+
+    def __neg__(self):
+        return self * -1
+
+    def __truediv__(self, scalar):
+        return self * (1 / scalar)
+
+    def __mod__(self, z):
+        return Matrix(self._matrix % z)
+
+    def __eq__(self, other):
+        if not isinstance(other, Matrix):
+            other = Matrix(*other)
+        return np.array_equal(self, other)
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, x):
+        self[0] = x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, y):
+        self[1] = y
+
+    @property
+    def z(self):
+        return self[2]
+
+    @z.setter
+    def z(self, z):
+        self[2] = z
+
+
+class Vector(Matrix):
+    """Structure which can be used as a column vector."""
+
+    def __init__(self, x, y, *others):
+        super().__init__(x, y, *others)

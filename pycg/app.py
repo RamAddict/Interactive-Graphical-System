@@ -2,16 +2,18 @@
 
 from math import inf, radians
 from sys import argv
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict
+from ast import literal_eval
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QColorDialog
-from PySide2.QtGui import QPainter, QIcon, QColor, QPixmap
+from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QColorDialog,
+                               QFileDialog, QMessageBox, QInputDialog)
+from PySide2.QtGui import QPainter, QKeySequence, QColor, QPalette, QIcon, QPixmap
 from PySide2.QtCore import Qt
 
 from blas import Vector
-from graphics import (Point, Line, Wireframe, Painter, Camera, Drawable,
-                      Transformation)
+from graphics import Point, Line, Wireframe, Painter, Camera, Transformation, Drawable
 from utilities import experp, begin, sign, to_float
+import obj as wavefront_obj
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
 
@@ -32,9 +34,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         super(InteractiveGraphicalSystem, self).__init__()
         self.setupUi(self)
 
+        self.display_file: Dict[str, Drawable] = dict()
+
         # viewport setup
         self.viewport = QtViewport(self.canvasFrame,
-                                   self.displayFile,
+                                   self.display_file,
                                    self.zoomSlider,
                                    self.eyePositionLabel)
         self.canvasFrame.layout().addWidget(self.viewport)
@@ -77,6 +81,57 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: None if self.displayFile.currentRow() < 0
             else self.componentWidget.setCurrentWidget(self.transformPage))
 
+        def handle_save_action():
+            if self.displayFile.currentRow() < 0:
+                QMessageBox.question(
+                    self,
+                    "Message",
+                    "Please select an object before saving",
+                    QMessageBox.Ok
+                )
+            else:
+                name = self.displayFile.currentItem().text()
+                model = self.display_file[name]
+                path, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Select .obj file to save",
+                    name + '.obj',
+                )
+                if path.strip() != '':
+                    with wavefront_obj.open(path, 'w+') as file:
+                        file.write(model, name)
+                        self.log(f"Saved object '{name}' to '{path}'")
+
+        def handle_new_action():
+            new_obj = None
+            text, ok = QInputDialog.getText(
+                self,
+                "Input",
+                "Manual input in format (x1,y1),(x2,y2),...",
+            )
+            parsed = literal_eval(text)
+            if not isinstance(parsed, tuple): return
+            if len(parsed) == 2:  # single point, or tuple with 2 points
+                a, b = parsed
+                if isinstance(a, tuple):
+                    new_obj = Line(Point(*a), Point(*b))
+                elif isinstance(a, (int, float)):
+                    new_obj = Point(a, b)
+            else:
+                points = [Point(x, y) for x, y in parsed]
+                new_obj = Wireframe(*points)
+            if new_obj is not None:
+                self.insert_object(new_obj, "object")
+
+        # setting up toolbar actions
+        self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
+        self.actionSave.triggered.connect(handle_save_action)
+        self.actionSave.setShortcut(QKeySequence.Save)
+        self.actionLoad.triggered.connect(lambda: self.load_obj())
+        self.actionLoad.setShortcut(QKeySequence.Open)
+        self.actionNew.triggered.connect(handle_new_action)
+        self.actionNew.setShortcut(QKeySequence.New)
+
         def new_type_select(index: int):
             # clean all fields after 'name', 'color' and 'type'
             while self.formLayout.rowCount() > 3:
@@ -107,7 +162,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             return extra
 
         def new_object():
-            # TODO: perform parameter validation (name conflict, valid fields)
             if self.typeBox.currentIndex() < 0:
                 return
 
@@ -130,9 +184,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     points.append(p)
                 obj = Wireframe(*points)
 
-            gui.insert_object(obj, name,
-                              index=self.displayFile.currentRow() + 1,
-                              color=color)
+            self.insert_object(obj, name,
+                               index=self.displayFile.currentRow() + 1,
+                               color=color)
             self.componentWidget.setCurrentWidget(self.emptyPage)
 
         def pick_color(override: str = None):
@@ -145,7 +199,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         self.typeBox.currentIndexChanged.connect(new_type_select)
         self.colorEdit.clicked.connect(pick_color)
-        pick_color('#01A1d0')
+        pick_color(QPalette().color(QPalette.Foreground).name())
         self.dialogBox.accepted.connect(new_object)
         self.dialogBox.rejected.connect(
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
@@ -164,7 +218,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             elif self.pivotSelect.currentText() == 'Custom':
                 pivot = Point(to_float(self.rotateXInput.text()),
                               to_float(self.rotateYInput.text()))
-            drawable = self.displayFile.currentItem().data(Qt.UserRole)
+            name = self.displayFile.currentItem().text()
+            drawable = self.display_file[name]
             drawable.transform(t, pivot)
             self.viewport.update()
 
@@ -192,23 +247,34 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         elif index is None:
             index = n
 
-        obj.color = color or '#000000'
+        # when names collide, add a counter (eg name, name1, name2, ...)
+        while name in self.display_file:
+            self.consoleArea.append(f"Renaming '{name}' on collision.")
+            prefix = name.rstrip('0123456789')
+            suffix = name[len(prefix):] if len(prefix) < len(name) else '0'
+            count = int(suffix) + 1
+            name = prefix + str(count)
+        self.display_file[name] = obj
+
+        obj.color = color or QPalette().color(QPalette.Foreground).name()
         self.displayFile.insertItem(index, name)
-        self.displayFile.item(index).setData(Qt.UserRole, obj)
-        self.log("Added %s '%s' to Display File." % (type(obj).__name__, name))
+        self.log(f"Added {type(obj).__name__} '{name}' to Display File.")
         self.displayFile.setCurrentRow(index)
         self.componentWidget.setCurrentWidget(self.emptyPage)
         self.viewport.update()
         return index
 
-    def remove_object(self, index: int) -> Drawable:
+    def remove_object(self, index: int) -> Optional[Drawable]:
         """Take an object out from a certain index in the Display File."""
         item = self.displayFile.takeItem(index)
-        if item:
-            self.log("Removed '%s' from Display File." % item.text())
+        if not item:
+            return None
+        else:
+            name = item.text()
+            model = self.display_file.pop(name)
+            self.log(f"Removed '{name}' from Display File.")
             self.viewport.update()
-            item = item.data(Qt.UserRole)
-        return item
+            return model
 
     def move_object(self, position: int, offset: int):
         """Offset an object's position in the Display File."""
@@ -219,6 +285,14 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.displayFile.setCurrentRow(pos)
         self.viewport.update()
 
+    def load_obj(self, path: str = None):
+        """Loads drawable objects from target OBJ file in disk."""
+        path = path or QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
+        if path.strip() != '':
+            with wavefront_obj.open(path, 'r') as file:
+                for model, name in file:
+                    self.insert_object(model, name)
+
 
 class QtViewport(QWidget):
     def __init__(self, parent_widget, display_file, zoom_slider, eye_position):
@@ -227,10 +301,10 @@ class QtViewport(QWidget):
             """Qt-based implementation of an abstract Painter."""
 
             def draw_pixel(self, x, y):
-                self.drawPoint(x, y)
+                self.drawPoint(int(x), int(y))
 
             def draw_line(self, xa, ya, xb, yb):
-                self.drawLine(xa, ya, xb, yb)
+                self.drawLine(int(xa), int(ya), int(xb), int(yb))
 
         super().__init__(parent_widget)
         self._display_file = display_file  # modified by main window
@@ -247,8 +321,8 @@ class QtViewport(QWidget):
         Takes the camera tilt into account, such that movement is view-aligned.
         """
         if _normalized:
-            dx = int(dx * self._pan)
-            dy = int(dy * self._pan)
+            dx *= self._pan
+            dy *= dy * self._pan
         align = Transformation().rotate(self.camera.angle).matrix()
         dx, dy, _ = align @ Vector(dx, dy, 1)
         self.camera.x += dx
@@ -269,22 +343,18 @@ class QtViewport(QWidget):
 
     def paintEvent(self, event):  # this is where we draw our scene
         self.camera.painter.begin(self)
-        self.camera.painter.fillRect(  # XXX: camera view background
-            0, 0, self.width(), self.height(), Qt.white)
-        self.camera.painter.setPen(Qt.red)
-        self.camera.painter.drawRect(  # XXX: camera view background
-            40, 40, self.width()-80, self.height()-80)
-        for i in range(self._display_file.count()):
-            model = self._display_file.item(i).data(Qt.UserRole)
-            self.camera.painter.setPen(QColor(model.color))
-            model.draw(self.camera)
+        self.camera.painter.setRenderHint(QPainter.Antialiasing, False)
+        self.camera.painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
+        for drawable in self._display_file.values():
+            self.camera.painter.setPen(QColor(drawable.color))
+            drawable.draw(self.camera)
         self.camera.painter.end()
         return super().paintEvent(event)
 
     def resizeEvent(self, event):
         self.camera.viewport_size = (self.width(), self.height())
         InteractiveGraphicalSystem.log(
-            "Viewport resized to {}x{}".format(self.width(), self.height()))
+            f"Viewport resized to {self.width()}x{self.height()}")
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
@@ -293,7 +363,7 @@ class QtViewport(QWidget):
             self.pan_camera(0, 1)
         elif e.key() == Qt.Key_A:
             self.pan_camera(-1, 0)
-        elif e.key() == Qt.Key_S:
+        elif e.key() == Qt.Key_S and not e.modifiers() & Qt.ControlModifier:
             self.pan_camera(0, -1)
         elif e.key() == Qt.Key_D:
             self.pan_camera(1, 0)
@@ -309,8 +379,8 @@ class QtViewport(QWidget):
             self.tilt_view(radians(15))
         elif e.key() == Qt.Key_E:
             self.tilt_view(radians(-15))
-        # forward (most) events to parent class
-        elif e.key() != Qt.Key_Tab:
+        # also forward (most) events to parent widget
+        if e.key() != Qt.Key_Tab:
             return super().keyPressEvent(e)
 
     def focusNextPrevChild(self, next):  # disable focus change with Tab
@@ -346,8 +416,7 @@ class QtViewport(QWidget):
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
             InteractiveGraphicalSystem.log(
-                "Window dragged to ({}, {})".format(self.camera.x,
-                                                    self.camera.y))
+                "Window dragged to (%g, %g)" % (self.camera.x, self.camera.y))
         else:
             self._eye_position.setText("[{}, {}]".format(event.x(), event.y()))
             return super().mouseMoveEvent(event)
@@ -362,8 +431,7 @@ class PointFields(QWidget, Ui_PointFields):
         self._has_action = False
 
     def to_point(self) -> Point:
-        return Point(int(self.xDoubleSpinBox.value()),
-                     int(self.yDoubleSpinBox.value()))
+        return Point(self.xDoubleSpinBox.value(), self.yDoubleSpinBox.value())
 
     def set_action(self, action: Optional[Callable[[], None]]):
         """Set procedure to be executed when the action button is clicked."""
@@ -397,30 +465,13 @@ class PointFields(QWidget, Ui_PointFields):
 
 
 if __name__ == '__main__':
-    app = QApplication(argv)
-
-    gui = InteractiveGraphicalSystem()  # NOTE: variable is needed
-
-    # simple objects to test the app
-    gui.insert_object(Line(Point(-950, 0), Point(1605, 3)), "lhor")
-    gui.insert_object(Wireframe(Point(100, 0),
-                                Point(475, 250),
-                                Point(300, 133),
-                                Point(478, 75),
-                                Point(696, 134),
-                                Point(475, 250),
-                                Point(950, 0)),
-                      "wmmc")
-    gui.insert_object(Line(Point(220, 75), Point(80, 135)), "lve")
-    gui.insert_object(Line(Point(80, 135), Point(-40, 83)), "lvw")
-    gui.insert_object(Wireframe(Point(-575, 0),
-                                Point(-475, 135),
-                                Point(-220, 152),
-                                Point(-130, 300),
-                                Point(0, 0)),
-                      "wmt")
-    gui.insert_object(Point(-130, 297), "ppmt")
-
-    gui.displayFile.setCurrentRow(-1)
-
-    exit(app.exec_())
+    if '-h' in argv:
+        print(f"Usage: {argv[0]} [<objfiles> ...] | -h")
+        exit(0)
+    else:
+        app = QApplication(argv)
+        gui = InteractiveGraphicalSystem()
+        for obj in argv[1:]:
+            gui.load_obj(obj)
+        gui.displayFile.setCurrentRow(-1)
+        exit(app.exec_())
