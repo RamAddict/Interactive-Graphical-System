@@ -25,8 +25,7 @@ class Matrix:
         Builds an MxN Matrix by calling a given builder function on each index
         pair (row, column) and filling its cell with the function's return.
         """
-        rows = [[builder(i, j) for j in range(n)] for i in range(m)]
-        return Matrix.from_lists(rows)
+        return Matrix.from_lists([[builder(i, j) for j in range(n)] for i in range(m)])
 
     @staticmethod
     def identity(n: int):

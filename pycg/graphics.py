@@ -1,6 +1,6 @@
 """Computer Graphics API."""
 
-from math import sqrt, cos, sin
+from math import sqrt, cos, sin, inf
 from typing import Iterable, Tuple, Sequence
 
 from blas import Vector, Matrix
@@ -138,7 +138,7 @@ class Drawable():
 
 class Point(Drawable, Vector):
     def __init__(self, x, y):
-        super(Point, self).__init__(x, y)
+        Vector.__init__(self, x, y)
 
     def draw(self, painter):
         painter.draw_pixel(self.x, self.y)
@@ -213,7 +213,7 @@ class Wireframe(Drawable):
 
     def center(self) -> Point:
         # to avoid overweighting repeated points, only average over unique ones
-        points = set({(x,y) for x, y, in self._points})
+        points = set(self._points)
         average = Point(0, 0)
         for x, y in points:
             average += Point(x, y)
@@ -233,6 +233,10 @@ class Polygon(Wireframe):
     """Filled polygon."""
 
     def __init__(self, points: Sequence[Point]):
+        points = list(points)
+        if points[-1] != points[0]:
+            x, y = points[0]
+            points.append(Point(x, y))
         super().__init__(points)
 
     def draw(self, painter):
@@ -255,31 +259,39 @@ class Camera(Painter):
 
     def draw_pixel(self, x, y):
         self._recompute_matrixes()
-        x, y, _ = self._world_to_view @ Vector(x, y, 1)
-        if -1 <= x <= 1 and -1 <= y <= 1:
-            x, y, _ = self._view_to_screen @ Vector(x, y, 1)
-            self.painter.draw_pixel(x, y)
+        p = self._world_to_view @ Vector(x, y, 1)
+        if -1 <= p.x <= 1 and -1 <= p.y <= 1:
+            x, y, _ = self._view_to_screen @ Vector(p.x, p.y, 1)
+            self.painter.draw_pixel(int(x), int(y))
 
     def draw_line(self, xa, ya, xb, yb):
         self._recompute_matrixes()
         a = self._world_to_view @ Vector(xa, ya, 1)
         b = self._world_to_view @ Vector(xb, yb, 1)
-        clipped = Camera._cohen_sutherland(a.x, a.y, b.x, b.y)
+        # TODO: let the user choose which method to use
+        clipped = clip_line(a.x, a.y, b.x, b.y)
         if clipped:
             xa, ya, xb, yb = clipped
             a = self._view_to_screen @ Vector(xa, ya, 1)
             b = self._view_to_screen @ Vector(xb, yb, 1)
-            self.painter.draw_line(a.x, a.y, b.x, b.y)
+            self.painter.draw_line(int(a.x), int(a.y), int(b.x), int(b.y))
 
-    # TODO: clip polygons
     def draw_polygon(self, points: Sequence[Tuple[int, int]]):
         self._recompute_matrixes()
-        world_to_screen = self._view_to_screen @ self._world_to_view
-        transformed = []
-        for p in points:
-            x, y, _ = world_to_screen @ Vector(p.x, p.y, 1)
-            transformed.append((x, y))
-        self.painter.draw_polygon(transformed)
+
+        clipspace = []
+        for x, y in points:
+            x, y, _ = self._world_to_view @ Vector(x, y, 1)
+            clipspace.append((x, y))
+
+        clipped = clip_polygon(clipspace)
+
+        screenspace = []
+        for x, y in clipped:
+            x, y, _ = self._view_to_screen @ Vector(x, y, 1)
+            screenspace.append((int(x), int(y)))
+
+        if screenspace: self.painter.draw_polygon(screenspace)
 
     def _recompute_matrixes(self):
         # only actually recompute if the camera has changed
@@ -348,66 +360,67 @@ class Camera(Painter):
         self._viewport_size = Vector(w, h)
         self._dirty = True
 
-    @staticmethod
-    def _liang_barsky(xa: float, ya: float, xb: float, yb: float):
-        # we assume input coordinates are normalized
-        x_min, x_max = (-1, 1)
-        y_min, y_max = (-1, 1)
 
-        # compute distance from window borders
-        qs = (
-            xa - x_min, # left
-            x_max - xa, # right
-            ya - y_min, # bottom
-            y_max - ya, # up
-        )
+def clip_line(xa: float, ya: float, xb: float, yb: float) -> Sequence[float]:
+    """Straightforward Liang-Barsky normalized line clipping algorithm."""
 
-        # also the displacements
-        dx = xb - xa
-        dy = yb - ya
-        ps = (-dx, dx, -dy, dy)
+    # we assume input coordinates are normalized
+    x_min, x_max = (-1, 1)
+    y_min, y_max = (-1, 1)
 
-        # when any p == 0, the line is parallel to one side of the window, in
-        # which case we can quickly tell whether the line is completely outside
-        for p, q in zip(ps, qs):
-            if p == 0 and q < 0:
-                return []
+    # compute distance from window borders
+    qs = (
+        xa - x_min, # left
+        x_max - xa, # right
+        ya - y_min, # bottom
+        y_max - ya, # up
+    )
 
-        # for all other cases, we take an argument u in [0,1] and consider
-        # x = xa + u*dx        and        y = yb + u*dy
-        u1, u2 = 0, 1
+    # also the displacements
+    dx = xb - xa
+    dy = yb - ya
+    ps = (-dx, dx, -dy, dy)
 
-        # update parameters
-        for p, q in zip(ps, qs):
-            if p < 0:    # out -> in
-                u1 = max(u1, q / p)
-            elif p > 0:  # in -> out
-                u2 = min(u2, q / p)
-        else:
-            if u1 > u2:  # line completely outside
-                return []
+    # when any p == 0, the line is parallel to one side of the window, in
+    # which case we can quickly tell whether the line is completely outside
+    for p, q in zip(ps, qs):
+        if p == 0 and q < 0:
+            return []
 
-        # by default, assume no clipping
-        x1, y1, x2, y2 = xa, ya, xb, yb
+    # for all other cases, we take an argument u in [0,1] and consider
+    # x = xa + u*dx        and        y = yb + u*dy
+    u1, u2 = 0, 1
 
-        # if zero we reject u1
-        if u1 != 0:
-            x1 = xa + u1*dx
-            y1 = ya + u1*dy
+    # update parameters
+    for p, q in zip(ps, qs):
+        if p < 0:    # out -> in
+            u1 = max(u1, q / p)
+        elif p > 0:  # in -> out
+            u2 = min(u2, q / p)
+    else:
+        if u1 > u2:  # line completely outside
+            return []
 
-        # if one we reject u2
-        if u2 != 1:
-            x2 = xa + u2*dx
-            y2 = ya + u2*dy
+    # by default, assume no clipping
+    x1, y1, x2, y2 = xa, ya, xb, yb
 
-        return [x1, y1, x2, y2]
-    # TODO: let the user choose which method to use
-    @staticmethod
-    def _cohen_sutherland(xa: float, ya: float, xb: float, yb: float):
-        # we assume input coordinates are normalized
-        x_min, x_max = (-1, 1)
-        y_min, y_max = (-1, 1)
+    # if zero we reject u1
+    if u1 != 0:
+        x1 = xa + u1*dx
+        y1 = ya + u1*dy
 
+    # if one we reject u2
+    if u2 != 1:
+        x2 = xa + u2*dx
+        y2 = ya + u2*dy
+
+    return [x1, y1, x2, y2]
+
+
+def make_clipper(x_min: float, x_max: float, y_min: float, y_max: float):
+    """Creates a line clipper that respects the given window bounds."""
+
+    def _cohen_sutherland(xa: float, ya: float, xb: float, yb: float) -> Sequence[float]:
         # This method uses 4 bits and 9 quadrants to heuristically discover if
         # lines will cross the window or not
         #    1001 |  1000  | 1010
@@ -467,3 +480,33 @@ class Camera(Painter):
             else:
                 x2, y2 = x, y
                 rcEnd = calculate_rc(x2, y2)
+
+    return _cohen_sutherland
+
+
+def clip_polygon(points: Sequence[Tuple[float, float]]) -> Sequence[Tuple[float, float]]:
+    """Sutherland polygon clipping algorithm over a normalized window."""
+
+    # we assume input coordinates are normalized
+    x_min, x_max = (-1, 1)
+    y_min, y_max = (-1, 1)
+
+    # Sutherland-Hodgman works well with Cohen-Sutherland
+    clip_left = make_clipper(x_min, +inf, -inf, +inf)
+    clip_up = make_clipper(-inf, +inf, -inf, y_max)
+    clip_right = make_clipper(-inf, x_max, -inf, +inf)
+    clip_down = make_clipper(-inf, +inf, y_min, +inf)
+
+    for clip in (clip_left, clip_up, clip_right, clip_down):
+        if not points: break
+        new = []
+        for a, b in pairwise(points):
+            segment = clip(a[0], a[1], b[0], b[1])
+            if not segment: continue
+            xa, ya, xb, yb = segment
+            new.append((xa, ya))
+            if (xb, yb) != b: new.append((xb, yb))
+        if new[-1] != new[0]: new.append(new[0])
+        points = new
+
+    return points
