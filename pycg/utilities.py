@@ -6,7 +6,7 @@ from typing import Iterable, Sequence, Generator, Tuple, Optional
 
 
 def grouped(iterable: Iterable, n: int) -> Generator[Tuple, None, None]:
-    """Goes through an Iterable, n elements at a time.
+    """Goes through an Iterable n elements at a time.
     If there aren't enough elements left for a last iteration, it won't happen.
     """
     it = iter(iterable)
@@ -43,6 +43,11 @@ def experp(x, in_min, in_max, out_min, out_max):
     a = out_min / 2**(b * in_min)
     # now we plug them into the equation (PS: base 2 is probably faster than e)
     return a * 2**(b * x)
+
+
+def clamp(x, out_min, out_max):
+    """Ensures input value saturates on given bounds."""
+    return min(max(out_min, x), out_max)
 
 
 def sign(x):

@@ -33,7 +33,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         # imported Qt UI setup
-        super(InteractiveGraphicalSystem, self).__init__()
+        super().__init__()
         self.setupUi(self)
 
         self.display_file: Dict[str, Drawable] = dict()
@@ -304,15 +304,13 @@ class QtViewport(QWidget):
             """Qt-based implementation of an abstract Painter."""
 
             def draw_pixel(self, x, y):
-                self.drawPoint(int(x), int(y))
+                self.drawPoint(x, y)
 
             def draw_line(self, xa, ya, xb, yb):
-                self.drawLine(int(xa), int(ya), int(xb), int(yb))
+                self.drawLine(xa, ya, xb, yb)
 
             def draw_polygon(self, points: Sequence[Tuple]):
-                self.drawPolygon(QPolygon([
-                    QPoint(int(x), int(y)) for x, y in points
-                ]))
+                self.drawPolygon(QPolygon([QPoint(x, y) for x, y in points]))
 
         super().__init__(parent_widget)
         self._display_file = display_file  # modified by main window
@@ -441,7 +439,7 @@ class QtViewport(QWidget):
 
 class PointFields(QWidget, Ui_PointFields):
     def __init__(self):
-        super(PointFields, self).__init__()
+        super().__init__()
         self.setupUi(self)
         self.xDoubleSpinBox.setRange(-inf, inf)
         self.yDoubleSpinBox.setRange(-inf, inf)
