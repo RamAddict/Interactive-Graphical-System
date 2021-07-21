@@ -2,6 +2,7 @@
 
 from math import inf, radians
 from sys import argv
+from os import path
 from typing import Optional, Callable, Dict, Sequence, Tuple
 from ast import literal_eval
 
@@ -13,7 +14,7 @@ from PySide2.QtCore import Qt, QPoint
 
 from blas import Vector
 from graphics import (Painter, Camera, Transformation, Drawable, Point, Line,
-                      Wireframe, Polygon)
+                      Wireframe, Polygon, Color)
 from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
@@ -95,15 +96,28 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             else:
                 name = self.displayFile.currentItem().text()
                 model = self.display_file[name]
-                path, _ = QFileDialog.getSaveFileName(
+
+                modelpath, _ = QFileDialog.getSaveFileName(
                     self,
                     "Select .obj file to save",
                     name + '.obj',
                 )
-                if path.strip() != '':
-                    with wavefront_obj.open(path, 'w+') as file:
-                        file.write(model, name)
-                        self.log(f"Saved object '{name}' to '{path}'")
+                if modelpath.strip() == '': return
+
+                mtlpath, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Select .mtl file to save",
+                    name + '.mtl',
+                )
+                if mtlpath.strip() != '':
+                    color = model.color
+                    with open(mtlpath, 'w+') as file:
+                        file.write(f"newmtl color\n")
+                        file.write(f"Kd {color.r/255} {color.g/255} {color.b/255}\n")
+
+                with wavefront_obj.open(modelpath, 'w+', mtllib=path.basename(mtlpath)) as file:
+                    file.write(model, name, usemtl='color')
+                    self.log(f"Saved object '{name}' to '{mtlpath}'")
 
         def handle_new_action():
             new_obj = None
@@ -185,7 +199,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
             name = self.nameEdit.text()
             typename = self.typeBox.currentText()
-            color = self.colorEdit.text()
+            color = QColor(self.colorEdit.text())
+            color = Color(color.red(), color.green(), color.blue())
 
             # indexes of QLayout.itemAt() depend on the order of UI elements
             obj = None
@@ -257,7 +272,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.log("Interactive Graphical System initialized.")
 
     def insert_object(self, obj: Drawable, name,
-                      index: int = None, color: str = None) -> int:
+                      index: int = None, color: Color = None) -> int:
         """Put an object in the Display File, returning its position."""
 
         n = self.displayFile.count()
@@ -275,7 +290,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             name = prefix + str(count)
         self.display_file[name] = obj
 
-        obj.color = color or QPalette().color(QPalette.Foreground).name()
+        if not color:
+            color = QPalette().color(QPalette.Foreground)
+            color = Color(color.red(), color.green(), color.blue())
+        obj.color = color
         self.displayFile.insertItem(index, name)
         self.log(f"Added {type(obj).__name__} '{name}' to Display File.")
         self.displayFile.setCurrentRow(index)
@@ -309,8 +327,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         path = path or QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
         if path.strip() != '':
             with wavefront_obj.open(path, 'r') as file:
-                for model, name in file:
-                    self.insert_object(model, name)
+                for model, attributes in file:
+                    self.insert_object(
+                        model,
+                        name=attributes['name'],
+                        color=attributes.get('color', None),
+                    )
 
 
 class QtViewport(QWidget):
@@ -374,8 +396,8 @@ class QtViewport(QWidget):
         painter.drawRect(40, 40, w - 80, h-80)
 
         for drawable in self._display_file.values():
-            painter.setPen(QColor(drawable.color))
-            painter.setBrush(QColor(drawable.color))
+            painter.setPen(QColor(str(drawable.color)))
+            painter.setBrush(QColor(str(drawable.color)))
             drawable.draw(self.camera)
 
         painter.end()

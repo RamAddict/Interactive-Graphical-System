@@ -38,7 +38,7 @@ release: submission.zip
 $(QT_OBJ)/%.py: $(QT_SRC)/%.ui
 	$(QT_COMPILER) $< -o $@
 
-submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md objs/scene.obj
+submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md objs/scene.obj objs/palette.mtl
 	@ make test
 	@ make mostlyclean
 	mkdir PyCG
@@ -48,5 +48,6 @@ submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md objs/scene.obj
 	cp README.md PyCG
 	mkdir PyCG/objs
 	cp objs/scene.obj PyCG/objs
+	cp objs/palette.mtl PyCG/objs
 	zip -r submission.zip PyCG
 	rm -r PyCG
