@@ -4,7 +4,7 @@ from math import sqrt, cos, sin, inf
 from typing import Iterable, Tuple, Sequence
 
 from blas import Vector, Matrix
-from utilities import pairwise
+from utilities import pairwise, clamp
 
 
 class Painter():
@@ -513,3 +513,48 @@ def clip_polygon(points: Sequence[Tuple[float, float]]) -> Sequence[Tuple[float,
         points = new
 
     return points
+
+
+class Color:
+    def __init__(self, r, g, b, a = 0xFF):
+        self._r = clamp(int(r), 0x00, 0xFF)
+        self._g = clamp(int(g), 0x00, 0xFF)
+        self._b = clamp(int(b), 0x00, 0xFF)
+        self._a = clamp(int(a), 0x00, 0xFF)
+
+    def __repr__(self):
+        return '#' + ''.join('%02x' % x for x in (self.r, self.g, self.b))
+
+    def __eq__(self, other) -> bool:
+        return self.r == other.r \
+           and self.g == other.g \
+           and self.b == other.b \
+           and self.a == other.a
+
+    @property
+    def r(self):
+        return self._r
+
+    @r.setter
+    def r(self, r):
+        self._r = clamp(int(r), 0x00, 0xFF)
+
+    @property
+    def g(self):
+        return self._g
+
+    @g.setter
+    def g(self, g):
+        self._g = clamp(int(g), 0x00, 0xFF)
+
+    @property
+    def b(self):
+        return self._b
+
+    @b.setter
+    def b(self, b):
+        self._b = clamp(int(b), 0x00, 0xFF)
+
+    @property
+    def a(self):
+        return self._a

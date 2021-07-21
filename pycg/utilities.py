@@ -66,3 +66,8 @@ def to_float(value) -> Optional[float]:
         return float(value)
     except BaseException:
         return None
+
+
+def iter_no_str(thing):
+    """Avoid iterating over strings."""
+    return iter([thing]) if isinstance(thing, str) else iter(thing)
