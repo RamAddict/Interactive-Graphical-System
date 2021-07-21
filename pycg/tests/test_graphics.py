@@ -20,7 +20,8 @@ def test_transformations_center_pivot():
     rect = Polygon([Point(-1, 1), Point(1, 1), Point(1, -1), Point(-1, -1)])
     s = Transformation().scale(4, 3)
     rect.transform(s)
-    upper_left, upper_right, lower_right, lower_left = rect
+    upper_left, upper_right, lower_right, lower_left, close = rect
+    assert close == upper_left
     assert upper_left == (-4, 3)
     assert upper_right == (4, 3)
     assert lower_right == (4, -3)
