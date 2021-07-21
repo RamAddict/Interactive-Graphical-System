@@ -5,8 +5,8 @@ from sys import argv
 from typing import Optional, Callable, Dict, Sequence, Tuple
 from ast import literal_eval
 
-from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QColorDialog,
-                               QFileDialog, QMessageBox, QInputDialog)
+from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QDialog,
+                               QColorDialog, QFileDialog, QMessageBox, QInputDialog)
 from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
                            QPixmap, QPolygon)
 from PySide2.QtCore import Qt, QPoint
@@ -18,6 +18,7 @@ from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
+from ui.settings import Ui_SettingsDialog
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
@@ -31,9 +32,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         else:
             print(message)
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         # imported Qt UI setup
-        super().__init__()
+        QMainWindow.__init__(self, *args, **kwargs)
         self.setupUi(self)
 
         self.display_file: Dict[str, Drawable] = dict()
@@ -126,6 +127,18 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             if new_obj is not None:
                 self.insert_object(new_obj, "object")
 
+        def handle_settings_action():
+            dialog = SettingsDialog(self)
+            cs = self.viewport.camera.line_clipping_algorithm == SettingsDialog.CLIP_CS
+            dialog.clipLBButton.setChecked(not cs)
+            dialog.clipCSButton.setChecked(cs)
+            status = dialog.exec_()
+            if status != QDialog.Accepted: return
+            algo = (SettingsDialog.CLIP_CS if dialog.clipCSButton.isChecked()
+                    else SettingsDialog.CLIP_LB)
+            self.viewport.camera.line_clipping_algorithm = algo
+            self.log(f"Settings: line clipping algorithm set to '{algo}'.")
+
         # setting up toolbar actions
         self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
         self.actionSave.triggered.connect(handle_save_action)
@@ -134,6 +147,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.actionLoad.setShortcut(QKeySequence.Open)
         self.actionNew.triggered.connect(handle_new_action)
         self.actionNew.setShortcut(QKeySequence.New)
+        self.actionSettings.triggered.connect(handle_settings_action)
+        self.actionSettings.setShortcut(QKeySequence.Preferences)
 
         def new_type_select(index: int):
             # clean all fields after 'name', 'color' and 'type'
@@ -438,8 +453,8 @@ class QtViewport(QWidget):
 
 
 class PointFields(QWidget, Ui_PointFields):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        QWidget.__init__(self, *args, **kwargs)
         self.setupUi(self)
         self.xDoubleSpinBox.setRange(-inf, inf)
         self.yDoubleSpinBox.setRange(-inf, inf)
@@ -477,6 +492,17 @@ class PointFields(QWidget, Ui_PointFields):
         """Set whether or not the fields are enabled."""
         self.xDoubleSpinBox.setEnabled(active)
         self.yDoubleSpinBox.setEnabled(active)
+
+
+class SettingsDialog(QDialog, Ui_SettingsDialog):
+    CLIP_CS = 'Cohen-Sutherland'
+    CLIP_LB = 'Liang-Barsky'
+
+    def __init__(self, *args, **kwargs):
+        QDialog.__init__(self, *args, **kwargs)
+        self.setupUi(self)
+        self.buttonBox.accepted.connect(lambda: self.accept())
+        self.buttonBox.rejected.connect(lambda: self.reject())
 
 
 if __name__ == '__main__':

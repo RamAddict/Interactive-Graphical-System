@@ -383,8 +383,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>306</width>
-             <height>226</height>
+             <width>186</width>
+             <height>163</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
@@ -973,6 +973,8 @@
    <addaction name="actionSave"/>
    <addaction name="separator"/>
    <addaction name="actionNew"/>
+   <addaction name="separator"/>
+   <addaction name="actionSettings"/>
   </widget>
   <action name="actionSave">
    <property name="text">
@@ -987,6 +989,11 @@
   <action name="actionNew">
    <property name="text">
     <string>New</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="text">
+    <string>Settings</string>
    </property>
   </action>
  </widget>

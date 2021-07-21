@@ -213,7 +213,7 @@ class Wireframe(Drawable):
 
     def center(self) -> Point:
         # to avoid overweighting repeated points, only average over unique ones
-        points = set(self._points)
+        points = set({(x, y) for x, y in self._points})
         average = Point(0, 0)
         for x, y in points:
             average += Point(x, y)
@@ -256,6 +256,7 @@ class Camera(Painter):
         self._dirty = True
         self._world_to_view = None
         self._view_to_screen = None
+        self.line_clipping_algorithm = 'Liang-Barsky'
 
     def draw_pixel(self, x, y):
         self._recompute_matrixes()
@@ -268,8 +269,10 @@ class Camera(Painter):
         self._recompute_matrixes()
         a = self._world_to_view @ Vector(xa, ya, 1)
         b = self._world_to_view @ Vector(xb, yb, 1)
-        # TODO: let the user choose which method to use
-        clipped = clip_line(a.x, a.y, b.x, b.y)
+        clipper = (make_clipper(-1, +1, -1, +1)
+                   if self.line_clipping_algorithm == 'Cohen-Sutherland'
+                   else clip_line)
+        clipped = clipper(a.x, a.y, b.x, b.y)
         if clipped:
             xa, ya, xb, yb = clipped
             a = self._view_to_screen @ Vector(xa, ya, 1)
