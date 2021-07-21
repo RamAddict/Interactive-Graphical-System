@@ -1,3 +1,5 @@
+mtllib palette.mtl
+
 v -950 0 1.0 1.0
 v 1605 0 1.0 1.0
 v -575 0 1.0 1.0
@@ -12,11 +14,19 @@ v 478 75 1.0 1.0
 v 696 134 1.0 1.0
 v 475 250 1.0 1.0
 v 950 0 1.0 1.0
+
 o horizon
+usemtl green
 l 1 2
+
 o mountain
-l 3 4 5 6 7 3
+usemtl red
+f 3 4 5 6 7
+
 o peak
+usemtl white
 p 6
+
 o snow_mountain
-f 8 9 10 11 12 13 14
+usemtl blue
+l 8 9 10 11 12 13 14 8

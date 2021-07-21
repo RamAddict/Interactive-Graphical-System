@@ -2,36 +2,40 @@
 
 from math import inf, radians
 from sys import argv
-from typing import Optional, Callable, Dict
+from os import path
+from typing import Optional, Callable, Dict, Sequence, Tuple
 from ast import literal_eval
 
-from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QColorDialog,
-                               QFileDialog, QMessageBox, QInputDialog)
-from PySide2.QtGui import QPainter, QKeySequence, QColor, QPalette, QIcon, QPixmap
-from PySide2.QtCore import Qt
+from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QDialog,
+                               QColorDialog, QFileDialog, QMessageBox, QInputDialog)
+from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
+                           QPixmap, QPolygon)
+from PySide2.QtCore import Qt, QPoint
 
 from blas import Vector
-from graphics import Point, Line, Wireframe, Painter, Camera, Transformation, Drawable
+from graphics import (Painter, Camera, Transformation, Drawable, Point, Line,
+                      Wireframe, Polygon, Color)
 from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
 from ui.point import Ui_PointFields
+from ui.settings import Ui_SettingsDialog
 
 
 class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
     _console = None
 
     @staticmethod
-    def log(message):
+    def log(message: str):
         console = InteractiveGraphicalSystem._console
         if console:
             console.append(str(message))
         else:
             print(message)
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         # imported Qt UI setup
-        super(InteractiveGraphicalSystem, self).__init__()
+        QMainWindow.__init__(self, *args, **kwargs)
         self.setupUi(self)
 
         self.display_file: Dict[str, Drawable] = dict()
@@ -92,15 +96,28 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             else:
                 name = self.displayFile.currentItem().text()
                 model = self.display_file[name]
-                path, _ = QFileDialog.getSaveFileName(
+
+                modelpath, _ = QFileDialog.getSaveFileName(
                     self,
                     "Select .obj file to save",
                     name + '.obj',
                 )
-                if path.strip() != '':
-                    with wavefront_obj.open(path, 'w+') as file:
-                        file.write(model, name)
-                        self.log(f"Saved object '{name}' to '{path}'")
+                if modelpath.strip() == '': return
+
+                mtlpath, _ = QFileDialog.getSaveFileName(
+                    self,
+                    "Select .mtl file to save",
+                    name + '.mtl',
+                )
+                if mtlpath.strip() != '':
+                    color = model.color
+                    with open(mtlpath, 'w+') as file:
+                        file.write(f"newmtl color\n")
+                        file.write(f"Kd {color.r/255} {color.g/255} {color.b/255}\n")
+
+                with wavefront_obj.open(modelpath, 'w+', mtllib=path.basename(mtlpath)) as file:
+                    file.write(model, name, usemtl='color')
+                    self.log(f"Saved object '{name}' to '{mtlpath}'")
 
         def handle_new_action():
             new_obj = None
@@ -119,9 +136,22 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     new_obj = Point(a, b)
             else:
                 points = [Point(x, y) for x, y in parsed]
-                new_obj = Wireframe(*points)
+                if points[-1] == points[0]: new_obj = Polygon(points)
+                else: new_obj = Wireframe(points)
             if new_obj is not None:
                 self.insert_object(new_obj, "object")
+
+        def handle_settings_action():
+            dialog = SettingsDialog(self)
+            cs = self.viewport.camera.line_clipping_algorithm == SettingsDialog.CLIP_CS
+            dialog.clipLBButton.setChecked(not cs)
+            dialog.clipCSButton.setChecked(cs)
+            status = dialog.exec_()
+            if status != QDialog.Accepted: return
+            algo = (SettingsDialog.CLIP_CS if dialog.clipCSButton.isChecked()
+                    else SettingsDialog.CLIP_LB)
+            self.viewport.camera.line_clipping_algorithm = algo
+            self.log(f"Settings: line clipping algorithm set to '{algo}'.")
 
         # setting up toolbar actions
         self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
@@ -131,6 +161,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.actionLoad.setShortcut(QKeySequence.Open)
         self.actionNew.triggered.connect(handle_new_action)
         self.actionNew.setShortcut(QKeySequence.New)
+        self.actionSettings.triggered.connect(handle_settings_action)
+        self.actionSettings.setShortcut(QKeySequence.Preferences)
 
         def new_type_select(index: int):
             # clean all fields after 'name', 'color' and 'type'
@@ -143,7 +175,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             elif typename == 'Line':
                 self.formLayout.addRow(PointFields())
                 self.formLayout.addRow(PointFields())
-            elif typename == 'Wireframe':
+            elif typename in ('Wireframe', 'Polygon'):
                 self.formLayout.addRow(PointFields())
                 self.formLayout.addRow(PointFields())
                 self.formLayout.addRow(PointFields())
@@ -167,7 +199,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
             name = self.nameEdit.text()
             typename = self.typeBox.currentText()
-            color = self.colorEdit.text()
+            color = QColor(self.colorEdit.text())
+            color = Color(color.red(), color.green(), color.blue())
 
             # indexes of QLayout.itemAt() depend on the order of UI elements
             obj = None
@@ -177,12 +210,13 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 pa = self.formLayout.itemAt(6).widget().to_point()
                 pb = self.formLayout.itemAt(7).widget().to_point()
                 obj = Line(pa, pb)
-            elif typename == 'Wireframe':
+            elif typename in ('Wireframe', 'Polygon'):
                 points = []
                 for i in range(6, self.formLayout.count() - 1):
                     p = self.formLayout.itemAt(i).widget().to_point()
                     points.append(p)
-                obj = Wireframe(*points)
+                if typename == 'Polygon': obj = Polygon(points)
+                else: obj = Wireframe(points)
 
             self.insert_object(obj, name,
                                index=self.displayFile.currentRow() + 1,
@@ -238,12 +272,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.log("Interactive Graphical System initialized.")
 
     def insert_object(self, obj: Drawable, name,
-                      index: int = None, color: str = None) -> int:
+                      index: int = None, color: Color = None) -> int:
         """Put an object in the Display File, returning its position."""
 
         n = self.displayFile.count()
         if index and (index < 0 or index > n):
-            raise IndexError("Invalid Display File index: %d" % index)
+            raise IndexError("Invalid Display File index", index)
         elif index is None:
             index = n
 
@@ -256,7 +290,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             name = prefix + str(count)
         self.display_file[name] = obj
 
-        obj.color = color or QPalette().color(QPalette.Foreground).name()
+        if not color:
+            color = QPalette().color(QPalette.Foreground)
+            color = Color(color.red(), color.green(), color.blue())
+        obj.color = color
         self.displayFile.insertItem(index, name)
         self.log(f"Added {type(obj).__name__} '{name}' to Display File.")
         self.displayFile.setCurrentRow(index)
@@ -290,8 +327,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         path = path or QFileDialog.getOpenFileName(self, "Select .obj file to load")[0]
         if path.strip() != '':
             with wavefront_obj.open(path, 'r') as file:
-                for model, name in file:
-                    self.insert_object(model, name)
+                for model, attributes in file:
+                    self.insert_object(
+                        model,
+                        name=attributes['name'],
+                        color=attributes.get('color', None),
+                    )
 
 
 class QtViewport(QWidget):
@@ -300,16 +341,20 @@ class QtViewport(QWidget):
             """Qt-based implementation of an abstract Painter."""
 
             def draw_pixel(self, x, y):
-                self.drawPoint(int(x), int(y))
+                self.drawPoint(x, y)
 
             def draw_line(self, xa, ya, xb, yb):
-                self.drawLine(int(xa), int(ya), int(xb), int(yb))
+                self.drawLine(xa, ya, xb, yb)
+
+            def draw_polygon(self, points: Sequence[Tuple]):
+                self.drawPolygon(QPolygon([QPoint(x, y) for x, y in points]))
 
         super().__init__(parent_widget)
         self._display_file = display_file  # modified by main window
         self._zoom_slider = zoom_slider
         self._eye_position = eye_position
-        self.camera = Camera(QtPainter(), Vector(self.width(), self.height()))
+        size = Vector(self.width() - 80, self.height() - 80)
+        self.camera = Camera(QtPainter(), size, Point(40, 40))
         self._pan = 10
         self._drag_begin = None
         self.setFocusPolicy(Qt.StrongFocus)
@@ -341,19 +386,27 @@ class QtViewport(QWidget):
         self.update()
 
     def paintEvent(self, event):  # this is where we draw our scene
-        self.camera.painter.begin(self)
-        self.camera.painter.setRenderHint(QPainter.Antialiasing, False)
-        self.camera.painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
+        w, h = self.width(), self.height()
+        painter = self.camera.painter
+        painter.begin(self)
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform, False)
+
+        painter.setPen(QPalette().color(QPalette.Highlight))
+        painter.drawRect(40, 40, w - 80, h-80)
+
         for drawable in self._display_file.values():
-            self.camera.painter.setPen(QColor(drawable.color))
+            painter.setPen(QColor(str(drawable.color)))
+            painter.setBrush(QColor(str(drawable.color)))
             drawable.draw(self.camera)
-        self.camera.painter.end()
+
+        painter.end()
         return super().paintEvent(event)
 
     def resizeEvent(self, event):
-        self.camera.viewport_size = (self.width(), self.height())
-        InteractiveGraphicalSystem.log(
-            f"Viewport resized to {self.width()}x{self.height()}")
+        w, h = self.width(), self.height()
+        self.camera.viewport_size = Vector(w - 80, h - 80)
+        InteractiveGraphicalSystem.log(f"Viewport resized to {w}x{h}")
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
@@ -401,6 +454,8 @@ class QtViewport(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MiddleButton:
             self._drag_begin = None
+            InteractiveGraphicalSystem.log(
+                "Window dragged to (%g, %g)" % (self.camera.x, self.camera.y))
         else:
             return super().mouseReleaseEvent(event)
 
@@ -414,16 +469,14 @@ class QtViewport(QWidget):
             dy = delta.y / self.camera.zoom
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
-            InteractiveGraphicalSystem.log(
-                "Window dragged to (%g, %g)" % (self.camera.x, self.camera.y))
         else:
-            self._eye_position.setText("[{}, {}]".format(event.x(), event.y()))
+            self._eye_position.setText(f"[{event.x()}, {event.y()}]")
             return super().mouseMoveEvent(event)
 
 
 class PointFields(QWidget, Ui_PointFields):
-    def __init__(self):
-        super(PointFields, self).__init__()
+    def __init__(self, *args, **kwargs):
+        QWidget.__init__(self, *args, **kwargs)
         self.setupUi(self)
         self.xDoubleSpinBox.setRange(-inf, inf)
         self.yDoubleSpinBox.setRange(-inf, inf)
@@ -461,6 +514,17 @@ class PointFields(QWidget, Ui_PointFields):
         """Set whether or not the fields are enabled."""
         self.xDoubleSpinBox.setEnabled(active)
         self.yDoubleSpinBox.setEnabled(active)
+
+
+class SettingsDialog(QDialog, Ui_SettingsDialog):
+    CLIP_CS = 'Cohen-Sutherland'
+    CLIP_LB = 'Liang-Barsky'
+
+    def __init__(self, *args, **kwargs):
+        QDialog.__init__(self, *args, **kwargs)
+        self.setupUi(self)
+        self.buttonBox.accepted.connect(lambda: self.accept())
+        self.buttonBox.rejected.connect(lambda: self.reject())
 
 
 if __name__ == '__main__':

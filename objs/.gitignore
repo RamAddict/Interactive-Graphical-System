@@ -1,2 +1,3 @@
-# keep the OBJs in this folder
+# keep the OBJ stuff in this folder
 !*.obj
+!*.mtl

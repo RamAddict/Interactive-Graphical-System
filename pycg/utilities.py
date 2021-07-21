@@ -6,7 +6,7 @@ from typing import Iterable, Sequence, Generator, Tuple, Optional
 
 
 def grouped(iterable: Iterable, n: int) -> Generator[Tuple, None, None]:
-    """Goes through an Iterable, n elements at a time.
+    """Goes through an Iterable n elements at a time.
     If there aren't enough elements left for a last iteration, it won't happen.
     """
     it = iter(iterable)
@@ -45,6 +45,11 @@ def experp(x, in_min, in_max, out_min, out_max):
     return a * 2**(b * x)
 
 
+def clamp(x, out_min, out_max):
+    """Ensures input value saturates on given bounds."""
+    return min(max(out_min, x), out_max)
+
+
 def sign(x):
     """Get the sign of a number or 0 when it is zero."""
     return x and (1, -1)[x < 0]
@@ -61,3 +66,8 @@ def to_float(value) -> Optional[float]:
         return float(value)
     except BaseException:
         return None
+
+
+def iter_no_str(thing):
+    """Avoid iterating over strings."""
+    return iter([thing]) if isinstance(thing, str) else iter(thing)
