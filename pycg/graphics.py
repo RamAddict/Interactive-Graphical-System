@@ -509,7 +509,7 @@ def clip_polygon(points: Sequence[Tuple[float, float]]) -> Sequence[Tuple[float,
             xa, ya, xb, yb = segment
             new.append((xa, ya))
             if (xb, yb) != b: new.append((xb, yb))
-        if new[-1] != new[0]: new.append(new[0])
+        if new and new[-1] != new[0]: new.append(new[0])
         points = new
 
     return points
