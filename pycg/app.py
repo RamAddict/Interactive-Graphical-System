@@ -85,8 +85,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: None if self.displayFile.currentRow() < 0
             else self.componentWidget.setCurrentWidget(self.transformPage))
 
-        def handle_save_action():
-            if self.displayFile.currentRow() < 0:
+        def handle_save_action(all: bool = False):
+            if not all and self.displayFile.currentRow() < 0:
                 QMessageBox.question(
                     self,
                     "Message",
@@ -94,8 +94,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     QMessageBox.Ok
                 )
             else:
-                name = self.displayFile.currentItem().text()
-                model = self.display_file[name]
+                name = "world" if all else self.displayFile.currentItem().text()
 
                 modelpath, _ = QFileDialog.getSaveFileName(
                     self,
@@ -109,19 +108,31 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     "Select .mtl file to save",
                     name + '.mtl',
                 )
-                if mtlpath.strip() != '':
-                    color = model.color
-                    with open(mtlpath, 'w+') as file:
-                        file.write(f"newmtl color\n")
-                        file.write(f"Kd {color.r/255} {color.g/255} {color.b/255}\n")
+                if mtlpath.strip() == '': return
 
-                with wavefront_obj.open(modelpath, 'w+', mtllib=path.basename(mtlpath)) as file:
-                    file.write(model, name, usemtl='color')
-                    self.log(f"Saved object '{name}' to '{mtlpath}'")
+                models = self.display_file if all else {name: self.display_file[name]}
+
+                with open(mtlpath, 'w+') as file:
+                    for name, model in models.items():
+                        color = model.color
+                        mtl = model.attributes.get('usemtl', f"{name}_color")
+                        file.write(f"newmtl {mtl}\n")
+                        file.write(f"Kd {color.r/255} {color.g/255} {color.b/255}\n")
+                        self.log(f"Saved material '{mtl}' to '{path.relpath(mtlpath)}'")
+
+                with wavefront_obj.open(
+                    modelpath,
+                    'w+',
+                    mtllib=path.basename(mtlpath),
+                ) as file:
+                    for name, model in models.items():
+                        mtl = model.attributes.get('usemtl', f"{name}_color")
+                        file.write(model, name, usemtl=mtl)
+                        self.log(f"Saved object '{name}' to '{path.relpath(modelpath)}'")
 
         def handle_new_action():
             new_obj = None
-            text, ok = QInputDialog.getText(
+            text, _ = QInputDialog.getText(
                 self,
                 "Input",
                 "Manual input in format (x1,y1),(x2,y2),...",
@@ -155,8 +166,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         # setting up toolbar actions
         self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
-        self.actionSave.triggered.connect(handle_save_action)
+        self.actionSave.triggered.connect(lambda: handle_save_action(all=False))
         self.actionSave.setShortcut(QKeySequence.Save)
+        self.actionSaveAll.triggered.connect(lambda: handle_save_action(all=True))
+        self.actionSaveAll.setShortcut(QKeySequence.SaveAs)
         self.actionLoad.triggered.connect(lambda: self.load_obj())
         self.actionLoad.setShortcut(QKeySequence.Open)
         self.actionNew.triggered.connect(handle_new_action)
@@ -271,8 +284,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.show()
         self.log("Interactive Graphical System initialized.")
 
-    def insert_object(self, obj: Drawable, name,
-                      index: int = None, color: Color = None) -> int:
+    def insert_object(self, obj: Drawable, name: str,
+                      index: int = None, color: Color = None, **kwargs) -> int:
         """Put an object in the Display File, returning its position."""
 
         n = self.displayFile.count()
@@ -294,6 +307,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             color = QPalette().color(QPalette.Foreground)
             color = Color(color.red(), color.green(), color.blue())
         obj.color = color
+        obj.attributes = kwargs
+        obj.attributes['name'] = name
+        obj.attributes['color'] = color
+
         self.displayFile.insertItem(index, name)
         self.log(f"Added {type(obj).__name__} '{name}' to Display File.")
         self.displayFile.setCurrentRow(index)
@@ -328,11 +345,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         if path.strip() != '':
             with wavefront_obj.open(path, 'r') as file:
                 for model, attributes in file:
-                    self.insert_object(
-                        model,
-                        name=attributes['name'],
-                        color=attributes.get('color', None),
-                    )
+                    self.insert_object(model, **attributes)
 
 
 class QtViewport(QWidget):

@@ -972,6 +972,8 @@
    <addaction name="separator"/>
    <addaction name="actionSave"/>
    <addaction name="separator"/>
+   <addaction name="actionSaveAll"/>
+   <addaction name="separator"/>
    <addaction name="actionNew"/>
    <addaction name="separator"/>
    <addaction name="actionSettings"/>
@@ -994,6 +996,11 @@
   <action name="actionSettings">
    <property name="text">
     <string>Settings</string>
+   </property>
+  </action>
+  <action name="actionSaveAll">
+   <property name="text">
+    <string>Save All</string>
    </property>
   </action>
  </widget>
