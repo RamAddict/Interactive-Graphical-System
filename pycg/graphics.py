@@ -367,6 +367,7 @@ class Camera(Painter):
         self._dirty = True
 
 """
+    Assumes number of points is of the form (4 + 3*i)
     iterates on the points 4 by 4
 """
 def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
@@ -376,17 +377,17 @@ def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
     if len(points) >= 4:
         j = 0
         M = Matrix([-1,3,-3,1], [3,-6,3,0], [-3,3,0,0],[1,0,0,0])
-        while j < 1:
-            T = Matrix([j*j*j, j*j, j, 1])
-            sumGx = 0
-            sumGy = 0
-            for i in range(len(points)-3):
+        for i in range(0, len(points)-3,3):
+            j = 0
+            while j < 1:
+                T = Matrix([j*j*j, j*j, j, 1])
+                
                 Gx = Matrix(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
                 Gy = Matrix(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
-                sumGx += (T @ M @ Gx)[0]
-                sumGy += (T @ M @ Gy)[0]
-            curve.append(Point(sumGx, sumGy))
-            j+=step
+                Gx = (T @ M @ Gx)[0]
+                Gy = (T @ M @ Gy)[0]
+                curve.append(Point(Gx, Gy))
+                j+=step
     else:
         return points
     return curve
