@@ -6,14 +6,14 @@ from os import path
 from typing import Optional, Callable, Dict, Sequence, Tuple
 from ast import literal_eval
 
-from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QDialog,
+from PySide2.QtWidgets import (QApplication, QLineEdit, QMainWindow, QMenuBar, QWidget, QDialog,
                                QColorDialog, QFileDialog, QMessageBox, QInputDialog)
 from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
                            QPixmap, QPolygon)
 from PySide2.QtCore import Qt, QPoint
 
 from blas import Vector
-from graphics import (Painter, Camera, Transformation, Drawable, Point, Line,
+from graphics import (Bezier, Painter, Camera, Transformation, Drawable, Point, Line,
                       Wireframe, Polygon, Color)
 from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
@@ -180,6 +180,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 self.formLayout.addRow(PointFields())
                 self.formLayout.addRow(PointFields())
                 self.formLayout.addRow(make_extra_point())
+            elif typename == 'Bezier':
+                self.lineEdit = QLineEdit(self.objectArea)
+                self.formLayout.addRow(self.lineEdit)
+                self.lineEdit.setPlaceholderText("Pontos na forma (x, y)")
 
         def make_extra_point() -> PointFields:
             extra = PointFields()
@@ -217,7 +221,18 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     points.append(p)
                 if typename == 'Polygon': obj = Polygon(points)
                 else: obj = Wireframe(points)
-
+            elif typename == "Bezier":
+                parsed = literal_eval(self.lineEdit.text())
+                if not isinstance(parsed, tuple): return
+                if len(parsed) == 2:
+                    a, b = parsed
+                    if isinstance(a, tuple):
+                        obj = Line(Point(*a), Point(*b))
+                    elif isinstance(a, (int, float)):
+                        obj = Point(a, b)
+                else:
+                    points = [Point(x, y) for x, y in parsed]
+                    obj = Bezier(points)
             self.insert_object(obj, name,
                                index=self.displayFile.currentRow() + 1,
                                color=color)
@@ -333,7 +348,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                         name=attributes['name'],
                         color=attributes.get('color', None),
                     )
-
 
 class QtViewport(QWidget):
     def __init__(self, parent_widget, display_file, zoom_slider, eye_position):
