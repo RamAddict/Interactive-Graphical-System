@@ -1,5 +1,7 @@
 from math import pi
-from graphics import Transformation, Point, Line, Polygon
+from typing import Sequence
+from blas import Matrix
+from graphics import Bezier, Transformation, Point, Line, Polygon
 
 
 def test_transformations_center_pivot():
@@ -50,3 +52,8 @@ def test_transformations_global_pivot():
     assert round(point_a.y) == 100
     assert round(point_b.x) == -300
     assert round(point_b.y) == 100
+
+def testBezier():
+    curve = Bezier([Point(1,1), Point(2,2), Point(3,2), Point(4,1)], step=0.1)
+    correctCurve = [Point(1.0, 1.0), Point(1.2999999523162842, 1.2699999809265137), Point(1.600000023841858, 1.4800000190734863), Point(1.9000000953674316, 1.6299999952316284), Point(2.1999998092651367, 1.71999990940094), Point(2.5, 1.75), Point(2.799999713897705, 1.7199996709823608), Point(3.0999999046325684, 1.6299998760223389), Point(3.4000000953674316, 1.4800002574920654), Point(3.6999998092651367, 1.269999623298645), Point(4.0, 1.0)]
+    assert curve._points == correctCurve

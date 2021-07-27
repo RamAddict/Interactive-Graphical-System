@@ -1,6 +1,6 @@
 """Computer Graphics API."""
 
-from math import sqrt, cos, sin, inf
+from math import pi, sqrt, cos, sin, inf
 from typing import Iterable, Tuple, Sequence
 
 from blas import Vector, Matrix
@@ -242,6 +242,9 @@ class Polygon(Wireframe):
     def draw(self, painter):
         painter.draw_polygon(self._points)
 
+class Bezier(Wireframe):
+    def __init__(self, points: Sequence[Point], step=0.01):
+        super().__init__(bezier(points, step))
 
 class Camera(Painter):
     """Window used as reference to render objects."""
@@ -363,6 +366,30 @@ class Camera(Painter):
         self._viewport_size = Vector(w, h)
         self._dirty = True
 
+"""
+    iterates on the points 4 by 4
+"""
+def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
+    curve = []
+    if len(points) == 3:
+        points = [points[0], points[1], points[1], points[2]]
+    if len(points) >= 4:
+        j = 0
+        M = Matrix([-1,3,-3,1], [3,-6,3,0], [-3,3,0,0],[1,0,0,0])
+        while j < 1:
+            T = Matrix([j*j*j, j*j, j, 1])
+            sumGx = 0
+            sumGy = 0
+            for i in range(len(points)-3):
+                Gx = Matrix(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
+                Gy = Matrix(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
+                sumGx += (T @ M @ Gx)[0]
+                sumGy += (T @ M @ Gy)[0]
+            curve.append(Point(sumGx, sumGy))
+            j+=step
+    else:
+        return points
+    return curve
 
 def clip_line(xa: float, ya: float, xb: float, yb: float) -> Sequence[float]:
     """Straightforward Liang-Barsky normalized line clipping algorithm."""
