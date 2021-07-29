@@ -10,7 +10,7 @@
     <x>0</x>
     <y>0</y>
     <width>1280</width>
-    <height>720</height>
+    <height>794</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,95 +23,19 @@
      <verstretch>1</verstretch>
     </sizepolicy>
    </property>
-   <layout class="QGridLayout" name="gridLayout" rowstretch="4,7,4,5" columnstretch="4,1">
-    <item row="0" column="1">
-     <layout class="QVBoxLayout" name="displayFileLayout" stretch="0,1">
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="sceneLabel">
-        <property name="toolTip">
-         <string>Scene</string>
-        </property>
-        <property name="text">
-         <string>Display File</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <layout class="QHBoxLayout" name="scenelLayout" stretch="1,0">
-        <property name="spacing">
-         <number>6</number>
-        </property>
-        <item>
-         <widget class="QListWidget" name="displayFile">
-          <property name="verticalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOn</enum>
-          </property>
-          <property name="selectionRectVisible">
-           <bool>true</bool>
-          </property>
-          <property name="currentRow">
-           <number>-1</number>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <layout class="QVBoxLayout" name="actionsLayout">
-          <item>
-           <widget class="QPushButton" name="newButton">
-            <property name="text">
-             <string>New</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="transformButton">
-            <property name="text">
-             <string>Transform</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="removeButton">
-            <property name="text">
-             <string>Remove</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="upListButton">
-            <property name="text">
-             <string>Move Up</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="downListButton">
-            <property name="text">
-             <string>Move Down</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </item>
-     </layout>
-    </item>
+   <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,2,3" columnstretch="6,2">
+    <property name="horizontalSpacing">
+     <number>12</number>
+    </property>
     <item row="1" column="1">
-     <layout class="QVBoxLayout" name="windowLayout" stretch="0,1">
+     <layout class="QVBoxLayout" name="cameraLayout">
       <property name="spacing">
        <number>0</number>
       </property>
       <item>
-       <widget class="QLabel" name="controlLabel">
-        <property name="toolTip">
-         <string>Camera</string>
-        </property>
+       <widget class="QLabel" name="cameraLabel">
         <property name="text">
-         <string>Window Controls</string>
+         <string>Camera Controls</string>
         </property>
        </widget>
       </item>
@@ -123,27 +47,21 @@
         <property name="frameShadow">
          <enum>QFrame::Sunken</enum>
         </property>
-        <layout class="QGridLayout" name="controlLayout" rowstretch="0,0,0,1">
+        <layout class="QGridLayout" name="controlLayout">
          <property name="leftMargin">
           <number>20</number>
          </property>
          <property name="rightMargin">
           <number>20</number>
          </property>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="upBtn">
+         <item row="0" column="0">
+          <widget class="QPushButton" name="tiltLeftBtn">
            <property name="text">
-            <string>^</string>
+            <string/>
            </property>
-           <property name="autoRepeat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QPushButton" name="leftBtn">
-           <property name="text">
-            <string notr="true">&lt;</string>
+           <property name="icon">
+            <iconset theme="object-rotate-left">
+             <normaloff>.</normaloff>.</iconset>
            </property>
            <property name="autoRepeat">
             <bool>true</bool>
@@ -154,16 +72,6 @@
           <widget class="QPushButton" name="rightBtn">
            <property name="text">
             <string notr="true">&gt;</string>
-           </property>
-           <property name="autoRepeat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QPushButton" name="downBtn">
-           <property name="text">
-            <string>v</string>
            </property>
            <property name="autoRepeat">
             <bool>true</bool>
@@ -209,14 +117,30 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <widget class="QPushButton" name="tiltLeftBtn">
+         <item row="0" column="1">
+          <widget class="QPushButton" name="upBtn">
            <property name="text">
-            <string/>
+            <string>^</string>
            </property>
-           <property name="icon">
-            <iconset theme="object-rotate-left">
-             <normaloff>.</normaloff>.</iconset>
+           <property name="autoRepeat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QPushButton" name="leftBtn">
+           <property name="text">
+            <string notr="true">&lt;</string>
+           </property>
+           <property name="autoRepeat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QPushButton" name="downBtn">
+           <property name="text">
+            <string>v</string>
            </property>
            <property name="autoRepeat">
             <bool>true</bool>
@@ -229,10 +153,7 @@
      </layout>
     </item>
     <item row="0" column="0" rowspan="3">
-     <layout class="QGridLayout" name="viewportLayout" rowstretch="0,1">
-      <property name="horizontalSpacing">
-       <number>2</number>
-      </property>
+     <layout class="QGridLayout" name="viewportLayout">
       <property name="verticalSpacing">
        <number>0</number>
       </property>
@@ -244,7 +165,7 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QLabel" name="eyePositionLabel">
+       <widget class="QLabel" name="mousePositionLabel">
         <property name="text">
          <string notr="true">[0, 0]</string>
         </property>
@@ -292,7 +213,7 @@
      </layout>
     </item>
     <item row="3" column="0">
-     <layout class="QVBoxLayout" name="consoleLayout" stretch="0,1">
+     <layout class="QVBoxLayout" name="consoleLayout">
       <property name="spacing">
        <number>0</number>
       </property>
@@ -305,49 +226,124 @@
       </item>
       <item>
        <widget class="QTextBrowser" name="consoleArea">
+        <property name="openExternalLinks">
+         <bool>true</bool>
+        </property>
         <property name="openLinks">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
        </widget>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="1">
+     <layout class="QVBoxLayout" name="displayFileLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="sceneLabel">
+        <property name="text">
+         <string>Display File</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="scenelLayout">
+        <property name="spacing">
+         <number>12</number>
+        </property>
+        <item>
+         <widget class="QListWidget" name="displayFile">
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOn</enum>
+          </property>
+          <property name="selectionRectVisible">
+           <bool>true</bool>
+          </property>
+          <property name="currentRow">
+           <number>-1</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="actionsLayout">
+          <property name="spacing">
+           <number>2</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="newButton">
+            <property name="text">
+             <string>New</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="transformButton">
+            <property name="text">
+             <string>Transform</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="removeButton">
+            <property name="text">
+             <string>Remove</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="upListButton">
+            <property name="text">
+             <string>Move Up</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="downListButton">
+            <property name="text">
+             <string>Move Down</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>
     <item row="2" column="1" rowspan="2">
      <widget class="QStackedWidget" name="componentWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="emptyPage">
-       <widget class="QLabel" name="instructionsLabel">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>310</width>
-          <height>271</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>14</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use the scene buttons to manipulate the Display File and its drawable objects.&lt;/p&gt;&lt;p&gt;The Window may be controlled using either the provided buttons, or mouse and keyboard bindings (WASD, QE, Ctrl + -/=/Wheel, Middle Click &amp;amp; Drag).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-        <property name="wordWrap">
-         <bool>true</bool>
-        </property>
-        <property name="margin">
-         <number>4</number>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QLabel" name="instructionsLabel">
+          <property name="font">
+           <font>
+            <pointsize>14</pointsize>
+           </font>
+          </property>
+          <property name="text">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Use the display file buttons to manipulate the world and its objects.&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;The camera may be controlled using either the provided buttons, or mouse and keyboard bindings (WASD, QE, Ctrl + -/=/Wheel, Middle Click &amp;amp; Drag).&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;The toolbar provides some additional actions, including saving as and loading from OBJ files, as well as changing settings.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="wordWrap">
+           <bool>true</bool>
+          </property>
+          <property name="margin">
+           <number>4</number>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="objectPage">
-       <layout class="QVBoxLayout" name="objectLayout" stretch="0,1">
+       <layout class="QVBoxLayout" name="objectLayout">
         <property name="spacing">
          <number>0</number>
         </property>
@@ -384,12 +380,12 @@
              <x>0</x>
              <y>0</y>
              <width>186</width>
-             <height>163</height>
+             <height>160</height>
             </rect>
            </property>
-           <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0">
+           <layout class="QVBoxLayout" name="verticalLayout">
             <property name="topMargin">
-             <number>5</number>
+             <number>2</number>
             </property>
             <item>
              <layout class="QFormLayout" name="formLayout">
@@ -415,7 +411,48 @@
                 </property>
                </widget>
               </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="colorLabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Color:</string>
+                </property>
+               </widget>
+              </item>
               <item row="2" column="1">
+               <widget class="QToolButton" name="colorEdit">
+                <property name="text">
+                 <string>#000000</string>
+                </property>
+                <property name="icon">
+                 <iconset theme="applications-accessories">
+                  <normaloff>.</normaloff>.</iconset>
+                </property>
+                <property name="popupMode">
+                 <enum>QToolButton::InstantPopup</enum>
+                </property>
+                <property name="toolButtonStyle">
+                 <enum>Qt::ToolButtonTextBesideIcon</enum>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="typeLabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Type:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
                <widget class="QComboBox" name="typeBox">
                 <property name="currentIndex">
                  <number>-1</number>
@@ -442,53 +479,6 @@
                 </item>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QLabel" name="colorLabel">
-                <property name="font">
-                 <font>
-                  <pointsize>12</pointsize>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Color:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="typeLabel">
-                <property name="font">
-                 <font>
-                  <pointsize>12</pointsize>
-                 </font>
-                </property>
-                <property name="text">
-                 <string>Type:</string>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QToolButton" name="colorEdit">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>#000000</string>
-                </property>
-                <property name="icon">
-                 <iconset theme="applications-accessories">
-                  <normaloff>.</normaloff>.</iconset>
-                </property>
-                <property name="popupMode">
-                 <enum>QToolButton::InstantPopup</enum>
-                </property>
-                <property name="toolButtonStyle">
-                 <enum>Qt::ToolButtonTextBesideIcon</enum>
-                </property>
-               </widget>
-              </item>
              </layout>
             </item>
             <item>
@@ -508,454 +498,347 @@
        </layout>
       </widget>
       <widget class="QWidget" name="transformPage">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>310</width>
-         <height>247</height>
-        </size>
-       </property>
-       <widget class="QLabel" name="translateXlabel">
-        <property name="geometry">
-         <rect>
-          <x>95</x>
-          <y>15</y>
-          <width>16</width>
-          <height>21</height>
-         </rect>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="spacing">
+         <number>0</number>
         </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
+        <property name="leftMargin">
+         <number>0</number>
         </property>
-        <property name="text">
-         <string>X:</string>
+        <property name="topMargin">
+         <number>0</number>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
+        <property name="rightMargin">
+         <number>0</number>
         </property>
-       </widget>
-       <widget class="QLabel" name="angleLabel">
-        <property name="geometry">
-         <rect>
-          <x>15</x>
-          <y>75</y>
-          <width>66</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Angle: °</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QLabel" name="rotateLabel">
-        <property name="geometry">
-         <rect>
-          <x>15</x>
-          <y>55</y>
-          <width>42</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Rotate</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="translateYlabel">
-        <property name="geometry">
-         <rect>
-          <x>165</x>
-          <y>15</y>
-          <width>20</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Y:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="Line" name="line_1">
-        <property name="geometry">
-         <rect>
-          <x>5</x>
-          <y>40</y>
-          <width>306</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="angleInput">
-        <property name="geometry">
-         <rect>
-          <x>80</x>
-          <y>75</y>
-          <width>40</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhPreferNumbers</set>
-        </property>
-        <property name="text">
-         <string>0</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="pivotLabel">
-        <property name="geometry">
-         <rect>
-          <x>130</x>
-          <y>70</y>
-          <width>50</width>
-          <height>26</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Pivot:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QLabel" name="transateLabel">
-        <property name="geometry">
-         <rect>
-          <x>15</x>
-          <y>10</y>
-          <width>60</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Translate</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="translateXinput">
-        <property name="geometry">
-         <rect>
-          <x>115</x>
-          <y>15</y>
-          <width>40</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhPreferNumbers</set>
-        </property>
-        <property name="text">
-         <string>0</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="scaleLabel">
-        <property name="geometry">
-         <rect>
-          <x>15</x>
-          <y>150</y>
-          <width>42</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Scale</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="translateYinput">
-        <property name="geometry">
-         <rect>
-          <x>185</x>
-          <y>15</y>
-          <width>40</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhPreferNumbers</set>
-        </property>
-        <property name="text">
-         <string>0</string>
-        </property>
-       </widget>
-       <widget class="QDialogButtonBox" name="transformConfirm">
-        <property name="geometry">
-         <rect>
-          <x>70</x>
-          <y>205</y>
-          <width>171</width>
-          <height>36</height>
-         </rect>
-        </property>
-        <property name="standardButtons">
-         <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-        </property>
-        <property name="centerButtons">
-         <bool>true</bool>
-        </property>
-       </widget>
-       <widget class="Line" name="line_3">
-        <property name="geometry">
-         <rect>
-          <x>5</x>
-          <y>185</y>
-          <width>306</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-       <widget class="Line" name="line_2">
-        <property name="geometry">
-         <rect>
-          <x>5</x>
-          <y>135</y>
-          <width>306</width>
-          <height>16</height>
-         </rect>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-       </widget>
-       <widget class="QComboBox" name="pivotSelect">
-        <property name="geometry">
-         <rect>
-          <x>185</x>
-          <y>70</y>
-          <width>101</width>
-          <height>26</height>
-         </rect>
-        </property>
-        <property name="currentIndex">
+        <property name="bottomMargin">
          <number>0</number>
         </property>
         <item>
-         <property name="text">
-          <string>Center</string>
-         </property>
+         <widget class="QLabel" name="transformLabel">
+          <property name="text">
+           <string>Transform</string>
+          </property>
+         </widget>
         </item>
         <item>
-         <property name="text">
-          <string>Origin</string>
-         </property>
+         <widget class="QFrame" name="transformFrame">
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <layout class="QGridLayout" name="gridLayout_2" columnstretch="3,1,0">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>6</number>
+           </property>
+           <item row="1" column="0">
+            <widget class="QPushButton" name="transformAddButton">
+             <property name="text">
+              <string>Add</string>
+             </property>
+             <property name="autoRepeat">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QFrame" name="transformForm">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>1</horstretch>
+               <verstretch>1</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QFormLayout" name="formLayout_2">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+              </property>
+              <property name="labelAlignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+              <property name="verticalSpacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>6</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <item row="1" column="0">
+               <widget class="QLabel" name="translateXlabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Translate X:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="translateXinput">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhPreferNumbers</set>
+                </property>
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="translateYlabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Translate Y:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="translateYinput">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhPreferNumbers</set>
+                </property>
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="0">
+               <widget class="QLabel" name="pivotLabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Pivot:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="7" column="1">
+               <widget class="QComboBox" name="pivotSelect">
+                <property name="currentIndex">
+                 <number>0</number>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>Center</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Origin</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Custom</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="9" column="0">
+               <widget class="QLabel" name="rotateXLabel">
+                <property name="text">
+                 <string>Pivot X:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="9" column="1">
+               <widget class="QLineEdit" name="rotateXInput">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhPreferNumbers</set>
+                </property>
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="0">
+               <widget class="QLabel" name="rotateYLabel">
+                <property name="text">
+                 <string>Pivot Y:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="11" column="1">
+               <widget class="QLineEdit" name="rotateYInput">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhPreferNumbers</set>
+                </property>
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="14" column="0">
+               <widget class="QLabel" name="angleLabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Rotate Angle: °</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="14" column="1">
+               <widget class="QLineEdit" name="angleInput">
+                <property name="inputMethodHints">
+                 <set>Qt::ImhPreferNumbers</set>
+                </property>
+                <property name="text">
+                 <string>0</string>
+                </property>
+               </widget>
+              </item>
+              <item row="17" column="0">
+               <widget class="QLabel" name="scaleXlabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Scale X:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="17" column="1">
+               <widget class="QLineEdit" name="scaleXinput">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhPreferNumbers</set>
+                </property>
+                <property name="text">
+                 <string>1</string>
+                </property>
+               </widget>
+              </item>
+              <item row="18" column="0">
+               <widget class="QLabel" name="scaleYlabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Scale Y:</string>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="18" column="1">
+               <widget class="QLineEdit" name="scaleYinput">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="inputMethodHints">
+                 <set>Qt::ImhPreferNumbers</set>
+                </property>
+                <property name="text">
+                 <string>1</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QListWidget" name="transformList"/>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDialogButtonBox" name="transformApplyButtons">
+             <property name="standardButtons">
+              <set>QDialogButtonBox::Apply|QDialogButtonBox::Close</set>
+             </property>
+             <property name="centerButtons">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
-        <item>
-         <property name="text">
-          <string>Custom</string>
-         </property>
-        </item>
-       </widget>
-       <widget class="QLabel" name="scaleXlabel">
-        <property name="geometry">
-         <rect>
-          <x>95</x>
-          <y>155</y>
-          <width>16</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>X:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QLabel" name="scaleYlabel">
-        <property name="geometry">
-         <rect>
-          <x>165</x>
-          <y>155</y>
-          <width>16</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Y:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="scaleXinput">
-        <property name="geometry">
-         <rect>
-          <x>115</x>
-          <y>155</y>
-          <width>40</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhPreferNumbers</set>
-        </property>
-        <property name="text">
-         <string>1</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="scaleYinput">
-        <property name="geometry">
-         <rect>
-          <x>185</x>
-          <y>155</y>
-          <width>40</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>12</pointsize>
-         </font>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhPreferNumbers</set>
-        </property>
-        <property name="text">
-         <string>1</string>
-        </property>
-       </widget>
-       <widget class="QLabel" name="rotateXLabel">
-        <property name="geometry">
-         <rect>
-          <x>95</x>
-          <y>110</y>
-          <width>16</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>X:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QLabel" name="rotateYLabel">
-        <property name="geometry">
-         <rect>
-          <x>165</x>
-          <y>110</y>
-          <width>20</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>Y:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="rotateXInput">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="geometry">
-         <rect>
-          <x>115</x>
-          <y>110</y>
-          <width>40</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhPreferNumbers</set>
-        </property>
-        <property name="text">
-         <string>0</string>
-        </property>
-       </widget>
-       <widget class="QLineEdit" name="rotateYInput">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="geometry">
-         <rect>
-          <x>185</x>
-          <y>110</y>
-          <width>40</width>
-          <height>21</height>
-         </rect>
-        </property>
-        <property name="inputMethodHints">
-         <set>Qt::ImhPreferNumbers</set>
-        </property>
-        <property name="text">
-         <string>0</string>
-        </property>
-       </widget>
+       </layout>
       </widget>
      </widget>
     </item>
    </layout>
   </widget>
   <widget class="QToolBar" name="toolBar">
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-     <horstretch>1</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="minimumSize">
-    <size>
-     <width>0</width>
-     <height>32</height>
-    </size>
-   </property>
    <property name="movable">
     <bool>false</bool>
    </property>

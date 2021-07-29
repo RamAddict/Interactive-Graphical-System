@@ -7,12 +7,13 @@ from typing import Optional, Callable, Dict, Sequence, Tuple
 from ast import literal_eval
 
 from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QDialog,
-                               QColorDialog, QFileDialog, QMessageBox, QInputDialog)
+                               QColorDialog, QFileDialog, QMessageBox, QInputDialog,
+                               QDialogButtonBox)
 from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
                            QPixmap, QPolygon)
 from PySide2.QtCore import Qt, QPoint
 
-from blas import Vector
+from blas import Vector, Matrix
 from graphics import (Painter, Camera, Transformation, Drawable, Point, Line,
                       Wireframe, Polygon, Color)
 from utilities import experp, begin, sign, to_float
@@ -44,7 +45,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.viewport = QtViewport(self.canvasFrame,
                                    self.display_file,
                                    self.zoomSlider,
-                                   self.eyePositionLabel)
+                                   self.mousePositionLabel)
         self.canvasFrame.layout().addWidget(self.viewport)
         self.viewport.setFocus(Qt.OtherFocusReason)
 
@@ -77,13 +78,25 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.downListButton.clicked.connect(
             lambda: self.move_object(self.displayFile.currentRow(), 1))
         self.newButton.clicked.connect(lambda: begin(
-            self.componentWidget.setCurrentWidget(self.objectPage),
             self.typeBox.setCurrentIndex(-1),
             self.nameEdit.setText(""),
+            self.componentWidget.setCurrentWidget(self.objectPage),
         ))
+        self._transformations_with_pivots = []
         self.transformButton.clicked.connect(  # ensures something is selected
             lambda: None if self.displayFile.currentRow() < 0
-            else self.componentWidget.setCurrentWidget(self.transformPage))
+            else begin(
+                self._transformations_with_pivots.clear(),
+                self.transformList.clear(),
+                self.translateXinput.setText("0"),
+                self.translateYinput.setText("0"),
+                self.pivotSelect.setCurrentIndex(0),
+                self.angleInput.setText("0"),
+                self.scaleXinput.setText("1"),
+                self.scaleYinput.setText("1"),
+                self.componentWidget.setCurrentWidget(self.transformPage),
+            )
+        )
 
         def handle_save_action(all: bool = False):
             if not all and self.displayFile.currentRow() < 0:
@@ -252,12 +265,19 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
         def do_transformations():
-            tx = to_float(self.translateXinput.text()) or 0
-            ty = to_float(self.translateYinput.text()) or 0
-            theta = radians((to_float(self.angleInput.text()) or 0))
-            sx = to_float(self.scaleXinput.text()) or 1
-            sy = to_float(self.scaleYinput.text()) or 1
-            t = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
+            if not self._transformations_with_pivots: return
+            name = self.displayFile.currentItem().text()
+            drawable = self.display_file[name]
+            result = Matrix.identity(3)
+            for transformation, pivot in reversed(self._transformations_with_pivots):
+                pivot = pivot or drawable.center()
+                matrix = transformation.matrix(pivot)
+                result = result @ matrix
+            drawable.transform(result)
+            self.viewport.update()
+            self.log("Applied transformation\n" + str(result))
+
+        def add_transformation():
             # get the correct pivot from dropdown box
             pivot = None
             if self.pivotSelect.currentText() == 'Origin':
@@ -265,20 +285,28 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             elif self.pivotSelect.currentText() == 'Custom':
                 pivot = Point(to_float(self.rotateXInput.text()),
                               to_float(self.rotateYInput.text()))
-            name = self.displayFile.currentItem().text()
-            drawable = self.display_file[name]
-            drawable.transform(t, pivot)
-            self.viewport.update()
+
+            tx = to_float(self.translateXinput.text()) or 0
+            ty = to_float(self.translateYinput.text()) or 0
+            theta = radians((to_float(self.angleInput.text()) or 0))
+            sx = to_float(self.scaleXinput.text()) or 1
+            sy = to_float(self.scaleYinput.text()) or 1
+            transform = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
+
+            self._transformations_with_pivots.append((transform, pivot))
+            self.transformList.addItem(f"T({tx}, {ty}), R({theta}), S({sx},{sy})")
 
         def enableRotateLabels():
             custom = self.pivotSelect.currentText() == 'Custom'
             self.rotateXInput.setEnabled(custom)
             self.rotateYInput.setEnabled(custom)
 
-        self.transformConfirm.accepted.connect(do_transformations)
-        self.transformConfirm.rejected.connect(
-            lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
         self.pivotSelect.currentIndexChanged.connect(enableRotateLabels)
+        self.transformAddButton.clicked.connect(add_transformation)
+        self.transformApplyButtons.button(QDialogButtonBox.Apply) \
+                                  .clicked.connect(do_transformations)
+        self.transformApplyButtons.rejected.connect(
+            lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
         # render it all
         self.show()
