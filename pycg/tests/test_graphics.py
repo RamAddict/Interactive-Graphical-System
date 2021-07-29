@@ -1,6 +1,5 @@
 from math import pi
-from typing import Sequence
-from blas import Matrix
+
 from graphics import Bezier, Transformation, Point, Line, Polygon
 
 
@@ -52,6 +51,9 @@ def test_transformations_global_pivot():
     assert round(point_a.y) == 100
     assert round(point_b.x) == -300
     assert round(point_b.y) == 100
+
+
+# TODO: unittest clipping algorithms
 
 
 def test_bezier():
