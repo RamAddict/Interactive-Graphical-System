@@ -205,6 +205,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             pixmap.fill(color)
             self.colorEdit.setIcon(QIcon(pixmap))
 
+        # object page controls
         self.typeBox.currentIndexChanged.connect(lambda _: self.pointsText.clear())
         self.colorEdit.clicked.connect(pick_color)
         pick_color(QPalette().color(QPalette.Foreground).name())
@@ -249,6 +250,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             self.rotateXInput.setEnabled(custom)
             self.rotateYInput.setEnabled(custom)
 
+        # transformation page setup TODO: button to remove transformations
         self.pivotSelect.currentIndexChanged.connect(enableRotateLabels)
         self.transformAddButton.clicked.connect(add_transformation)
         self.transformApplyButtons.button(QDialogButtonBox.Apply) \

@@ -230,6 +230,11 @@ class Wireframe(Drawable):
         return True
 
 
+class Bezier(Wireframe):
+    def __init__(self, points: Sequence[Point], step=0.01):
+        super().__init__(bezier(points, step))
+
+
 class Polygon(Wireframe):
     """Filled polygon."""
 
@@ -243,9 +248,6 @@ class Polygon(Wireframe):
     def draw(self, painter):
         painter.draw_polygon(self._points)
 
-class Bezier(Wireframe):
-    def __init__(self, points: Sequence[Point], step=0.01):
-        super().__init__(bezier(points, step))
 
 class Camera(Painter):
     """Window used as reference to render objects."""
@@ -367,27 +369,51 @@ class Camera(Painter):
         self._viewport_size = Vector(w, h)
         self._dirty = True
 
-def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
-    """Assumes number of points is of the form (4 + 3*i), iterates 4 by 4."""
-    curve = []
-    if len(points) == 3:
-        points = [points[0], points[1], points[1], points[2]]
-    if len(points) >= 4:
-        j = 0
-        M = Matrix([-1,3,-3,1], [3,-6,3,0], [-3,3,0,0],[1,0,0,0])
-        for i in range(0, len(points)-3,3):
-            j = 0
-            while j < 1:
-                T = Matrix([j*j*j, j*j, j, 1])
-                Gx = Matrix(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
-                Gy = Matrix(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
-                Gx = T @ M @ Gx
-                Gy = T @ M @ Gy
-                curve.append(Point(Gx[0], Gy[0]))
-                j += step
-    else:
-        return points
-    return curve
+
+class Color:
+    def __init__(self, r, g, b, a = 0xFF):
+        self._r = clamp(int(r), 0x00, 0xFF)
+        self._g = clamp(int(g), 0x00, 0xFF)
+        self._b = clamp(int(b), 0x00, 0xFF)
+        self._a = clamp(int(a), 0x00, 0xFF)
+
+    def __repr__(self):
+        return '#' + ''.join('%02x' % x for x in (self.r, self.g, self.b))
+
+    def __eq__(self, other) -> bool:
+        return self.r == other.r \
+           and self.g == other.g \
+           and self.b == other.b \
+           and self.a == other.a
+
+    @property
+    def r(self):
+        return self._r
+
+    @r.setter
+    def r(self, r):
+        self._r = clamp(int(r), 0x00, 0xFF)
+
+    @property
+    def g(self):
+        return self._g
+
+    @g.setter
+    def g(self, g):
+        self._g = clamp(int(g), 0x00, 0xFF)
+
+    @property
+    def b(self):
+        return self._b
+
+    @b.setter
+    def b(self, b):
+        self._b = clamp(int(b), 0x00, 0xFF)
+
+    @property
+    def a(self):
+        return self._a
+
 
 def clip_line(xa: float, ya: float, xb: float, yb: float) -> Sequence[float]:
     """Straightforward Liang-Barsky normalized line clipping algorithm."""
@@ -540,46 +566,24 @@ def clip_polygon(points: Sequence[Tuple[float, float]]) -> Sequence[Tuple[float,
     return points
 
 
-class Color:
-    def __init__(self, r, g, b, a = 0xFF):
-        self._r = clamp(int(r), 0x00, 0xFF)
-        self._g = clamp(int(g), 0x00, 0xFF)
-        self._b = clamp(int(b), 0x00, 0xFF)
-        self._a = clamp(int(a), 0x00, 0xFF)
-
-    def __repr__(self):
-        return '#' + ''.join('%02x' % x for x in (self.r, self.g, self.b))
-
-    def __eq__(self, other) -> bool:
-        return self.r == other.r \
-           and self.g == other.g \
-           and self.b == other.b \
-           and self.a == other.a
-
-    @property
-    def r(self):
-        return self._r
-
-    @r.setter
-    def r(self, r):
-        self._r = clamp(int(r), 0x00, 0xFF)
-
-    @property
-    def g(self):
-        return self._g
-
-    @g.setter
-    def g(self, g):
-        self._g = clamp(int(g), 0x00, 0xFF)
-
-    @property
-    def b(self):
-        return self._b
-
-    @b.setter
-    def b(self, b):
-        self._b = clamp(int(b), 0x00, 0xFF)
-
-    @property
-    def a(self):
-        return self._a
+def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
+    """Assumes number of points is of the form (4 + 3*i), iterates 4 by 4."""
+    curve = []
+    if len(points) == 3:
+        points = [points[0], points[1], points[1], points[2]]
+    if len(points) >= 4:
+        j = 0
+        M = Matrix([-1,3,-3,1], [3,-6,3,0], [-3,3,0,0],[1,0,0,0])
+        for i in range(0, len(points)-3,3):
+            j = 0
+            while j < 1:
+                T = Matrix([j*j*j, j*j, j, 1])
+                Gx = Matrix(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
+                Gy = Matrix(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
+                Gx = T @ M @ Gx
+                Gy = T @ M @ Gy
+                curve.append(Point(Gx[0], Gy[0]))
+                j += step
+    else:
+        return points
+    return curve
