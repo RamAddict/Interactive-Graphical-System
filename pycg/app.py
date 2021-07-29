@@ -6,15 +6,16 @@ from os import path
 from typing import Optional, Callable, Dict, Sequence, Tuple
 from ast import literal_eval
 
-from PySide2.QtWidgets import (QApplication, QLineEdit, QMainWindow, QMenuBar, QWidget, QDialog,
-                               QColorDialog, QFileDialog, QMessageBox, QInputDialog)
+from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QDialog,
+                               QColorDialog, QFileDialog, QMessageBox, QInputDialog,
+                               QDialogButtonBox)
 from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
                            QPixmap, QPolygon)
 from PySide2.QtCore import Qt, QPoint
 
-from blas import Vector
-from graphics import (Bezier, Painter, Camera, Transformation, Drawable, Point, Line,
-                      Wireframe, Polygon, Color)
+from blas import Vector, Matrix
+from graphics import (Painter, Camera, Transformation, Drawable, Point, Line,
+                      Wireframe, Polygon, Color, Bezier)
 from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
@@ -44,7 +45,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.viewport = QtViewport(self.canvasFrame,
                                    self.display_file,
                                    self.zoomSlider,
-                                   self.eyePositionLabel)
+                                   self.mousePositionLabel)
         self.canvasFrame.layout().addWidget(self.viewport)
         self.viewport.setFocus(Qt.OtherFocusReason)
 
@@ -77,16 +78,28 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.downListButton.clicked.connect(
             lambda: self.move_object(self.displayFile.currentRow(), 1))
         self.newButton.clicked.connect(lambda: begin(
-            self.componentWidget.setCurrentWidget(self.objectPage),
             self.typeBox.setCurrentIndex(-1),
             self.nameEdit.setText(""),
+            self.componentWidget.setCurrentWidget(self.objectPage),
         ))
+        self._transformations_with_pivots = []
         self.transformButton.clicked.connect(  # ensures something is selected
             lambda: None if self.displayFile.currentRow() < 0
-            else self.componentWidget.setCurrentWidget(self.transformPage))
+            else begin(
+                self._transformations_with_pivots.clear(),
+                self.transformList.clear(),
+                self.translateXinput.setText("0"),
+                self.translateYinput.setText("0"),
+                self.pivotSelect.setCurrentIndex(0),
+                self.angleInput.setText("0"),
+                self.scaleXinput.setText("1"),
+                self.scaleYinput.setText("1"),
+                self.componentWidget.setCurrentWidget(self.transformPage),
+            )
+        )
 
-        def handle_save_action():
-            if self.displayFile.currentRow() < 0:
+        def handle_save_action(all: bool = False):
+            if not all and self.displayFile.currentRow() < 0:
                 QMessageBox.question(
                     self,
                     "Message",
@@ -94,8 +107,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     QMessageBox.Ok
                 )
             else:
-                name = self.displayFile.currentItem().text()
-                model = self.display_file[name]
+                name = "world" if all else self.displayFile.currentItem().text()
 
                 modelpath, _ = QFileDialog.getSaveFileName(
                     self,
@@ -109,19 +121,31 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                     "Select .mtl file to save",
                     name + '.mtl',
                 )
-                if mtlpath.strip() != '':
-                    color = model.color
-                    with open(mtlpath, 'w+') as file:
-                        file.write(f"newmtl color\n")
-                        file.write(f"Kd {color.r/255} {color.g/255} {color.b/255}\n")
+                if mtlpath.strip() == '': return
 
-                with wavefront_obj.open(modelpath, 'w+', mtllib=path.basename(mtlpath)) as file:
-                    file.write(model, name, usemtl='color')
-                    self.log(f"Saved object '{name}' to '{mtlpath}'")
+                models = self.display_file if all else {name: self.display_file[name]}
+
+                with open(mtlpath, 'w+') as file:
+                    for name, model in models.items():
+                        color = model.color
+                        mtl = model.attributes.get('usemtl', f"{name}_color")
+                        file.write(f"newmtl {mtl}\n")
+                        file.write(f"Kd {color.r/255} {color.g/255} {color.b/255}\n")
+                        self.log(f"Saved material '{mtl}' to '{path.relpath(mtlpath)}'")
+
+                with wavefront_obj.open(
+                    modelpath,
+                    'w+',
+                    mtllib=path.basename(mtlpath),
+                ) as file:
+                    for name, model in models.items():
+                        mtl = model.attributes.get('usemtl', f"{name}_color")
+                        file.write(model, name, usemtl=mtl)
+                        self.log(f"Saved object '{name}' to '{path.relpath(modelpath)}'")
 
         def handle_new_action():
             new_obj = None
-            text, ok = QInputDialog.getText(
+            text, _ = QInputDialog.getText(
                 self,
                 "Input",
                 "Manual input in format (x1,y1),(x2,y2),...",
@@ -155,8 +179,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
         # setting up toolbar actions
         self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
-        self.actionSave.triggered.connect(handle_save_action)
+        self.actionSave.triggered.connect(lambda: handle_save_action(all=False))
         self.actionSave.setShortcut(QKeySequence.Save)
+        self.actionSaveAll.triggered.connect(lambda: handle_save_action(all=True))
+        self.actionSaveAll.setShortcut(QKeySequence.SaveAs)
         self.actionLoad.triggered.connect(lambda: self.load_obj())
         self.actionLoad.setShortcut(QKeySequence.Open)
         self.actionNew.triggered.connect(handle_new_action)
@@ -254,12 +280,19 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
         def do_transformations():
-            tx = to_float(self.translateXinput.text()) or 0
-            ty = to_float(self.translateYinput.text()) or 0
-            theta = radians((to_float(self.angleInput.text()) or 0))
-            sx = to_float(self.scaleXinput.text()) or 1
-            sy = to_float(self.scaleYinput.text()) or 1
-            t = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
+            if not self._transformations_with_pivots: return
+            name = self.displayFile.currentItem().text()
+            drawable = self.display_file[name]
+            result = Matrix.identity(3)
+            for transformation, pivot in reversed(self._transformations_with_pivots):
+                pivot = pivot or drawable.center()
+                matrix = transformation.matrix(pivot)
+                result = result @ matrix
+            drawable.transform(result)
+            self.viewport.update()
+            self.log("Applied transformation\n" + str(result))
+
+        def add_transformation():
             # get the correct pivot from dropdown box
             pivot = None
             if self.pivotSelect.currentText() == 'Origin':
@@ -267,27 +300,35 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             elif self.pivotSelect.currentText() == 'Custom':
                 pivot = Point(to_float(self.rotateXInput.text()),
                               to_float(self.rotateYInput.text()))
-            name = self.displayFile.currentItem().text()
-            drawable = self.display_file[name]
-            drawable.transform(t, pivot)
-            self.viewport.update()
+
+            tx = to_float(self.translateXinput.text()) or 0
+            ty = to_float(self.translateYinput.text()) or 0
+            theta = radians((to_float(self.angleInput.text()) or 0))
+            sx = to_float(self.scaleXinput.text()) or 1
+            sy = to_float(self.scaleYinput.text()) or 1
+            transform = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
+
+            self._transformations_with_pivots.append((transform, pivot))
+            self.transformList.addItem(f"T({tx}, {ty}), R({theta}), S({sx},{sy})")
 
         def enableRotateLabels():
             custom = self.pivotSelect.currentText() == 'Custom'
             self.rotateXInput.setEnabled(custom)
             self.rotateYInput.setEnabled(custom)
 
-        self.transformConfirm.accepted.connect(do_transformations)
-        self.transformConfirm.rejected.connect(
-            lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
         self.pivotSelect.currentIndexChanged.connect(enableRotateLabels)
+        self.transformAddButton.clicked.connect(add_transformation)
+        self.transformApplyButtons.button(QDialogButtonBox.Apply) \
+                                  .clicked.connect(do_transformations)
+        self.transformApplyButtons.rejected.connect(
+            lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
         # render it all
         self.show()
         self.log("Interactive Graphical System initialized.")
 
-    def insert_object(self, obj: Drawable, name,
-                      index: int = None, color: Color = None) -> int:
+    def insert_object(self, obj: Drawable, name: str,
+                      index: int = None, color: Color = None, **kwargs) -> int:
         """Put an object in the Display File, returning its position."""
 
         n = self.displayFile.count()
@@ -309,6 +350,10 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             color = QPalette().color(QPalette.Foreground)
             color = Color(color.red(), color.green(), color.blue())
         obj.color = color
+        obj.attributes = kwargs
+        obj.attributes['name'] = name
+        obj.attributes['color'] = color
+
         self.displayFile.insertItem(index, name)
         self.log(f"Added {type(obj).__name__} '{name}' to Display File.")
         self.displayFile.setCurrentRow(index)
@@ -343,11 +388,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         if path.strip() != '':
             with wavefront_obj.open(path, 'r') as file:
                 for model, attributes in file:
-                    self.insert_object(
-                        model,
-                        name=attributes['name'],
-                        color=attributes.get('color', None),
-                    )
+                    self.insert_object(model, **attributes)
 
 class QtViewport(QWidget):
     def __init__(self, parent_widget, display_file, zoom_slider, eye_position):
@@ -380,7 +421,7 @@ class QtViewport(QWidget):
         """
         if _normalized:
             dx *= self._pan
-            dy *= dy * self._pan
+            dy *= self._pan
         align = Transformation().rotate(self.camera.angle).matrix()
         dx, dy, _ = align @ Vector(dx, dy, 1)
         self.camera.x += dx
