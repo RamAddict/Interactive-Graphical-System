@@ -19,7 +19,6 @@ from graphics import (Painter, Camera, Transformation, Drawable, Point, Line,
 from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
-from ui.point import Ui_PointFields
 from ui.settings import Ui_SettingsDialog
 
 
@@ -143,28 +142,6 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                         file.write(model, name, usemtl=mtl)
                         self.log(f"Saved object '{name}' to '{path.relpath(modelpath)}'")
 
-        def handle_new_action():
-            new_obj = None
-            text, _ = QInputDialog.getText(
-                self,
-                "Input",
-                "Manual input in format (x1,y1),(x2,y2),...",
-            )
-            parsed = literal_eval(text)
-            if not isinstance(parsed, tuple): return
-            if len(parsed) == 2:  # single point, or tuple with 2 points
-                a, b = parsed
-                if isinstance(a, tuple):
-                    new_obj = Line(Point(*a), Point(*b))
-                elif isinstance(a, (int, float)):
-                    new_obj = Point(a, b)
-            else:
-                points = [Point(x, y) for x, y in parsed]
-                if points[-1] == points[0]: new_obj = Polygon(points)
-                else: new_obj = Wireframe(points)
-            if new_obj is not None:
-                self.insert_object(new_obj, "object")
-
         def handle_settings_action():
             dialog = SettingsDialog(self)
             cs = self.viewport.camera.line_clipping_algorithm == SettingsDialog.CLIP_CS
@@ -185,80 +162,36 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.actionSaveAll.setShortcut(QKeySequence.SaveAs)
         self.actionLoad.triggered.connect(lambda: self.load_obj())
         self.actionLoad.setShortcut(QKeySequence.Open)
-        self.actionNew.triggered.connect(handle_new_action)
-        self.actionNew.setShortcut(QKeySequence.New)
         self.actionSettings.triggered.connect(handle_settings_action)
         self.actionSettings.setShortcut(QKeySequence.Preferences)
 
-        def new_type_select(index: int):
-            # clean all fields after 'name', 'color' and 'type'
-            while self.formLayout.rowCount() > 3:
-                self.formLayout.removeRow(3)
-
-            typename = self.typeBox.itemText(index)
-            if typename == 'Point':
-                self.formLayout.addRow(PointFields())
-            elif typename == 'Line':
-                self.formLayout.addRow(PointFields())
-                self.formLayout.addRow(PointFields())
-            elif typename in ('Wireframe', 'Polygon'):
-                self.formLayout.addRow(PointFields())
-                self.formLayout.addRow(PointFields())
-                self.formLayout.addRow(PointFields())
-                self.formLayout.addRow(make_extra_point())
-            elif typename == 'Bezier':
-                self.lineEdit = QLineEdit(self.objectArea)
-                self.formLayout.addRow(self.lineEdit)
-                self.lineEdit.setPlaceholderText("Pontos na forma (x, y)")
-
-        def make_extra_point() -> PointFields:
-            extra = PointFields()
-            extra.set_active(False)
-            extra.set_icon('list-add', fallback_text="+")
-            extra.set_action(lambda: begin(
-                extra.set_active(True),
-                extra.set_icon('list-remove', fallback_text="-"),
-                extra.set_action(lambda: self.formLayout.removeRow(extra)),
-                self.formLayout.addRow(make_extra_point())
-            ))
-            return extra
-
         def new_object():
-            if self.typeBox.currentIndex() < 0:
-                return
+            if self.typeBox.currentIndex() < 0: return
 
             name = self.nameEdit.text()
             typename = self.typeBox.currentText()
             color = QColor(self.colorEdit.text())
             color = Color(color.red(), color.green(), color.blue())
 
-            # indexes of QLayout.itemAt() depend on the order of UI elements
+            text = self.pointsText.toPlainText().replace("\n", " ")
+            parsed = literal_eval(text)
+            if not isinstance(parsed, tuple): return
+
             obj = None
-            if typename == 'Point':
-                obj = self.formLayout.itemAt(6).widget().to_point()
-            elif typename == 'Line':
-                pa = self.formLayout.itemAt(6).widget().to_point()
-                pb = self.formLayout.itemAt(7).widget().to_point()
-                obj = Line(pa, pb)
-            elif typename in ('Wireframe', 'Polygon'):
-                points = []
-                for i in range(6, self.formLayout.count() - 1):
-                    p = self.formLayout.itemAt(i).widget().to_point()
-                    points.append(p)
-                if typename == 'Polygon': obj = Polygon(points)
-                else: obj = Wireframe(points)
-            elif typename == "Bezier":
-                parsed = literal_eval(self.lineEdit.text())
-                if not isinstance(parsed, tuple): return
-                if len(parsed) == 2:
-                    a, b = parsed
-                    if isinstance(a, tuple):
-                        obj = Line(Point(*a), Point(*b))
-                    elif isinstance(a, (int, float)):
-                        obj = Point(a, b)
-                else:
-                    points = [Point(x, y) for x, y in parsed]
-                    obj = Bezier(points)
+            if typename == 'Point' and len(parsed) == 2 and isinstance(parsed[0], (int, float)):
+                obj = Point(*parsed)
+            elif typename == 'Line' and len(parsed) == 2 and isinstance(parsed[0], tuple):
+                a, b = parsed
+                obj = Line(Point(*a), Point(*b))
+            elif typename == 'Wireframe' and len(parsed) > 2:
+                obj = Wireframe([Point(x, y) for x, y in parsed])
+            elif typename == 'Polygon' and len(parsed) > 2:
+                obj = Polygon([Point(x, y) for x, y in parsed])
+            elif typename == "Bezier" and len(parsed) > 2:
+                obj = Bezier([Point(x, y) for x, y in parsed])
+            else:
+                return
+
             self.insert_object(obj, name,
                                index=self.displayFile.currentRow() + 1,
                                color=color)
@@ -272,7 +205,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             pixmap.fill(color)
             self.colorEdit.setIcon(QIcon(pixmap))
 
-        self.typeBox.currentIndexChanged.connect(new_type_select)
+        self.typeBox.currentIndexChanged.connect(lambda _: self.pointsText.clear())
         self.colorEdit.clicked.connect(pick_color)
         pick_color(QPalette().color(QPalette.Foreground).name())
         self.dialogBox.accepted.connect(new_object)
@@ -527,48 +460,6 @@ class QtViewport(QWidget):
         else:
             self._eye_position.setText(f"[{event.x()}, {event.y()}]")
             return super().mouseMoveEvent(event)
-
-
-class PointFields(QWidget, Ui_PointFields):
-    def __init__(self, *args, **kwargs):
-        QWidget.__init__(self, *args, **kwargs)
-        self.setupUi(self)
-        self.xDoubleSpinBox.setRange(-inf, inf)
-        self.yDoubleSpinBox.setRange(-inf, inf)
-        self._has_action = False
-
-    def to_point(self) -> Point:
-        return Point(self.xDoubleSpinBox.value(), self.yDoubleSpinBox.value())
-
-    def set_action(self, action: Optional[Callable[[], None]]):
-        """Set procedure to be executed when the action button is clicked."""
-
-        # NOTE: multiple receivers must be disconnect()ed from a signal
-        if self._has_action:
-            self.actionButton.clicked.disconnect()
-            self._has_action = False
-
-        if action:
-            self.actionButton.clicked.connect(action)
-            self._has_action = True
-            self.actionButton.setEnabled(True)
-        else:
-            self.actionButton.setEnabled(False)
-
-    def set_icon(self, icon_name: str, fallback_text: str = ""):
-        """Set the action button's icon as by the Icon Theme Specification."""
-
-        if QIcon.hasThemeIcon(icon_name):
-            self.actionButton.setIcon(QIcon.fromTheme(icon_name))
-            self.actionButton.setText("")
-        else:
-            self.actionButton.setIcon(QIcon())
-            self.actionButton.setText(fallback_text)
-
-    def set_active(self, active: bool):
-        """Set whether or not the fields are enabled."""
-        self.xDoubleSpinBox.setEnabled(active)
-        self.yDoubleSpinBox.setEnabled(active)
 
 
 class SettingsDialog(QDialog, Ui_SettingsDialog):
