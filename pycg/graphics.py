@@ -132,7 +132,10 @@ class Drawable():
     def draw(self, painter: Painter):
         raise NotImplementedError("Drawable is an abstract class.")
 
-    def transform(self, transformations: Transformation, pivot=None):
+    def transform(self, transformation: Matrix):
+        raise NotImplementedError("Drawable is an abstract class.")
+
+    def center(self):  # -> Point:
         raise NotImplementedError("Drawable is an abstract class.")
 
 
@@ -143,9 +146,11 @@ class Point(Drawable, Vector):
     def draw(self, painter):
         painter.draw_pixel(self.x, self.y)
 
-    def transform(self, transformations: Transformation, pivot=None):
-        matrix = transformations.matrix(pivot=None)
-        self.x, self.y, _ = matrix @ Vector(self.x, self.y, 1)
+    def transform(self, transformation: Matrix):
+        self.x, self.y, _ = transformation @ Vector(self.x, self.y, 1)
+
+    def center(self):  # -> Point:
+        return self
 
     def __repr__(self):  # as by the Well-known text representation of geometry
         return f"POINT ({self.x} {self.y})"
@@ -164,13 +169,11 @@ class Line(Drawable):
     def draw(self, painter):
         painter.draw_line(self[0].x, self[0].y, self[1].x, self[1].y)
 
-    def transform(self, transformations: Transformation, pivot: Point = None):
-        pivot = pivot or self.middle()
-        matrix = transformations.matrix(pivot)
+    def transform(self, transformation: Matrix):
         for p in self:
-            p.x, p.y, _ = matrix @ Vector(p.x, p.y, 1)
+            p.x, p.y, _ = transformation @ Vector(p.x, p.y, 1)
 
-    def middle(self) -> Point:
+    def center(self) -> Point:
         return (self[0] + self[1]) / 2
 
     def __repr__(self):  # WKT
@@ -205,11 +208,9 @@ class Wireframe(Drawable):
         for pa, pb in pairwise(self._points):
             painter.draw_line(pa.x, pa.y, pb.x, pb.y)
 
-    def transform(self, transformations: Transformation, pivot: Point = None):
-        pivot = pivot or self.center()
-        matrix = transformations.matrix(pivot)
+    def transform(self, transformation: Matrix):
         for p in self._points:
-            p.x, p.y, _ = matrix @ Vector(p.x, p.y, 1)
+            p.x, p.y, _ = transformation @ Vector(p.x, p.y, 1)
 
     def center(self) -> Point:
         # to avoid overweighting repeated points, only average over unique ones
