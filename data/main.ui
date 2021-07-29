@@ -315,7 +315,7 @@
     <item row="2" column="1" rowspan="2">
      <widget class="QStackedWidget" name="componentWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="emptyPage">
        <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -379,8 +379,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>186</width>
-             <height>160</height>
+             <width>389</width>
+             <height>322</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout">
@@ -390,7 +390,7 @@
             <item>
              <layout class="QFormLayout" name="formLayout">
               <property name="formAlignment">
-               <set>Qt::AlignHCenter|Qt::AlignTop</set>
+               <set>Qt::AlignJustify|Qt::AlignTop</set>
               </property>
               <item row="0" column="0">
                <widget class="QLabel" name="nameLabel">
@@ -425,6 +425,12 @@
               </item>
               <item row="2" column="1">
                <widget class="QToolButton" name="colorEdit">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="text">
                  <string>#000000</string>
                 </property>
@@ -454,8 +460,14 @@
               </item>
               <item row="1" column="1">
                <widget class="QComboBox" name="typeBox">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="currentIndex">
-                 <number>-1</number>
+                 <number>0</number>
                 </property>
                 <item>
                  <property name="text">
@@ -477,6 +489,30 @@
                   <string>Polygon</string>
                  </property>
                 </item>
+                <item>
+                 <property name="text">
+                  <string>Bezier</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QPlainTextEdit" name="pointsText">
+                <property name="placeholderText">
+                 <string>Points in the format (x1, y1), (x2, y2), ...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="pointsLabel">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>Points:</string>
+                </property>
                </widget>
               </item>
              </layout>
@@ -526,7 +562,7 @@
           <property name="frameShape">
            <enum>QFrame::NoFrame</enum>
           </property>
-          <layout class="QGridLayout" name="gridLayout_2" columnstretch="3,1,0">
+          <layout class="QGridLayout" name="gridLayout_2" columnstretch="3,1">
            <property name="leftMargin">
             <number>0</number>
            </property>
@@ -857,8 +893,6 @@
    <addaction name="separator"/>
    <addaction name="actionSaveAll"/>
    <addaction name="separator"/>
-   <addaction name="actionNew"/>
-   <addaction name="separator"/>
    <addaction name="actionSettings"/>
   </widget>
   <action name="actionSave">
@@ -869,11 +903,6 @@
   <action name="actionLoad">
    <property name="text">
     <string>Load</string>
-   </property>
-  </action>
-  <action name="actionNew">
-   <property name="text">
-    <string>New</string>
    </property>
   </action>
   <action name="actionSettings">
