@@ -234,6 +234,9 @@ class Bezier(Wireframe):
     def __init__(self, points: Sequence[Point], step=0.01):
         super().__init__(bezier(points, step))
 
+class BSpline(Wireframe):
+    def __init__(self, points: Sequence[Point], step=0.01):
+        super().__init__(bSpline(points, step))
 
 class Polygon(Wireframe):
     """Filled polygon."""
@@ -584,6 +587,38 @@ def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
                 Gy = T @ M @ Gy
                 curve.append(Point(Gx[0], Gy[0]))
                 j += step
+    else:
+        return points
+    return curve
+
+def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
+    curve = []
+    if len(points) == 3:
+        points = [points[0], points[1], points[1], points[2]]
+    if len(points) >= 4:
+        d1 = step
+        d2 = step*step
+        d3 = step*step*step
+        E = Matrix([0,    0,    0, 1], 
+                   [d3,   d2,  d1, 0], 
+                   [6*d3, 2*d2, 0, 0], 
+                   [6*d3, 0,    0, 0])
+        M = (1/6)*Matrix([-1, 3,-3, 1], 
+                         [ 3,-6, 3 ,0], 
+                         [-3, 0, 3, 0], 
+                         [ 1, 4, 1, 0])
+        ExM = E @ M
+        for i in range(0, len(points)-3):
+            G = Vector(points[i], points[i+1], points[i+2], points[i+3])
+            D = ExM @ G
+            j = 0
+            while True:
+                j += step
+                if j >= 1: break
+                curve.append(Point(D[0][0], D[0][1]))
+                D[0] += D[1]
+                D[1] += D[2]
+                D[2] += D[3]
     else:
         return points
     return curve

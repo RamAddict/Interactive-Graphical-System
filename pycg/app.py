@@ -14,7 +14,7 @@ from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
 from PySide2.QtCore import Qt, QPoint
 
 from blas import Vector, Matrix
-from graphics import (Painter, Camera, Transformation, Drawable, Point, Line,
+from graphics import (BSpline, Painter, Camera, Transformation, Drawable, Point, Line,
                       Wireframe, Polygon, Color, Bezier)
 from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
@@ -189,6 +189,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 obj = Polygon([Point(x, y) for x, y in parsed])
             elif typename == "Bezier" and len(parsed) > 2:
                 obj = Bezier([Point(x, y) for x, y in parsed])
+            elif typename == "BSpline" and len(parsed) > 2:
+                obj = BSpline([Point(x, y) for x, y in parsed])
             else:
                 return
 
