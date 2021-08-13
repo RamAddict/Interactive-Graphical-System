@@ -1,89 +1,61 @@
 """A custom implementation of some Basic Linear Algebra Subprograms (BLAS)."""
 
 from typing import Sequence, Callable
+from math import sqrt, acos
 
-import numpy as np
 
+class Vector:
+    """Structure which can be used as a column vector."""
 
-class Matrix:
-    """Matrix structured for row-major access."""
-
-    def __init__(self, first: Sequence, *rest: Sequence):
-        if isinstance(first, np.ndarray):
-            self._matrix = first
-        else:
-            self._matrix = np.array([first] + list(rest), np.float32)
+    def __init__(self, first, *rest):
+        self._coordinates = [first] + list(rest)
 
     @staticmethod
-    def from_lists(rows: Sequence):
-        """Creates a Matrix with the given sequence of sequences."""
-        return Matrix(*rows)
-
-    @staticmethod
-    def from_function(m: int, n: int, builder: Callable):
-        """
-        Builds an MxN Matrix by calling a given builder function on each index
-        pair (row, column) and filling its cell with the function's return.
-        """
-        return Matrix.from_lists([[builder(i, j) for j in range(n)] for i in range(m)])
-
-    @staticmethod
-    def identity(n: int):
-        """Create an NxN identity Matrix."""
-        return Matrix.from_function(n, n, lambda i, j: 1 if j == i else 0)
-
-    @staticmethod
-    def zeros(m: int, n: int):
-        """Create an MxN Matrix filled with zeros."""
-        return Matrix.from_function(m, n, lambda i, j: 0)
-
-    @property
-    def rows(self):
-        return len(self)
-
-    @property
-    def columns(self):
-        return len(self[0])
+    def angle(a, b):
+        """Finds the angle between two vectors."""
+        return acos((a @ b) / (a.length * b.length))
 
     def __getitem__(self, key):
-        return self._matrix[key]
+        return self._coordinates[key]
 
     def __setitem__(self, key, item):
-        self._matrix[key] = item
+        self._coordinates[key] = item
 
     def __len__(self):
-        return len(self._matrix)
+        return len(self._coordinates)
 
     def __repr__(self):
-        return str(self._matrix)
+        return str(self._coordinates)
 
-    def __add__(self, other):
-        if not isinstance(other, Matrix):
-            other = Matrix(*other)
-        return Matrix(self._matrix + other._matrix)
+    def __add__(self, other: Sequence):
+        try:
+            return Vector(*tuple(v + other[i] for i, v in enumerate(self)))
+        except Exception as exc:
+            raise NotImplementedError from exc
 
     def __radd__(self, other):
         return self + other
 
-    def __sub__(self, other):
-        if not isinstance(other, Matrix):
-            other = Matrix(*other)
-        return Matrix(self._matrix - other._matrix)
+    def __sub__(self, other: Sequence):
+        return self + tuple(-x for x in other)
 
     def __rsub__(self, other):
         return other + (-self)
 
     def __mul__(self, scalar):  # scalar product
-        return Matrix(self._matrix * scalar)
+        try:
+            return Vector(*tuple(scalar * x for x in self))
+        except Exception as exc:
+            raise NotImplementedError from exc
 
     def __rmul__(self, other):
         return self * other
 
-    def __matmul__(self, other):
-        if not isinstance(other, Matrix):
-            other = Matrix(*other)
-        product = self._matrix @ other._matrix
-        return product if isinstance(product, np.float32) else Matrix(product)
+    def __matmul__(self, other: Sequence):  # dot product
+        try:
+            return sum(tuple(v * other[i] for i, v in enumerate(self)))
+        except Exception as exc:
+            raise NotImplementedError from exc
 
     def __neg__(self):
         return self * -1
@@ -92,12 +64,19 @@ class Matrix:
         return self * (1 / scalar)
 
     def __mod__(self, z):
-        return Matrix(self._matrix % z)
+        return Vector(*tuple(x % z for x in self))
 
     def __eq__(self, other):
-        if not isinstance(other, Matrix):
-            other = Matrix(*other)
-        return np.array_equal(self, other)
+        if len(self) != len(other):
+            return False
+        for i, v in enumerate(self):
+            if v != other[i]:
+                return False
+        return True
+
+    def normalized(self):
+        """Returns a normalized version of this vector."""
+        return self / self.length
 
     @property
     def x(self):
@@ -123,9 +102,75 @@ class Matrix:
     def z(self, z):
         self[2] = z
 
+    @property
+    def length(self):
+        squared_sum = 0
+        for component in self:
+            squared_sum += component * component
+        return sqrt(squared_sum)
 
-class Vector(Matrix):
-    """Structure which can be used as a column vector."""
 
-    def __init__(self, x, y, *others):
-        super().__init__(x, y, *others)
+class Matrix(Vector):
+    """Matrix structured for row-major access."""
+
+    def __init__(self, first: Sequence, *rest: Sequence):
+        convert = lambda seq: seq if isinstance(seq, Vector) else Vector(*seq)
+        rows = [convert(first)]
+        for row in rest:
+            if len(row) != len(first):
+                raise ValueError("Matrix row length mismatch.")
+            else:
+                rows.append(convert(row))
+        super().__init__(*rows)
+
+    @staticmethod
+    def from_lists(rows: Sequence):
+        """Creates a Matrix with the given sequence of sequences."""
+        return Matrix(*rows)
+
+    @staticmethod
+    def from_function(m: int, n: int, builder: Callable):
+        """
+        Builds an MxN Matrix by calling a given builder function on each index
+        pair (row, column) and filling its cell with the function's return.
+        """
+        rows = [[builder(i, j) for j in range(n)] for i in range(m)]
+        return Matrix.from_lists(rows)
+
+    @staticmethod
+    def identity(n: int):
+        """Create an NxN identity Matrix."""
+        return Matrix.from_function(n, n, lambda i, j: 1 if j == i else 0)
+
+    @staticmethod
+    def zeros(m: int, n: int):
+        """Create an MxN Matrix filled with zeros."""
+        return Matrix.from_function(m, n, lambda i, j: 0)
+
+    def __matmul__(self, other):
+        if isinstance(other, Matrix):
+            m, n, p = self.rows, self.columns, other.columns
+            if other.rows != n:
+                raise ValueError("Matrix has incompatible dimensions.")
+            result = Matrix.zeros(m, p)
+            for i in range(m):
+                for j in range(p):
+                    for k in range(n):
+                        result[i][j] += self[i][k] * other[k][j]
+            return result
+        elif isinstance(other, Vector):
+            n = len(other)
+            if n != self.columns:
+                raise ValueError("Vector has incompatible dimensions.")
+            return Vector(*[line @ other for line in self])
+        else:
+            raise NotImplementedError("Can't multiply Matrix by %s." %
+                                      type(other).__name__)
+
+    @property
+    def rows(self):
+        return len(self)
+
+    @property
+    def columns(self):
+        return len(self[0])

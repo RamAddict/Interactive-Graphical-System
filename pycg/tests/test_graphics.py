@@ -31,12 +31,12 @@ def test_transformations_center_pivot():
 
 def test_transformations_global_pivot():
     p = Point(4, 2)
-    s = Transformation().scale(-3).matrix(pivot=Point(0, 0))
+    s = Transformation().scale(-3).matrix()
     p.transform(s)
     assert p == (-12, -6)
 
     vertical_line = Line(Point(0, 0), Point(0, 300))
-    translation_by_100 = Transformation().translate(100, 0).matrix(pivot=Point(0,0))
+    translation_by_100 = Transformation().translate(100, 0).matrix()
     vertical_line.transform(translation_by_100)
     point_a, point_b = vertical_line
     assert point_a.x == 100
@@ -44,7 +44,7 @@ def test_transformations_global_pivot():
     assert point_b.x == 100
     assert point_b.y == 300
 
-    rotate_by_90 = Transformation().rotate(pi/2).matrix(pivot=Point(0,0))
+    rotate_by_90 = Transformation().rotate(pi/2).matrix()
     vertical_line.transform(rotate_by_90)
     point_a, point_b = vertical_line
     assert round(point_a.x) == 0

@@ -184,13 +184,13 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 a, b = parsed
                 obj = Line(Point(*a), Point(*b))
             elif typename == 'Wireframe' and len(parsed) > 2:
-                obj = Wireframe([Point(x, y) for x, y in parsed])
+                obj = Wireframe([Point(*p) for p in parsed])
             elif typename == 'Polygon' and len(parsed) > 2:
-                obj = Polygon([Point(x, y) for x, y in parsed])
+                obj = Polygon([Point(*p) for p in parsed])
             elif typename == "Bezier" and len(parsed) > 2:
-                obj = Bezier([Point(x, y) for x, y in parsed])
+                obj = Bezier([Point(*p) for p in parsed])
             elif typename == "BSpline" and len(parsed) > 2:
-                obj = BSpline([Point(x, y) for x, y in parsed])
+                obj = BSpline([Point(*p) for p in parsed])
             else:
                 return
 
@@ -360,9 +360,9 @@ class QtViewport(QWidget):
             dx *= self._pan
             dy *= self._pan
         align = Transformation().rotate(self.camera.angle).matrix()
-        dx, dy, _ = align @ Vector(dx, dy, 1)
-        self.camera.x += dx
-        self.camera.y += dy
+        delta = align @ Point(dx, dy)
+        self.camera.x += delta.x
+        self.camera.y += delta.y
         self.update()
 
     def update_zoom(self, value, minimum, maximum):
@@ -454,7 +454,7 @@ class QtViewport(QWidget):
     def mouseMoveEvent(self, event):
         if self._drag_begin:
             # compute motion vector and update drag initial position
-            delta = (event.x(), event.y()) - self._drag_begin
+            delta = Point(event.x(), event.y()) - self._drag_begin
             self._drag_begin += delta
             # adjust delta based on window zoom
             dx = delta.x / self.camera.zoom

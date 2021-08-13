@@ -1,3 +1,4 @@
+from math import radians, sqrt
 from random import randint
 
 from blas import Vector, Matrix
@@ -40,6 +41,24 @@ def test_vector_dot_product():
     b = Vector(4, -2, -1)
     assert a @ b == b @ a
     assert a @ b == 3
+
+
+def test_vector_normalization():
+    u = Vector(1, 0)
+    assert u.normalized() == u
+
+    v = Vector(1, 2, 3)
+    assert v.normalized().length == 1
+
+
+def test_vector_angle():
+    i = Vector(1, 0)
+    j = Vector(0, 1)
+    assert abs(Vector.angle(i, j) - radians(90)) < 1e-6
+
+    v = Vector(0.5, sqrt(3)/2)
+    assert abs(Vector.angle(v, i) - radians(60)) < 1e-6
+    assert abs(Vector.angle(v, j) - radians(30)) < 1e-6
 
 
 def test_matrix_access():

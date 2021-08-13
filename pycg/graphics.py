@@ -61,104 +61,189 @@ class Painter():
 
 
 class Transformation:
-    """Representation of Transformations in 2D Homogeneous Coordinates.
+    """Representation of Transformations in 3D Homogeneous Coordinates.
 
     Methods such as `translate`, `rotate` and `scale` modify the calling object
     and return it afterwards, allowing for chaining. eg:
 
-        t = Transformation().translate(x, y).rotate(theta).scale(sx, sy)
+        t = Transformation().translate(tx, ty, tz).rotate(theta).scale(s)
 
-    These operations should be considered commutative, and are applied all at
-    once using a pivot Point.
+    These operations are all applied at the same time.
     """
 
     def __init__(self):
-        self.translation = Vector(0, 0)
+        self.translation = Vector(0, 0, 0)
         self.rotation = 0
-        self.scaling = Vector(1, 1)
+        self.scaling = Vector(1, 1, 1)
 
-    def translate(self, tx, ty):
-        self.translation += (tx, ty)
+    def is_identity(self) -> bool:
+        return (self.translation.length == 0
+                and self.rotation == 0
+                and self.scaling == Vector(1, 1, 1))
+
+    def translate(self, tx: float, ty: float, tz: float = 0):
+        self.translation += (tx, ty, tz)
         return self
 
-    def rotate(self, theta: float):
+    def rotate(self, theta):
         self.rotation += theta
         return self
 
-    def scale(self, sx, sy=None):
+    def scale(self, scale: float, sy: float = None, sz: float = None, sx: float = None):
+        # scale all axis the same when given a single factor
+        if not sx and not sy and not sz:
+            sx = scale
+            sy = scale
+            sz = scale
+        # otherwise, assume the first factor is for sx and use 1 as default
+        else:
+            sx = scale
+            sy = sy or 1
+            sz = sz or 1
         self.scaling.x *= sx
-        self.scaling.y *= sy or sx
+        self.scaling.y *= sy
+        self.scaling.z *= sz
         return self
 
     @staticmethod
-    def _translation(deltas: Sequence) -> Matrix:
-        t = Matrix.identity(3)
+    def _scaling(scales: Sequence[float]) -> Matrix:
+        t = Matrix.identity(4)
+        for i in range(t.rows - 1):
+            t[i][i] = scales[i]  # modify each diagonal to the scaling
+        return t
+
+    @staticmethod
+    def _translation(deltas: Sequence[float]) -> Matrix:
+        t = Matrix.identity(4)
         for i in range(t.rows - 1):
             t[i][-1] = deltas[i]  # apply delta to last column of each row
         return t
 
     @staticmethod
-    def _rotation(theta: float) -> Matrix:
+    def _rotation_x(theta: float) -> Matrix:
         cs, sn = cos(theta), sin(theta)
-        return Matrix([cs, -sn, 0],
-                      [sn, cs,  0],
-                      [0,  0,   1])
+        roll = Matrix([1, 0,  0,   0],
+                      [0, cs, -sn, 0],
+                      [0, sn, cs,  0],
+                      [0, 0,  0,   1])
+        return roll
 
     @staticmethod
-    def _scaling(scales: Sequence) -> Matrix:
-        t = Matrix.identity(3)
-        for i in range(t.rows - 1):
-            t[i][i] = scales[i]  # modify each diagonal to the scaling
-        return t
+    def _rotation_y(theta: float) -> Matrix:
+        cs, sn = cos(theta), sin(theta)
+        pitch = Matrix([cs,  0, sn, 0],
+                       [0,   1, 0,  0],
+                       [-sn, 0, cs, 0],
+                       [0,   0, 0,  1])
+        return pitch
 
-    def matrix(self, pivot=None) -> Matrix:
-        """Gets the 3x3 Matrix that performs this transformation on vectors.
-        If a pivot is not specified, it defaults to (0, 0).
+    @staticmethod
+    def _rotation_z(theta: float) -> Matrix:
+        cs, sn = cos(theta), sin(theta)
+        yaw = Matrix([cs, -sn, 0, 0],
+                     [sn, cs,  0, 0],
+                     [0,   0,  1, 0],
+                     [0,   0,  0, 1])
+        return yaw
+
+    @staticmethod
+    def _rotate_2D(vec: Vector, theta: float) -> Vector:
+        x, y = vec.x, vec.y
+        cs, sn = cos(theta), sin(theta)
+        return Vector(x*cs - y*sn, x*sn + y*cs)
+
+    def matrix(self, pivot = None, axis: Vector = None) -> Matrix:
+        """Gets the 4x4 Matrix that performs this transformation on vectors.
+        Pivot defaults to global origin and axis to the global Z axis.
         """
-        t = Transformation._translation(self.translation)
-        r = Transformation._rotation(self.rotation)
-        s = Transformation._scaling(self.scaling)
-        if pivot:
-            to_pivot_point = Transformation._translation(-pivot)
-            back_from_pivot_point = Transformation._translation(pivot)
-            return back_from_pivot_point @ t @ r @ s @ to_pivot_point
-        else:
-            return t @ r @ s
+        if self.is_identity(): return Matrix.identity(4)
+
+        # notice the axis is always a new variable -> ok to mutate
+        pivot = pivot or Point(0, 0, 0)
+        axis = axis.normalized() if axis else Vector(0, 0, 1)
+
+        # we need to translate pivot to origin for scaling and rotation
+        to_origin = Transformation._translation(-pivot)
+        back_from_origin = Transformation._translation(pivot)
+        scale = Transformation._scaling(self.scaling)
+
+        # align object axis to the XY plane by rotating along X
+        projectiony_yz = Vector(axis.y, axis.z)
+        align_xy_angle = -Vector.angle(projectiony_yz, Vector(1, 0))
+        aligned = Transformation._rotate_2D(projectiony_yz, align_xy_angle)
+        align_xy = Transformation._rotation_x(align_xy_angle)
+        unalign_xy = Transformation._rotation_x(-align_xy_angle)
+
+        # align new object axis with the Y axis by rotating along Z
+        projection_xy = Vector(axis.x, aligned[0])
+        align_y_angle = -Vector.angle(projection_xy, Vector(0, 1))
+        align_y = Transformation._rotation_z(align_y_angle)
+        unalign_y = Transformation._rotation_z(-align_y_angle)
+
+        # then, we rotate along Y by the angle we actually wanted
+        rotate_aligned = Transformation._rotation_y(self.rotation)
+
+        # translation is easy
+        translate = Transformation._translation(self.translation)
+
+        # this should be read bottom-up:
+        return (back_from_origin
+                @ translate
+                @ unalign_xy
+                @ unalign_y
+                @ rotate_aligned
+                @ align_y
+                @ align_xy
+                @ scale
+                @ to_origin)
 
 
 class Drawable():
     """Common interface for all graphical objects."""
 
-    def draw(self, painter: Painter):
+    def _error(self):
         raise NotImplementedError("Drawable is an abstract class.")
+
+    def draw(self, painter: Painter):
+        self._error()
 
     def transform(self, transformation: Matrix):
-        raise NotImplementedError("Drawable is an abstract class.")
+        self._error()
 
     def center(self):  # -> Point:
-        raise NotImplementedError("Drawable is an abstract class.")
+        self._error()
 
 
 class Point(Drawable, Vector):
-    def __init__(self, x, y):
-        Vector.__init__(self, x, y)
+    def __init__(self, x, y, z=1, _=1):
+        Vector.__init__(self, x, y, z, 1)
 
-    def draw(self, painter):
+    def __repr__(self):  # as by the Well-known text representation of geometry
+        return f"POINT ({self.x} {self.y} {self.z})"
+
+    def __eq__(self, other):
+        if len(other) < 2: return False
+        for a, b in zip(self, other):
+            if a != b:
+                return False
+        return True
+
+    def draw(self, painter):  # TODO: projection
         painter.draw_pixel(self.x, self.y)
 
     def transform(self, transformation: Matrix):
-        self.x, self.y, _ = transformation @ Vector(self.x, self.y, 1)
+        self.x, self.y, self.z, _ = Point(*(transformation @ self))
 
     def center(self):  # -> Point:
         return self
-
-    def __repr__(self):  # as by the Well-known text representation of geometry
-        return f"POINT ({self.x} {self.y})"
 
 
 class Line(Drawable):
     def __init__(self, pa: Point, pb: Point):
         self._points = [pa, pb]
+
+    def __len__(self) -> int:
+        return 2
 
     def __getitem__(self, key: int) -> Point:
         return self._points[key]
@@ -166,31 +251,33 @@ class Line(Drawable):
     def __setitem__(self, key: int, point: Point):
         self._points[key] = point
 
-    def draw(self, painter):
-        painter.draw_line(self[0].x, self[0].y, self[1].x, self[1].y)
-
-    def transform(self, transformation: Matrix):
-        for p in self:
-            p.x, p.y, _ = transformation @ Vector(p.x, p.y, 1)
-
-    def center(self) -> Point:
-        return (self[0] + self[1]) / 2
-
     def __repr__(self):  # WKT
-        return f"LINESTRING ({self[0].x} {self[0].y}, {self[1].x} {self[1].y})"
+        return f"LINESTRING ({self[0].x} {self[0].y} {self[0].z}, {self[1].x} {self[1].y}, {self[0].z})"
 
-    def __eq__(self, other: Iterable) -> bool:
+    def __eq__(self, other: Sequence[Point]) -> bool:
+        if len(other) != len(self): return False
         for p1, p2 in zip(self, other):
             if p1 != p2:
                 return False
         return True
 
-    def __len__(self) -> float:
-        return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2)
+    def draw(self, painter):  # TODO: projection
+        painter.draw_line(self[0].x, self[0].y, self[1].x, self[1].y)
+
+    def transform(self, transformation: Matrix):
+        for i, point in enumerate(self._points):
+            self._points[i] = Point(*(transformation @ point))
+
+    def center(self) -> Point:
+        return (self[0] + self[1]) / 2
+
+    @property
+    def length(self) -> float:
+        return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2 + (self[0].z - self[1].z)**2)
 
 
 class Wireframe(Drawable):
-    """Open polygon defined by a sequence of points."""
+    """Open polygon defined by a sequence of connected points."""
 
     def __init__(self, points: Sequence[Point]):
         self._points = points
@@ -204,52 +291,61 @@ class Wireframe(Drawable):
     def __setitem__(self, key: int, point: Point):
         self._points[key] = point
 
-    def draw(self, painter):
-        for pa, pb in pairwise(self._points):
-            painter.draw_line(pa.x, pa.y, pb.x, pb.y)
-
-    def transform(self, transformation: Matrix):
-        for p in self._points:
-            p.x, p.y, _ = transformation @ Vector(p.x, p.y, 1)
-
-    def center(self) -> Point:
-        # to avoid overweighting repeated points, only average over unique ones
-        points = set({(x, y) for x, y in self._points})
-        average = Point(0, 0)
-        for x, y in points:
-            average += Point(x, y)
-        return average / len(points)
-
     def __repr__(self):  # WKT
-        return f"POLYGON (({', '.join(f'{p.x} {p.y}' for p in self._points)}))"
+        points = ', '.join(f'{p.x} {p.y} {p.z}' for p in self._points)
+        return f"LINESTRING ({points})"
 
     def __eq__(self, other: Iterable) -> bool:
+        if len(other) != len(self): return False
         for p1, p2 in zip(self, other):
             if p1 != p2:
                 return False
         return True
 
+    def draw(self, painter):  # TODO: projection
+        for pa, pb in pairwise(self._points):
+            painter.draw_line(pa.x, pa.y, pb.x, pb.y)
 
-class Bezier(Wireframe):
-    def __init__(self, points: Sequence[Point], step=0.01):
-        super().__init__(bezier(points, step))
+    def transform(self, transformation: Matrix):
+        for i, point in enumerate(self._points):
+            self._points[i] = Point(*(transformation @ point))
 
-class BSpline(Wireframe):
-    def __init__(self, points: Sequence[Point], step=0.01):
-        super().__init__(bSpline(points, step))
+    def center(self) -> Point:
+        # to avoid overweighting repeated points, only average over unique ones
+        points = set({tuple(p) for p in self._points})
+        average = Point(0, 0, 0)
+        for p in points:
+            average += p
+        return average / len(points)
+
 
 class Polygon(Wireframe):
     """Filled polygon."""
 
     def __init__(self, points: Sequence[Point]):
         points = list(points)
-        if points[-1] != points[0]:
-            x, y = points[0]
-            points.append(Point(x, y))
+        if points[-1] != points[0]:  # ensures polygons are closed
+            p = points[0]
+            points.append(Point(p.x, p.y, p.z))
         super().__init__(points)
 
-    def draw(self, painter):
-        painter.draw_polygon(self._points)
+    def __repr__(self):  # WKT
+        points = ', '.join(f'{p.x} {p.y} {p.z}' for p in self._points)
+        return f"POLYGON (({points}))"
+
+    def draw(self, painter):  # TODO: projection
+        painter.draw_polygon([(p.x, p.y) for p in self._points])
+
+
+class Bezier(Wireframe):
+    def __init__(self, points: Sequence[Point], step=0.01):
+        super().__init__(bezier(points, step))
+
+# TODO: 3D curves?
+
+class BSpline(Wireframe):
+    def __init__(self, points: Sequence[Point], step=0.01):
+        super().__init__(bSpline(points, step))
 
 
 class Camera(Painter):
@@ -269,23 +365,23 @@ class Camera(Painter):
 
     def draw_pixel(self, x, y):
         self._recompute_matrixes()
-        p = self._world_to_view @ Vector(x, y, 1)
+        p = self._world_to_view @ Point(x, y)
         if -1 <= p.x <= 1 and -1 <= p.y <= 1:
-            x, y, _ = self._view_to_screen @ Vector(p.x, p.y, 1)
-            self.painter.draw_pixel(int(x), int(y))
+            p = self._view_to_screen @ p
+            self.painter.draw_pixel(int(p.x), int(p.y))
 
     def draw_line(self, xa, ya, xb, yb):
         self._recompute_matrixes()
-        a = self._world_to_view @ Vector(xa, ya, 1)
-        b = self._world_to_view @ Vector(xb, yb, 1)
+        a = self._world_to_view @ Point(xa, ya)
+        b = self._world_to_view @ Point(xb, yb)
         clipper = (make_clipper(-1, +1, -1, +1)
                    if self.line_clipping_algorithm == 'Cohen-Sutherland'
                    else clip_line)
         clipped = clipper(a.x, a.y, b.x, b.y)
         if clipped:
             xa, ya, xb, yb = clipped
-            a = self._view_to_screen @ Vector(xa, ya, 1)
-            b = self._view_to_screen @ Vector(xb, yb, 1)
+            a = self._view_to_screen @ Point(xa, ya)
+            b = self._view_to_screen @ Point(xb, yb)
             self.painter.draw_line(int(a.x), int(a.y), int(b.x), int(b.y))
 
     def draw_polygon(self, points: Sequence[Tuple[int, int]]):
@@ -293,14 +389,14 @@ class Camera(Painter):
 
         clipspace = []
         for x, y in points:
-            x, y, _ = self._world_to_view @ Vector(x, y, 1)
+            x, y, *_ = self._world_to_view @ Point(x, y)
             clipspace.append((x, y))
 
         clipped = clip_polygon(clipspace)
 
         screenspace = []
         for x, y in clipped:
-            x, y, _ = self._view_to_screen @ Vector(x, y, 1)
+            x, y, *_ = self._view_to_screen @ Point(x, y)
             screenspace.append((int(x), int(y)))
 
         if screenspace: self.painter.draw_polygon(screenspace)
@@ -571,54 +667,57 @@ def clip_polygon(points: Sequence[Tuple[float, float]]) -> Sequence[Tuple[float,
 
 def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
     """Assumes number of points is of the form (4 + 3*i), iterates 4 by 4."""
+    if len(points) < 3: return points
+    if len(points) == 3: points = [points[0], points[1], points[1], points[2]]
+
     curve = []
-    if len(points) == 3:
-        points = [points[0], points[1], points[1], points[2]]
-    if len(points) >= 4:
+
+    j = 0
+    M = Matrix([-1, 3,  -3, 1],
+               [3,  -6, 3,  0],
+               [-3, 3,  0,  0],
+               [1,  0,  0,  0])
+    for i in range(0, len(points) - 3, 3):
         j = 0
-        M = Matrix([-1,3,-3,1], [3,-6,3,0], [-3,3,0,0],[1,0,0,0])
-        for i in range(0, len(points)-3,3):
-            j = 0
-            while j < 1:
-                T = Matrix([j*j*j, j*j, j, 1])
-                Gx = Matrix(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
-                Gy = Matrix(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
-                Gx = T @ M @ Gx
-                Gy = T @ M @ Gy
-                curve.append(Point(Gx[0], Gy[0]))
-                j += step
-    else:
-        return points
+        while j < 1:
+            T = Matrix([j*j*j, j*j, j, 1])
+            Gx = Vector(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
+            Gy = Vector(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
+            Gx = T @ M @ Gx
+            Gy = T @ M @ Gy
+            curve.append(Point(Gx[0], Gy[0]))
+            j += step
+
     return curve
 
 def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
+    if len(points) < 3: return points
+    if len(points) == 3: points = [points[0], points[1], points[1], points[2]]
+
     curve = []
-    if len(points) == 3:
-        points = [points[0], points[1], points[1], points[2]]
-    if len(points) >= 4:
-        d1 = step
-        d2 = step*step
-        d3 = step*step*step
-        E = Matrix([0,    0,    0, 1], 
-                   [d3,   d2,  d1, 0], 
-                   [6*d3, 2*d2, 0, 0], 
-                   [6*d3, 0,    0, 0])
-        M = (1/6)*Matrix([-1, 3,-3, 1], 
-                         [ 3,-6, 3 ,0], 
-                         [-3, 0, 3, 0], 
-                         [ 1, 4, 1, 0])
-        ExM = E @ M
-        for i in range(0, len(points)-3):
-            G = Vector(points[i], points[i+1], points[i+2], points[i+3])
-            D = ExM @ G
-            j = 0
-            while True:
-                j += step
-                if j >= 1: break
-                curve.append(Point(D[0][0], D[0][1]))
-                D[0] += D[1]
-                D[1] += D[2]
-                D[2] += D[3]
-    else:
-        return points
+
+    d1 = step
+    d2 = step*step
+    d3 = step*step*step
+    E = Matrix([0,    0,    0,  1],
+               [d3,   d2,   d1, 0],
+               [6*d3, 2*d2, 0,  0],
+               [6*d3, 0,    0,  0])
+    M = (1/6)*Matrix([-1, 3,  -3, 1],
+                     [3,  -6, 3,  0],
+                     [-3, 0,  3,  0],
+                     [1,  4,  1,  0])
+    ExM = E @ M
+    for i in range(0, len(points) - 3):
+        G = Vector(points[i], points[i+1], points[i+2], points[i+3])
+        D = ExM @ G
+        j = 0
+        while True:
+            j += step
+            if j >= 1: break
+            curve.append(Point(D[0][0], D[0][1]))
+            D[0] += D[1]
+            D[1] += D[2]
+            D[2] += D[3]
+
     return curve
