@@ -1,6 +1,6 @@
 from math import pi
 
-from graphics import Bezier, Transformation, Point, Line, Polygon
+from graphics import Transformation, Point, Line, Polygon, Bezier
 
 
 def test_transformations_center_pivot():
@@ -62,3 +62,6 @@ def test_bezier():
     for actual, expected in zip(curve, correct):
         assert abs(actual.x - expected.x) < 1e-6
         assert abs(actual.y - expected.y) < 1e-6
+
+
+# TODO: unittest bsplines

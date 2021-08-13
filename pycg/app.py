@@ -219,7 +219,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             if not self._transformations_with_pivots: return
             name = self.displayFile.currentItem().text()
             drawable = self.display_file[name]
-            result = Matrix.identity(3)
+            result = Matrix.identity(4)
             for transformation, pivot in reversed(self._transformations_with_pivots):
                 pivot = pivot or drawable.center()
                 matrix = transformation.matrix(pivot)

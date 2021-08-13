@@ -697,8 +697,8 @@ def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
     curve = []
 
     d1 = step
-    d2 = step*step
-    d3 = step*step*step
+    d2 = d1*step
+    d3 = d2*step
     E = Matrix([0,    0,    0,  1],
                [d3,   d2,   d1, 0],
                [6*d3, 2*d2, 0,  0],
@@ -709,7 +709,7 @@ def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
                      [1,  4,  1,  0])
     ExM = E @ M
     for i in range(0, len(points) - 3):
-        G = Vector(points[i], points[i+1], points[i+2], points[i+3])
+        G = Matrix(points[i], points[i+1], points[i+2], points[i+3])
         D = ExM @ G
         j = 0
         while True:

@@ -99,7 +99,11 @@ def test_matrix_multiply():
     b = Matrix([7, 8],
                [9, 10],
                [11, 12])
-    c = [[58,  64],
-         [139, 154]]
+    c = Matrix([58,  64],
+               [139, 154])
     assert a @ b == c
     assert a @ b != b @ a
+
+    id = Matrix.identity(2) * 1
+    assert id @ c == c @ id
+    assert id @ c == c
