@@ -29,7 +29,7 @@ class Vector:
 
     def __add__(self, other: Sequence):
         try:
-            return Vector(*tuple(v + other[i] for i, v in enumerate(self)))
+            return Vector(*[v + other[i] for i, v in enumerate(self)])
         except Exception as exc:
             raise NotImplementedError from exc
 
@@ -44,7 +44,7 @@ class Vector:
 
     def __mul__(self, scalar):  # scalar product
         try:
-            return Vector(*tuple(scalar * x for x in self))
+            return Vector(*[scalar * x for x in self])
         except Exception as exc:
             raise NotImplementedError from exc
 
@@ -62,9 +62,6 @@ class Vector:
 
     def __truediv__(self, scalar):
         return self * (1 / scalar)
-
-    def __mod__(self, z):
-        return Vector(*tuple(x % z for x in self))
 
     def __eq__(self, other):
         if len(self) != len(other):
@@ -145,7 +142,13 @@ class Matrix(Vector):
     @staticmethod
     def zeros(m: int, n: int):
         """Create an MxN Matrix filled with zeros."""
-        return Matrix.from_function(m, n, lambda i, j: 0)
+        return Matrix.from_function(m, n, lambda _i, _j: 0)
+
+    def __add__(self, other: Sequence):
+        return Matrix(*(super().__add__(other)))
+
+    def __mul__(self, scalar):  # scalar product
+        return Matrix(*(super().__mul__(scalar)))
 
     def __matmul__(self, other):
         if isinstance(other, Matrix):
