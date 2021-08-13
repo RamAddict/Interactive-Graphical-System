@@ -359,8 +359,7 @@ class QtViewport(QWidget):
         if _normalized:
             dx *= self._pan
             dy *= self._pan
-        align = Transformation().rotate(self.camera.angle).matrix()
-        delta = align @ Point(dx, dy)
+        delta = self.camera.view_right * dx + self.camera.view_up * dy
         self.camera.x += delta.x
         self.camera.y += delta.y
         self.update()
@@ -372,9 +371,9 @@ class QtViewport(QWidget):
         self._pan = 10 / zoom  # NOTE: camera step is adjusted by zoom
         self.update()
 
-    def tilt_view(self, theta: float):
+    def tilt_view(self, theta: float, axis = Camera.ROLL):
         """Tilt the camera view by the given amount."""
-        self.camera.angle += theta
+        self.camera.rotate(theta, axis)
         self.update()
 
     def paintEvent(self, event):  # this is where we draw our scene

@@ -12,8 +12,16 @@ class Vector:
 
     @staticmethod
     def angle(a, b):
-        """Finds the angle between two vectors."""
+        """Finds the angle between two 1st-rank vectors."""
         return acos((a @ b) / (a.length * b.length))
+
+    @staticmethod
+    def cross(a, b):
+        """Computes the cross product between two 3D vectors."""
+        assert(len(a) == len(b) == 3)
+        return Vector((a.y * b.z - a.z * b.y),
+                      -(a.x * b.z - a.z * b.x),
+                      (a.x * b.y - a.y * b.x))
 
     def __getitem__(self, key):
         return self._coordinates[key]
@@ -103,6 +111,7 @@ class Vector:
     def length(self):
         squared_sum = 0
         for component in self:
+            if isinstance(component, Vector): component = component.length
             squared_sum += component * component
         return sqrt(squared_sum)
 

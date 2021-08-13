@@ -1,10 +1,10 @@
 """Computer Graphics API."""
 
-from math import pi, sqrt, cos, sin, inf
+from math import sqrt, cos, sin, inf
 from typing import Iterable, Tuple, Sequence
 
 from blas import Vector, Matrix
-from utilities import pairwise, clamp
+from utilities import pairwise, clamp, rotate_2D
 
 
 class Painter():
@@ -120,36 +120,28 @@ class Transformation:
         return t
 
     @staticmethod
-    def _rotation_x(theta: float) -> Matrix:
+    def rotation_x(theta: float) -> Matrix:
         cs, sn = cos(theta), sin(theta)
-        roll = Matrix([1, 0,  0,   0],
+        return Matrix([1, 0,  0,   0],
                       [0, cs, -sn, 0],
                       [0, sn, cs,  0],
                       [0, 0,  0,   1])
-        return roll
 
     @staticmethod
-    def _rotation_y(theta: float) -> Matrix:
+    def rotation_y(theta: float) -> Matrix:
         cs, sn = cos(theta), sin(theta)
-        pitch = Matrix([cs,  0, sn, 0],
-                       [0,   1, 0,  0],
-                       [-sn, 0, cs, 0],
-                       [0,   0, 0,  1])
-        return pitch
+        return Matrix([cs,  0, sn, 0],
+                      [0,   1, 0,  0],
+                      [-sn, 0, cs, 0],
+                      [0,   0, 0,  1])
 
     @staticmethod
-    def _rotation_z(theta: float) -> Matrix:
+    def rotation_z(theta: float) -> Matrix:
         cs, sn = cos(theta), sin(theta)
-        yaw = Matrix([cs, -sn, 0, 0],
-                     [sn, cs,  0, 0],
-                     [0,   0,  1, 0],
-                     [0,   0,  0, 1])
-        return yaw
-
-    @staticmethod
-    def _rotate_2D(x: float, y: float, theta: float) -> Vector:
-        cs, sn = cos(theta), sin(theta)
-        return x*cs - y*sn, x*sn + y*cs
+        return Matrix([cs, -sn, 0, 0],
+                      [sn, cs,  0, 0],
+                      [0,   0,  1, 0],
+                      [0,   0,  0, 1])
 
     def matrix(self, pivot = None, axis: Vector = None) -> Matrix:
         """Gets the 4x4 Matrix that performs this transformation on vectors.
@@ -169,18 +161,18 @@ class Transformation:
         # align object axis to the XY plane by rotating along X
         projectiony_yz = Vector(axis.y, axis.z)
         align_xy_angle = -Vector.angle(projectiony_yz, Vector(1, 0))
-        y, z = Transformation._rotate_2D(axis.y, axis.z, align_xy_angle)
-        align_xy = Transformation._rotation_x(align_xy_angle)
-        unalign_xy = Transformation._rotation_x(-align_xy_angle)
+        y, _ = rotate_2D(axis.y, axis.z, align_xy_angle)
+        align_xy = Transformation.rotation_x(align_xy_angle)
+        unalign_xy = Transformation.rotation_x(-align_xy_angle)
 
         # align new object axis with the Y axis by rotating along Z
         projection_xy = Vector(axis.x, y)
         align_y_angle = -Vector.angle(projection_xy, Vector(0, 1))
-        align_y = Transformation._rotation_z(align_y_angle)
-        unalign_y = Transformation._rotation_z(-align_y_angle)
+        align_y = Transformation.rotation_z(align_y_angle)
+        unalign_y = Transformation.rotation_z(-align_y_angle)
 
         # then, we rotate along Y by the angle we actually wanted
-        rotate_aligned = Transformation._rotation_y(self.rotation)
+        rotate_aligned = Transformation.rotation_y(self.rotation)
 
         # translation is easy
         translate = Transformation._translation(self.translation)
@@ -214,7 +206,7 @@ class Drawable():
 
 
 class Point(Drawable, Vector):
-    def __init__(self, x, y, z=1, _=1):
+    def __init__(self, x, y, z = 0, _=1):
         Vector.__init__(self, x, y, z, 1)
 
     def __repr__(self):  # as by the Well-known text representation of geometry
@@ -234,7 +226,7 @@ class Point(Drawable, Vector):
         self.x, self.y, self.z, _ = Point(*(transformation @ self))
 
     def center(self):  # -> Point:
-        return self
+        return Point(*self)
 
 
 class Line(Drawable):
@@ -362,7 +354,7 @@ class Wireframe(Drawable):
         return self.points[a], self.points[b]
 
     def __setitem__(self, key: int, line: Tuple[int, int]):
-        self.line[key] = line
+        self.lines[key] = line
 
     def __repr__(self):  # WKT
         line = lambda a, b: (
@@ -394,13 +386,23 @@ class Wireframe(Drawable):
 class Camera(Painter):
     """Window used as reference to render objects."""
 
-    def __init__(self, painter: Painter, size: Vector, offset: Point = None):
+    def __init__(
+        self,
+        painter: Painter,
+        size: Vector,
+        offset: Point = None,
+    ):
         self.painter = painter
         self._viewport_size = size
-        self._offset = offset or Point(0, 0)
-        self._position = Point(0, 0)
         self._zoom = 1.0
-        self._angle = 0
+        self._offset = offset or Vector(0, 0)  # canvas-relative position
+
+        # these define the view plane since up and view are orthogonal
+        self._position = Point(0, 0, 0)
+        self._up = Vector(0, 1, 0)
+        self._normal = Vector(0, 0, 1)
+        self._thetas = Vector(0, 0, 0)
+
         self._dirty = True
         self._world_to_view = None
         self._view_to_screen = None
@@ -445,23 +447,86 @@ class Camera(Painter):
         if screenspace: self.painter.draw_polygon(screenspace)
 
     def _recompute_matrixes(self):
-        # only actually recompute if the camera has changed
-        if self._dirty:
-            half_size = self._viewport_size / 2
+        if not self._dirty: return
 
-            center = Transformation().translate(-self.x, -self.y).matrix()
-            align = Transformation().rotate(-self.angle).matrix()
-            scaling = half_size / self.zoom
-            normalize = Transformation().scale(1/scaling.x, 1/scaling.y).matrix()
-            self._world_to_view = normalize @ align @ center
+        half_size = self._viewport_size / 2
 
-            resize = Transformation().scale(half_size.x, half_size.y).matrix()
-            corner = Transformation().translate(half_size.x, -half_size.y).matrix()
-            invert_y = Transformation().scale(1, -1).matrix()
-            offset = Transformation().translate(self._offset.x, self._offset.y).matrix()
-            self._view_to_screen = offset @ invert_y @ corner @ resize
+        center = Transformation().translate(-self.x, -self.y, -self.y).matrix()
+        align_x = Transformation.rotation_x(-self._thetas.x)
+        align_y = Transformation.rotation_y(-self._thetas.y)
+        align_z = Transformation.rotation_z(-self._thetas.z)
+        align = align_y @ align_x @ align_z
+        scaling = half_size / self.zoom
+        normalize = Transformation().scale(1/scaling.x, 1/scaling.y).matrix()
+        self._world_to_view = normalize @ align @ center
 
-            self._dirty = False
+        resize = Transformation().scale(half_size.x, half_size.y).matrix()
+        corner = Transformation().translate(half_size.x, -half_size.y).matrix()
+        invert_y = Transformation().scale(1, -1).matrix()
+        offset = Transformation().translate(self._offset.x, self._offset.y).matrix()
+        self._view_to_screen = offset @ invert_y @ corner @ resize
+
+        self._dirty = False
+
+    ROLL, PITCH, YAW = 2, 0, 1
+
+    def rotate(self, theta: float, axis: int = 2):
+        """Rotates the camera's viewpoint on some axis (ROLL|PITCH|YAW)."""
+
+        if theta == 0: return
+
+        # (u, v, n) make an orthonormal basis for the camera's viewpoint
+        v = Vector(self._up.x, self._up.y, self._up.z, 1)
+        n = Vector(self._normal.x, self._normal.y, self._normal.z, 1)
+
+        # we rotate them together and extract our view plane + normal back
+        rotation = Transformation().matrix()
+        if axis == self.ROLL:
+            rotation = Transformation.rotation_z(theta)
+            self._thetas.z += theta
+        elif axis == self.PITCH:
+            rotation = Transformation.rotation_x(theta)
+            self._thetas.x += theta
+        elif axis == self.YAW:
+            rotation = Transformation.rotation_y(theta)
+            self._thetas.y += theta
+
+        self._up.x, self._up.y, self._up.z, _ = rotation @ v
+        self._normal.x, self._normal.y, self._normal.z, _ = rotation @ n
+        self._dirty = True
+
+    @property
+    def viewport_size(self) -> Vector:
+        return Vector(self._viewport_size.x, self._viewport_size.y)
+
+    @viewport_size.setter
+    def viewport_size(self, size: Tuple[int, int]):
+        w, h = size
+        if w == self._viewport_size.x and h == self._viewport_size.y: return
+        self._viewport_size = Vector(w, h)
+        self._dirty = True
+
+    @property
+    def zoom(self) -> float:
+        return self._zoom
+
+    @zoom.setter
+    def zoom(self, scale: float):
+        if scale <= 0: raise ValueError("Camera zoom should be strictly positive.")
+        elif scale == self._zoom: return
+        self._zoom = scale
+        self._dirty = True
+
+    @property
+    def offset(self) -> Vector:
+        return Vector(self._offset.x, self._offset.y)
+
+    @offset.setter
+    def offset(self, offset: Tuple[int, int]):
+        x, y = offset
+        if x == self._offset.x and y == self._offset.y: return
+        self.offset = Vector(x, y)
+        self._dirty = True
 
     @property
     def x(self):
@@ -469,6 +534,7 @@ class Camera(Painter):
 
     @x.setter
     def x(self, x):
+        if x == self._position.x: return
         self._position.x = x
         self._dirty = True
 
@@ -478,38 +544,31 @@ class Camera(Painter):
 
     @y.setter
     def y(self, y):
+        if y == self._position.y: return
         self._position.y = y
         self._dirty = True
 
     @property
-    def zoom(self) -> float:
-        return self._zoom
+    def z(self):
+        return self._position.z
 
-    @zoom.setter
-    def zoom(self, scale: float):
-        if scale <= 0:
-            raise ValueError("Camera zoom should be strictly positive.")
-        self._zoom = scale
+    @z.setter
+    def z(self, z):
+        if z == self._position.z: return
+        self._position.z = z
         self._dirty = True
 
     @property
-    def angle(self) -> float:
-        return self._angle
-
-    @angle.setter
-    def angle(self, theta: float):
-        self._angle = theta
-        self._dirty = True
+    def view_up(self):
+        return Vector(*self._up)
 
     @property
-    def viewport_size(self) -> Vector:
-        return self._viewport_size
+    def view_forward(self):
+        return Vector(*self._normal)
 
-    @viewport_size.setter
-    def viewport_size(self, size: Tuple[int, int]):
-        w, h = size
-        self._viewport_size = Vector(w, h)
-        self._dirty = True
+    @property
+    def view_right(self):
+        return Vector.cross(self._up, self._normal)
 
 
 class Color:
