@@ -13,9 +13,9 @@ from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
                            QPixmap, QPolygon)
 from PySide2.QtCore import Qt, QPoint
 
-from blas import Vector, Matrix
+from blas import Vector
 from graphics import (BSpline, Painter, Camera, Transformation, Drawable, Point, Line,
-                      Wireframe, Polygon, Color, Bezier)
+                      Linestring, Polygon, Color, Bezier)
 from utilities import experp, begin, sign, to_float
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
@@ -183,8 +183,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             elif typename == 'Line' and len(parsed) == 2 and isinstance(parsed[0], tuple):
                 a, b = parsed
                 obj = Line(Point(*a), Point(*b))
-            elif typename == 'Wireframe' and len(parsed) > 2:
-                obj = Wireframe([Point(*p) for p in parsed])
+            elif typename == 'Linestring' and len(parsed) > 2:
+                obj = Linestring([Point(*p) for p in parsed])
             elif typename == 'Polygon' and len(parsed) > 2:
                 obj = Polygon([Point(*p) for p in parsed])
             elif typename == "Bezier" and len(parsed) > 2:
@@ -219,7 +219,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             if not self._transformations_with_pivots: return
             name = self.displayFile.currentItem().text()
             drawable = self.display_file[name]
-            result = Matrix.identity(4)
+            result = Transformation().matrix()  # <- identity
             for transformation, pivot in reversed(self._transformations_with_pivots):
                 pivot = pivot or drawable.center()
                 matrix = transformation.matrix(pivot)
@@ -338,7 +338,7 @@ class QtViewport(QWidget):
             def draw_line(self, xa, ya, xb, yb):
                 self.drawLine(xa, ya, xb, yb)
 
-            def draw_polygon(self, points: Sequence[Tuple]):
+            def draw_polygon(self, points):
                 self.drawPolygon(QPolygon([QPoint(x, y) for x, y in points]))
 
         super().__init__(parent_widget)

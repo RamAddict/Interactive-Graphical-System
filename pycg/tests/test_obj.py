@@ -1,7 +1,7 @@
 from os import remove
 
 import obj
-from graphics import Line, Point, Wireframe, Polygon, Color
+from graphics import Line, Point, Linestring, Polygon, Color
 
 
 def test_write_read_idempotent():
@@ -15,7 +15,7 @@ def test_write_read_idempotent():
             Point(-130, 300),
             Point(0, 0)
         ]),
-        'test_wireframe': Wireframe([
+        'test_linestring': Linestring([
             Point(0, 0),
             Point(400, 300),
             Point(400, 0),
