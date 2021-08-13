@@ -61,6 +61,19 @@ def test_vector_angle():
     assert abs(Vector.angle(v, j) - radians(30)) < 1e-6
 
 
+def test_vector_cross_product():
+    a = Vector(1, 3, 4)
+    b = Vector(2, 7, -5)
+    assert Vector.cross(a, b) == Vector(-43, 13, 1)
+
+    x = Vector(1, 0, 0)
+    y = Vector(0, 1, 0)
+    z = Vector(0, 0, 1)
+    assert Vector.cross(x, y) == z
+    assert Vector.cross(y, z) == x
+    assert Vector.cross(z, x) == y
+
+
 def test_matrix_access():
     ref = [[i*j for j in range(3)] for i in range(3)]
     mat = Matrix(*ref)

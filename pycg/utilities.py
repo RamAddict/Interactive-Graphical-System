@@ -1,7 +1,7 @@
 """Miscellaneous Python utilities."""
 
 from itertools import tee
-from math import log2, isnan
+from math import log2, isnan, cos, sin
 from typing import Iterable, Sequence, Generator, Tuple, Optional
 
 
@@ -72,3 +72,8 @@ def to_float(value) -> Optional[float]:
 def iter_no_str(thing):
     """Avoid iterating over strings."""
     return iter([thing]) if isinstance(thing, str) else iter(thing)
+
+
+def rotate_2D(x: float, y: float, theta: float) -> Tuple[float, float]:
+    cs, sn = cos(theta), sin(theta)
+    return x*cs - y*sn, x*sn + y*cs
