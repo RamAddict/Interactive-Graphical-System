@@ -147,10 +147,9 @@ class Transformation:
         return yaw
 
     @staticmethod
-    def _rotate_2D(vec: Vector, theta: float) -> Vector:
-        x, y = vec.x, vec.y
+    def _rotate_2D(x: float, y: float, theta: float) -> Vector:
         cs, sn = cos(theta), sin(theta)
-        return Vector(x*cs - y*sn, x*sn + y*cs)
+        return x*cs - y*sn, x*sn + y*cs
 
     def matrix(self, pivot = None, axis: Vector = None) -> Matrix:
         """Gets the 4x4 Matrix that performs this transformation on vectors.
@@ -170,12 +169,12 @@ class Transformation:
         # align object axis to the XY plane by rotating along X
         projectiony_yz = Vector(axis.y, axis.z)
         align_xy_angle = -Vector.angle(projectiony_yz, Vector(1, 0))
-        aligned = Transformation._rotate_2D(projectiony_yz, align_xy_angle)
+        y, z = Transformation._rotate_2D(axis.y, axis.z, align_xy_angle)
         align_xy = Transformation._rotation_x(align_xy_angle)
         unalign_xy = Transformation._rotation_x(-align_xy_angle)
 
         # align new object axis with the Y axis by rotating along Z
-        projection_xy = Vector(axis.x, aligned[0])
+        projection_xy = Vector(axis.x, y)
         align_y_angle = -Vector.angle(projection_xy, Vector(0, 1))
         align_y = Transformation._rotation_z(align_y_angle)
         unalign_y = Transformation._rotation_z(-align_y_angle)
@@ -276,7 +275,7 @@ class Line(Drawable):
         return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2 + (self[0].z - self[1].z)**2)
 
 
-class Wireframe(Drawable):
+class Linestring(Drawable):
     """Open polygon defined by a sequence of connected points."""
 
     def __init__(self, points: Sequence[Point]):
@@ -319,7 +318,7 @@ class Wireframe(Drawable):
         return average / len(points)
 
 
-class Polygon(Wireframe):
+class Polygon(Linestring):
     """Filled polygon."""
 
     def __init__(self, points: Sequence[Point]):
@@ -337,15 +336,59 @@ class Polygon(Wireframe):
         painter.draw_polygon([(p.x, p.y) for p in self._points])
 
 
-class Bezier(Wireframe):
+class Bezier(Linestring):
     def __init__(self, points: Sequence[Point], step=0.01):
         super().__init__(bezier(points, step))
 
 # TODO: 3D curves?
 
-class BSpline(Wireframe):
+class BSpline(Linestring):
     def __init__(self, points: Sequence[Point], step=0.01):
         super().__init__(bSpline(points, step))
+
+
+class Wireframe(Drawable):
+    """3D model defined by a set of points and lines linking them."""
+
+    def __init__(self, points: Sequence[Point], lines: Sequence[Tuple[int, int]]):
+        self.points = points
+        self.lines = lines
+
+    def __len__(self):
+        return len(self.lines)
+
+    def __getitem__(self, key: int) -> Tuple[Point, Point]:
+        a, b = self.lines[key]
+        return self.points[a], self.points[b]
+
+    def __setitem__(self, key: int, line: Tuple[int, int]):
+        self.line[key] = line
+
+    def __repr__(self):  # WKT
+        line = lambda a, b: (
+            f'({self.points[a].x} {self.points[a].y} {self.points[a].z},' +
+            f' {self.points[b].x} {self.points[b].y} {self.points[b].z})')
+        return f"MULTILINESTRING ({','.join(line(a, b) for a, b in self.lines)})"
+
+    def __eq__(self, other) -> bool:
+        return (isinstance(other, Wireframe)
+                and self.points == other.points
+                and self.lines == other.lines)
+
+    def draw(self, painter):  # TODO: projection
+        for a, b in self.lines:
+            pa, pb = self.points[a], self.points[b]
+            painter.draw_line(pa.x, pa.y, pb.x, pb.y)
+
+    def transform(self, transformation: Matrix):
+        for i, point in enumerate(self.points):
+            self.points[i] = Point(*(transformation @ point))
+
+    def center(self) -> Point:
+        average = Point(0, 0, 0)
+        for p in self.points:
+            average += p
+        return average / len(self.points)
 
 
 class Camera(Painter):
