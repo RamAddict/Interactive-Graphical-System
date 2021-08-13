@@ -142,8 +142,8 @@ def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], Sequence[Point], Dict]:
                             materials[mtl] = color
                             mtl = None
         elif head == 'v':
-            x, y, *_ = body
-            vertices.append(Point(float(x), float(y)))
+            x, y, z, *_ = body
+            vertices.append(Point(float(x), float(y), float(z)))
         elif head == 'o':
             # before starting an object, we need to "finish" the current one
             if current_obj is not None and current_obj.kind is not None:
@@ -179,8 +179,7 @@ def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], Sequence[Point], Dict]:
 def _dump_objs(file, descriptors: _ObjDescriptor, vertices: Sequence[Point], globals_: Dict):
     # emit vertices
     for vertex in vertices[1:]:
-        x, y, *z = vertex
-        z = z[0] if z else 1.0
+        x, y, z, *_ = vertex
         file.write(f"v {x} {y} {z} 1.0\n")
 
     # emit global configs
