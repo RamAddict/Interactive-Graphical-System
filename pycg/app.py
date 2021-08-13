@@ -242,10 +242,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             theta = radians((to_float(self.angleInput.text()) or 0))
             sx = to_float(self.scaleXinput.text()) or 1
             sy = to_float(self.scaleYinput.text()) or 1
-            transform = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy)
+            sz = sy  # TODO
+            transform = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy, sz)
 
             self._transformations_with_pivots.append((transform, pivot))
-            self.transformList.addItem(f"T({tx}, {ty}), R({theta}), S({sx},{sy})")
+            self.transformList.addItem(f"T({tx}, {ty}), R({theta}), S({sx},{sy},{sz})")
 
         def enableRotateLabels():
             custom = self.pivotSelect.currentText() == 'Custom'
@@ -402,14 +403,21 @@ class QtViewport(QWidget):
 
     def keyPressEvent(self, e):
         # window movement
+        # TODO
+        # window rotation
         if e.key() == Qt.Key_W:
-            self.pan_camera(0, 1)
-        elif e.key() == Qt.Key_A:
-            self.pan_camera(-1, 0)
+            self.tilt_view(radians(15), Camera.PITCH)
         elif e.key() == Qt.Key_S and not e.modifiers() & Qt.ControlModifier:
-            self.pan_camera(0, -1)
+            self.tilt_view(radians(-15), Camera.PITCH)
+        elif e.key() == Qt.Key_A:
+            self.tilt_view(radians(15), Camera.YAW)
         elif e.key() == Qt.Key_D:
-            self.pan_camera(1, 0)
+            self.tilt_view(radians(-15), Camera.YAW)
+        elif e.key() == Qt.Key_Q:
+            self.tilt_view(radians(15), Camera.ROLL)
+        elif e.key() == Qt.Key_E:
+            self.tilt_view(radians(-15), Camera.ROLL)
+
         # window zooming
         elif e.key() == Qt.Key_Minus and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()
@@ -417,11 +425,6 @@ class QtViewport(QWidget):
         elif e.key() == Qt.Key_Equal and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()
             self._zoom_slider.setValue(self._zoom_slider.value() + step)
-        # window rotation
-        elif e.key() == Qt.Key_Q:
-            self.tilt_view(radians(15))
-        elif e.key() == Qt.Key_E:
-            self.tilt_view(radians(-15))
         # also forward (most) events to parent widget
         if e.key() != Qt.Key_Tab:
             return super().keyPressEvent(e)

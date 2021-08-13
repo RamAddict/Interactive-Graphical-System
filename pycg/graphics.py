@@ -10,10 +10,10 @@ from utilities import pairwise, clamp, rotate_2D
 class Painter():
     """Interface providing primitive graphics drawing."""
 
-    def draw_pixel(self, x: int, y: int):
+    def draw_pixel(self, x: int, y: int, z):
         raise NotImplementedError("Painter is an abstract class.")
 
-    def draw_line(self, xa: int, ya: int, xb: int, yb: int):
+    def draw_line(self, xa: int, ya: int, za, xb: int, yb: int, zb):
         # Bresenham's line algorithm, which is based on a decision parameter p
         # allowing to solve y = mx + c using only integer operations {+, -, 2*}
         xa, ya, xb, yb = int(xa), int(ya), int(xb), int(yb)  # coerce to int
@@ -56,7 +56,7 @@ class Painter():
                 else:
                     p += DX2
 
-    def draw_polygon(self, points: Sequence[Tuple[int, int]]):
+    def draw_polygon(self, points: Sequence[Tuple[int, int, int]]):
         raise NotImplementedError("Painter is an abstract class.")
 
 
@@ -220,7 +220,7 @@ class Point(Drawable, Vector):
         return True
 
     def draw(self, painter):  # TODO: projection
-        painter.draw_pixel(self.x, self.y)
+        painter.draw_pixel(self.x, self.y, self.z)
 
     def transform(self, transformation: Matrix):
         self.x, self.y, self.z, _ = Point(*(transformation @ self))
@@ -253,7 +253,7 @@ class Line(Drawable):
         return True
 
     def draw(self, painter):  # TODO: projection
-        painter.draw_line(self[0].x, self[0].y, self[1].x, self[1].y)
+        painter.draw_line(self[0].x, self[0].y, self[0].z, self[1].x, self[1].y, self[1].z)
 
     def transform(self, transformation: Matrix):
         for i, point in enumerate(self._points):
@@ -295,7 +295,7 @@ class Linestring(Drawable):
 
     def draw(self, painter):  # TODO: projection
         for pa, pb in pairwise(self._points):
-            painter.draw_line(pa.x, pa.y, pb.x, pb.y)
+            painter.draw_line(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z)
 
     def transform(self, transformation: Matrix):
         for i, point in enumerate(self._points):
@@ -325,7 +325,7 @@ class Polygon(Linestring):
         return f"POLYGON (({points}))"
 
     def draw(self, painter):  # TODO: projection
-        painter.draw_polygon([(p.x, p.y) for p in self._points])
+        painter.draw_polygon([(p.x, p.y, p.z) for p in self._points])
 
 
 class Bezier(Linestring):
@@ -370,7 +370,7 @@ class Wireframe(Drawable):
     def draw(self, painter):  # TODO: projection
         for a, b in self.lines:
             pa, pb = self.points[a], self.points[b]
-            painter.draw_line(pa.x, pa.y, pb.x, pb.y)
+            painter.draw_line(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z)
 
     def transform(self, transformation: Matrix):
         for i, point in enumerate(self.points):
@@ -408,17 +408,17 @@ class Camera(Painter):
         self._view_to_screen = None
         self.line_clipping_algorithm = 'Liang-Barsky'
 
-    def draw_pixel(self, x, y):
+    def draw_pixel(self, x, y, z):
         self._recompute_matrixes()
-        p = self._world_to_view @ Point(x, y)
+        p = self._world_to_view @ Point(x, y, z)
         if -1 <= p.x <= 1 and -1 <= p.y <= 1:
             p = self._view_to_screen @ p
             self.painter.draw_pixel(int(p.x), int(p.y))
 
-    def draw_line(self, xa, ya, xb, yb):
+    def draw_line(self, xa, ya, za, xb, yb, zb):
         self._recompute_matrixes()
-        a = self._world_to_view @ Point(xa, ya)
-        b = self._world_to_view @ Point(xb, yb)
+        a = self._world_to_view @ Point(xa, ya, za)
+        b = self._world_to_view @ Point(xb, yb, zb)
         clipper = (make_clipper(-1, +1, -1, +1)
                    if self.line_clipping_algorithm == 'Cohen-Sutherland'
                    else clip_line)
@@ -429,12 +429,12 @@ class Camera(Painter):
             b = self._view_to_screen @ Point(xb, yb)
             self.painter.draw_line(int(a.x), int(a.y), int(b.x), int(b.y))
 
-    def draw_polygon(self, points: Sequence[Tuple[int, int]]):
+    def draw_polygon(self, points: Sequence[Tuple[int, int, int]]):
         self._recompute_matrixes()
 
         clipspace = []
-        for x, y in points:
-            x, y, *_ = self._world_to_view @ Point(x, y)
+        for x, y, z in points:
+            x, y, z, *_ = self._world_to_view @ Point(x, y, z)
             clipspace.append((x, y))
 
         clipped = clip_polygon(clipspace)
