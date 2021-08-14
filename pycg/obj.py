@@ -36,7 +36,8 @@ class ObjFile:
 
     def __iter__(self) -> Generator:
         for obj in self._descriptors:
-            yield self._obj_to_drawable(obj)
+            if obj.attributes['name'] != 'window':  # TODO: change window based on OBJ
+                yield self._obj_to_drawable(obj)
 
     def _obj_to_drawable(self, obj: _ObjDescriptor) -> Tuple[Drawable, Dict]:
         drawable: Drawable = None
@@ -143,6 +144,9 @@ def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], Sequence[Point], Dict]:
                             mtl = None
         elif head == 'v':
             x, y, z, *_ = body
+            x = x.split('/')[0]
+            y = y.split('/')[0]
+            z = z.split('/')[0]
             vertices.append(Point(float(x), float(y), float(z)))
         elif head == 'o':
             # before starting an object, we need to "finish" the current one
@@ -158,16 +162,19 @@ def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], Sequence[Point], Dict]:
         elif head == 'p':
             assert current_obj is not None
             current_obj.kind = 'point'
-            current_obj.vertex_indexes.append(int(body[0]))
+            p = body[0].split('/')[0]
+            current_obj.vertex_indexes.append(int(p))
         elif head == 'l':
             assert current_obj is not None
             current_obj.kind = 'linestring' if len(body) > 2 else 'line'
             for v in body:
+                v = v.split('/')[0]
                 current_obj.vertex_indexes.append(int(v))
         elif head == 'f':
             assert current_obj is not None
             current_obj.kind = 'polygon'
             for v in body:
+                v = v.split('/')[0]
                 current_obj.vertex_indexes.append(int(v))
 
     if current_obj is not None:  # also close obj on end on file

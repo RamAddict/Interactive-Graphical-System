@@ -347,7 +347,7 @@
     <item row="2" column="1" rowspan="2">
      <widget class="QStackedWidget" name="componentWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="emptyPage">
        <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -359,7 +359,7 @@
            </font>
           </property>
           <property name="text">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Use the display file buttons to manipulate the world and its objects.&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;The camera may be controlled using either the provided buttons, or mouse and keyboard bindings (WASD, QE, Ctrl + -/=/Wheel, Middle Click &amp;amp; Drag).&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;The toolbar provides some additional actions, including saving as and loading from OBJ files, as well as changing settings.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Use the display file buttons to manipulate the world and its objects.&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;The camera may be controlled using either the provided buttons, or mouse and keyboard bindings (WASD, QE, IJKL, Ctrl + -/=/Wheel, Middle Drag + Shift, Middle Drag + Ctrl).&lt;/span&gt;&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;The toolbar provides some additional actions, including saving as and loading from OBJ files, as well as changing settings.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -411,8 +411,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>186</width>
-             <height>253</height>
+             <width>404</width>
+             <height>270</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout">
@@ -508,11 +508,6 @@
                 </item>
                 <item>
                  <property name="text">
-                  <string>BSpline</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
                   <string>Line</string>
                  </property>
                 </item>
@@ -531,12 +526,17 @@
                   <string>Bezier</string>
                  </property>
                 </item>
+                <item>
+                 <property name="text">
+                  <string>BSpline</string>
+                 </property>
+                </item>
                </widget>
               </item>
               <item row="3" column="1">
                <widget class="QPlainTextEdit" name="pointsText">
                 <property name="placeholderText">
-                 <string>Points in the format (x1, y1), (x2, y2), ...</string>
+                 <string>Points in the format (x1, y1, z1), (x2, y2, z2), ...</string>
                 </property>
                </widget>
               </item>

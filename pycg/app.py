@@ -171,7 +171,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             color = QColor(self.colorEdit.text())
             color = Color(color.red(), color.green(), color.blue())
 
-            parsed = literal_eval(self.pointsText.toPlainText())
+            text = self.pointsText.toPlainText().replace("\n", " ")
+            parsed = literal_eval(text)
             if not isinstance(parsed, tuple): return
 
             obj = None
