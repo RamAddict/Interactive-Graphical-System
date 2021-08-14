@@ -8,12 +8,15 @@ from utilities import pairwise, clamp, rotate_2D
 
 
 class Painter():
-    """Interface providing primitive graphics drawing."""
+    """Interface providing primitive graphics drawing on a 2D canvas"""
 
-    def draw_pixel(self, x: int, y: int, z):
+    def _error(self):
         raise NotImplementedError("Painter is an abstract class.")
 
-    def draw_line(self, xa: int, ya: int, za, xb: int, yb: int, zb):
+    def draw_pixel(self, x: int, y: int):
+        self._error()
+
+    def draw_line(self, xa: int, ya: int, xb: int, yb: int):
         # Bresenham's line algorithm, which is based on a decision parameter p
         # allowing to solve y = mx + c using only integer operations {+, -, 2*}
         xa, ya, xb, yb = int(xa), int(ya), int(xb), int(yb)  # coerce to int
@@ -56,8 +59,24 @@ class Painter():
                 else:
                     p += DX2
 
-    def draw_polygon(self, points: Sequence[Tuple[int, int, int]]):
-        raise NotImplementedError("Painter is an abstract class.")
+    def draw_polygon(self, points: Sequence[Tuple[int, int]]):
+        self._error()
+
+
+class Renderer():
+    """Like a `Painter`, but in 3D."""
+
+    def _error(self):
+        raise NotImplementedError("Renderer is an abstract class.")
+
+    def render_pixel(self, x: float, y: float, z: float):
+        self._error()
+
+    def render_line(self, xa: float, ya: float, za: float, xb: float, yb: float, zb: float):
+        self._error()
+
+    def render_polygon(self, points: Sequence[Tuple[float, float, float]]):
+        self._error()
 
 
 class Transformation:
@@ -68,7 +87,7 @@ class Transformation:
 
         t = Transformation().translate(tx, ty, tz).rotate(theta).scale(s)
 
-    These operations are all applied at the same time.
+    Where operations are always applied in the order S -> R -> T.
     """
 
     def __init__(self):
@@ -160,14 +179,16 @@ class Transformation:
 
         # align object axis to the XY plane by rotating along X
         projectiony_yz = Vector(axis.y, axis.z)
-        align_xy_angle = -Vector.angle(projectiony_yz, Vector(1, 0))
+        align_xy_angle = (-Vector.angle(projectiony_yz, Vector(1, 0))
+                          if projectiony_yz.length != 0 else 0)
         y, _ = rotate_2D(axis.y, axis.z, align_xy_angle)
         align_xy = Transformation.rotation_x(align_xy_angle)
         unalign_xy = Transformation.rotation_x(-align_xy_angle)
 
         # align new object axis with the Y axis by rotating along Z
         projection_xy = Vector(axis.x, y)
-        align_y_angle = -Vector.angle(projection_xy, Vector(0, 1))
+        align_y_angle = (-Vector.angle(projection_xy, Vector(0, 1))
+                         if projection_xy.length != 0 else 0)
         align_y = Transformation.rotation_z(align_y_angle)
         unalign_y = Transformation.rotation_z(-align_y_angle)
 
@@ -195,7 +216,7 @@ class Drawable():
     def _error(self):
         raise NotImplementedError("Drawable is an abstract class.")
 
-    def draw(self, painter: Painter):
+    def render(self, renderer: Renderer):
         self._error()
 
     def transform(self, transformation: Matrix):
@@ -209,7 +230,7 @@ class Point(Drawable, Vector):
     def __init__(self, x, y, z = 0, _=1):
         Vector.__init__(self, x, y, z, 1)
 
-    def __repr__(self):  # as by the Well-known text representation of geometry
+    def __repr__(self):  # as per the Well-known text representation of geometry
         return f"POINT ({self.x} {self.y} {self.z})"
 
     def __eq__(self, other):
@@ -219,8 +240,8 @@ class Point(Drawable, Vector):
                 return False
         return True
 
-    def draw(self, painter):  # TODO: projection
-        painter.draw_pixel(self.x, self.y, self.z)
+    def render(self, renderer: Renderer):
+        renderer.render_pixel(self.x, self.y, self.z)
 
     def transform(self, transformation: Matrix):
         self.x, self.y, self.z, _ = Point(*(transformation @ self))
@@ -252,8 +273,8 @@ class Line(Drawable):
                 return False
         return True
 
-    def draw(self, painter):  # TODO: projection
-        painter.draw_line(self[0].x, self[0].y, self[0].z, self[1].x, self[1].y, self[1].z)
+    def render(self, renderer: Renderer):
+        renderer.render_line(self[0].x, self[0].y, self[0].z, self[1].x, self[1].y, self[1].z)
 
     def transform(self, transformation: Matrix):
         for i, point in enumerate(self._points):
@@ -293,9 +314,9 @@ class Linestring(Drawable):
                 return False
         return True
 
-    def draw(self, painter):  # TODO: projection
+    def render(self, renderer: Renderer):
         for pa, pb in pairwise(self._points):
-            painter.draw_line(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z)
+            renderer.render_line(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z)
 
     def transform(self, transformation: Matrix):
         for i, point in enumerate(self._points):
@@ -324,15 +345,14 @@ class Polygon(Linestring):
         points = ', '.join(f'{p.x} {p.y} {p.z}' for p in self._points)
         return f"POLYGON (({points}))"
 
-    def draw(self, painter):  # TODO: projection
-        painter.draw_polygon([(p.x, p.y, p.z) for p in self._points])
+    def render(self, renderer: Renderer):
+        renderer.render_polygon([(p.x, p.y, p.z) for p in self._points])
 
 
 class Bezier(Linestring):
     def __init__(self, points: Sequence[Point], step=0.01):
         super().__init__(bezier(points, step))
 
-# TODO: 3D curves?
 
 class BSpline(Linestring):
     def __init__(self, points: Sequence[Point], step=0.01):
@@ -367,10 +387,10 @@ class Wireframe(Drawable):
                 and self.points == other.points
                 and self.lines == other.lines)
 
-    def draw(self, painter):  # TODO: projection
+    def render(self, renderer: Renderer):
         for a, b in self.lines:
             pa, pb = self.points[a], self.points[b]
-            painter.draw_line(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z)
+            renderer.render_line(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z)
 
     def transform(self, transformation: Matrix):
         for i, point in enumerate(self.points):
@@ -383,8 +403,8 @@ class Wireframe(Drawable):
         return average / len(self.points)
 
 
-class Camera(Painter):
-    """Window used as reference to render objects."""
+class Camera(Renderer):
+    """Implements object rendering, calling a painter to draw to the screen."""
 
     def __init__(
         self,
@@ -408,14 +428,14 @@ class Camera(Painter):
         self._view_to_screen = None
         self.line_clipping_algorithm = 'Liang-Barsky'
 
-    def draw_pixel(self, x, y, z):
+    def render_pixel(self, x: float, y: float, z: float):
         self._recompute_matrixes()
         p = self._world_to_view @ Point(x, y, z)
         if -1 <= p.x <= 1 and -1 <= p.y <= 1:
             p = self._view_to_screen @ p
             self.painter.draw_pixel(int(p.x), int(p.y))
 
-    def draw_line(self, xa, ya, za, xb, yb, zb):
+    def render_line(self, xa: float, ya: float, za: float, xb: float, yb: float, zb: float):
         self._recompute_matrixes()
         a = self._world_to_view @ Point(xa, ya, za)
         b = self._world_to_view @ Point(xb, yb, zb)
@@ -429,7 +449,7 @@ class Camera(Painter):
             b = self._view_to_screen @ Point(xb, yb)
             self.painter.draw_line(int(a.x), int(a.y), int(b.x), int(b.y))
 
-    def draw_polygon(self, points: Sequence[Tuple[int, int, int]]):
+    def render_polygon(self, points: Sequence[Tuple[float, float, float]]):
         self._recompute_matrixes()
 
         clipspace = []
@@ -451,7 +471,7 @@ class Camera(Painter):
 
         half_size = self._viewport_size / 2
 
-        center = Transformation().translate(-self.x, -self.y, -self.y).matrix()
+        center = Transformation().translate(-self.x, -self.y, -self.z).matrix()
         align_x = Transformation.rotation_x(-self._thetas.x)
         align_y = Transformation.rotation_y(-self._thetas.y)
         align_z = Transformation.rotation_z(-self._thetas.z)
@@ -791,6 +811,7 @@ def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
             j += step
 
     return curve
+
 
 def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
     if len(points) < 3: return points

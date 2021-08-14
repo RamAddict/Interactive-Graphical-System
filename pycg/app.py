@@ -4,7 +4,7 @@ from math import inf, radians
 from sys import argv
 from os import path
 from typing import Optional, Callable, Dict, Sequence, Tuple
-from ast import literal_eval
+from ast import literal_eval, parse
 
 from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QDialog,
                                QColorDialog, QFileDialog, QMessageBox, QInputDialog,
@@ -16,7 +16,7 @@ from PySide2.QtCore import Qt, QPoint
 from blas import Vector
 from graphics import (BSpline, Painter, Camera, Transformation, Drawable, Point, Line,
                       Linestring, Polygon, Color, Bezier)
-from utilities import experp, begin, sign, to_float
+from utilities import experp, begin, sign, to_float, lerp
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
 from ui.settings import Ui_SettingsDialog
@@ -57,10 +57,12 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.downBtn.clicked.connect(lambda: self.viewport.pan_camera(0, -1))
         self.leftBtn.clicked.connect(lambda: self.viewport.pan_camera(-1, 0))
         self.rightBtn.clicked.connect(lambda: self.viewport.pan_camera(1, 0))
-        self.tiltRightBtn.clicked.connect(
-            lambda: self.viewport.tilt_view(radians(-15)))
-        self.tiltLeftBtn.clicked.connect(
-            lambda: self.viewport.tilt_view(radians(15)))
+        self.rollLeftBtn.clicked.connect(lambda: self.viewport.tilt_view(1, Camera.ROLL))
+        self.rollRightBtn.clicked.connect(lambda: self.viewport.tilt_view(-1, Camera.ROLL))
+        self.pitchUpBtn.clicked.connect(lambda: self.viewport.tilt_view(1, Camera.PITCH))
+        self.pitchDownBtn.clicked.connect(lambda: self.viewport.tilt_view(-1, Camera.PITCH))
+        self.yawLeftBtn.clicked.connect(lambda: self.viewport.tilt_view(1, Camera.YAW))
+        self.yawRightBtn.clicked.connect(lambda: self.viewport.tilt_view(-1, Camera.YAW))
 
         # zoom slider setup
         self.zoomSlider.valueChanged.connect(
@@ -70,29 +72,25 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.zoomSlider.valueChanged.emit(None)
 
         # setting up scene controls
-        self.removeButton.clicked.connect(
-            lambda: self.remove_object(self.displayFile.currentRow()))
-        self.upListButton.clicked.connect(
-            lambda: self.move_object(self.displayFile.currentRow(), -1))
-        self.downListButton.clicked.connect(
-            lambda: self.move_object(self.displayFile.currentRow(), 1))
+        self.removeButton.clicked.connect(lambda: self.remove_object(self.displayFile.currentRow()))
+        self.upListButton.clicked.connect(lambda: self.move_object(self.displayFile.currentRow(), -1))
+        self.downListButton.clicked.connect(lambda: self.move_object(self.displayFile.currentRow(), 1))
         self.newButton.clicked.connect(lambda: begin(
             self.typeBox.setCurrentIndex(-1),
             self.nameEdit.setText(""),
             self.componentWidget.setCurrentWidget(self.objectPage),
         ))
-        self._transformations_with_pivots = []
+        self._delayed_transformations = []
         self.transformButton.clicked.connect(  # ensures something is selected
             lambda: None if self.displayFile.currentRow() < 0
             else begin(
-                self._transformations_with_pivots.clear(),
+                self._delayed_transformations.clear(),
                 self.transformList.clear(),
-                self.translateXinput.setText("0"),
-                self.translateYinput.setText("0"),
+                self.translateInput.setText("(0, 0, 0)"),
+                self.scaleInput.setText("(1, 1, 1)"),
+                self.angleInput.setText("0.0"),
+                self.axisInput.setText("(0, 0, 1)"),
                 self.pivotSelect.setCurrentIndex(0),
-                self.angleInput.setText("0"),
-                self.scaleXinput.setText("1"),
-                self.scaleYinput.setText("1"),
                 self.componentWidget.setCurrentWidget(self.transformPage),
             )
         )
@@ -173,12 +171,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             color = QColor(self.colorEdit.text())
             color = Color(color.red(), color.green(), color.blue())
 
-            text = self.pointsText.toPlainText().replace("\n", " ")
-            parsed = literal_eval(text)
+            parsed = literal_eval(self.pointsText.toPlainText())
             if not isinstance(parsed, tuple): return
 
             obj = None
-            if typename == 'Point' and len(parsed) == 2 and isinstance(parsed[0], (int, float)):
+            if typename == 'Point' and len(parsed) >= 2 and isinstance(parsed[0], (int, float)):
                 obj = Point(*parsed)
             elif typename == 'Line' and len(parsed) == 2 and isinstance(parsed[0], tuple):
                 a, b = parsed
@@ -187,9 +184,9 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 obj = Linestring([Point(*p) for p in parsed])
             elif typename == 'Polygon' and len(parsed) > 2:
                 obj = Polygon([Point(*p) for p in parsed])
-            elif typename == "Bezier" and len(parsed) > 2:
+            elif typename == 'Bezier' and len(parsed) >= 4 and len(parsed) % 3 == 1:
                 obj = Bezier([Point(*p) for p in parsed])
-            elif typename == "BSpline" and len(parsed) > 2:
+            elif typename == 'BSpline' and len(parsed) >= 4:
                 obj = BSpline([Point(*p) for p in parsed])
             else:
                 return
@@ -216,45 +213,54 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
         def do_transformations():
-            if not self._transformations_with_pivots: return
+            if not self._delayed_transformations: return
             name = self.displayFile.currentItem().text()
             drawable = self.display_file[name]
             result = Transformation().matrix()  # <- identity
-            for transformation, pivot in reversed(self._transformations_with_pivots):
+            for transformation, pivot, axis in reversed(self._delayed_transformations):
                 pivot = pivot or drawable.center()
-                matrix = transformation.matrix(pivot)
+                matrix = transformation.matrix(pivot, axis)
                 result = result @ matrix
             drawable.transform(result)
             self.viewport.update()
             self.log("Applied transformation\n" + str(result))
 
         def add_transformation():
-            # get the correct pivot from dropdown box
+            def parse_tuple3(text):
+                parsed = literal_eval(text)
+                if not isinstance(parsed, tuple):
+                    return None
+                elif len(parsed) != 3 or not isinstance(parsed[0], (int, float)):
+                    return None
+                else:
+                    return float(parsed[0]), float(parsed[1]), float(parsed[2])
+
+            tx, ty, tz = parse_tuple3(self.translateInput.text())
+            sx, sy, sz = parse_tuple3(self.scaleInput.text())
+            theta = radians(to_float(self.angleInput.text()))
+            rx, ry, rz = parse_tuple3(self.axisInput.text())
+            axis = Vector(rx, ry, rz).normalized()
+
             pivot = None
             if self.pivotSelect.currentText() == 'Origin':
-                pivot = Point(0, 0)
+                pivot = Point(0, 0, 0)
             elif self.pivotSelect.currentText() == 'Custom':
-                pivot = Point(to_float(self.rotateXInput.text()),
-                              to_float(self.rotateYInput.text()))
+                pivot = Point(*parse_tuple3(self.customInput.text()))
 
-            tx = to_float(self.translateXinput.text()) or 0
-            ty = to_float(self.translateYinput.text()) or 0
-            theta = radians((to_float(self.angleInput.text()) or 0))
-            sx = to_float(self.scaleXinput.text()) or 1
-            sy = to_float(self.scaleYinput.text()) or 1
-            sz = sy  # TODO
-            transform = Transformation().translate(tx, ty).rotate(theta).scale(sx, sy, sz)
+            transform = Transformation().translate(tx, ty, tz).rotate(theta).scale(sx, sy, sz)
+            self._delayed_transformations.append((transform, pivot, axis))
+            self.transformList.addItem(
+                f"{{\n  T({tx}, {ty}, {tz});\n  R({theta}, ({axis.x}, {axis.y}, {axis.z}));\n  S({sx},{sy},{sz});\n}}")
 
-            self._transformations_with_pivots.append((transform, pivot))
-            self.transformList.addItem(f"T({tx}, {ty}), R({theta}), S({sx},{sy},{sz})")
-
-        def enableRotateLabels():
-            custom = self.pivotSelect.currentText() == 'Custom'
-            self.rotateXInput.setEnabled(custom)
-            self.rotateYInput.setEnabled(custom)
+            self.translateInput.setText("(0, 0, 0)")
+            self.scaleInput.setText("(1, 1, 1)")
+            self.angleInput.setText("0.0")
+            self.axisInput.setText("(0, 0, 1)")
 
         # transformation page setup TODO: button to remove transformations
-        self.pivotSelect.currentIndexChanged.connect(enableRotateLabels)
+        self.pivotSelect.currentIndexChanged.connect(lambda:
+            self.customInput.setEnabled(self.pivotSelect.currentText() == 'Custom')
+        )
         self.transformAddButton.clicked.connect(add_transformation)
         self.transformApplyButtons.button(QDialogButtonBox.Apply) \
                                   .clicked.connect(do_transformations)
@@ -328,6 +334,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 for model, attributes in file:
                     self.insert_object(model, **attributes)
 
+
 class QtViewport(QWidget):
     def __init__(self, parent_widget, display_file, zoom_slider, eye_position):
         class QtPainter(QPainter, Painter):
@@ -350,6 +357,7 @@ class QtViewport(QWidget):
         self.camera = Camera(QtPainter(), size, Point(40, 40))
         self._pan = 10
         self._drag_begin = None
+        self._rotate_begin = None
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMouseTracking(True)
 
@@ -372,9 +380,9 @@ class QtViewport(QWidget):
         self._pan = 10 / zoom  # NOTE: camera step is adjusted by zoom
         self.update()
 
-    def tilt_view(self, theta: float, axis = Camera.ROLL):
+    def tilt_view(self, theta: float, axis = Camera.ROLL, _normalized=True):
         """Tilt the camera view by the given amount."""
-        self.camera.rotate(theta, axis)
+        self.camera.rotate(theta * radians(15), axis)
         self.update()
 
     def paintEvent(self, event):  # this is where we draw our scene
@@ -390,7 +398,7 @@ class QtViewport(QWidget):
         for drawable in self._display_file.values():
             painter.setPen(QColor(str(drawable.color)))
             painter.setBrush(QColor(str(drawable.color)))
-            drawable.draw(self.camera)
+            drawable.render(self.camera)
 
         painter.end()
         return super().paintEvent(event)
@@ -402,23 +410,29 @@ class QtViewport(QWidget):
         return super().resizeEvent(event)
 
     def keyPressEvent(self, e):
-        # window movement
-        # TODO
-        # window rotation
+        # camera movement
         if e.key() == Qt.Key_W:
-            self.tilt_view(radians(15), Camera.PITCH)
-        elif e.key() == Qt.Key_S and not e.modifiers() & Qt.ControlModifier:
-            self.tilt_view(radians(-15), Camera.PITCH)
+            self.pan_camera(0, 1)
+        elif e.key() == Qt.Key_S and not e.modifiers():
+            self.pan_camera(0, -1)
         elif e.key() == Qt.Key_A:
-            self.tilt_view(radians(15), Camera.YAW)
+            self.pan_camera(-1, 0)
         elif e.key() == Qt.Key_D:
-            self.tilt_view(radians(-15), Camera.YAW)
+            self.pan_camera(1, 0)
+        # camera rotation
         elif e.key() == Qt.Key_Q:
-            self.tilt_view(radians(15), Camera.ROLL)
+            self.tilt_view(1, Camera.ROLL)
         elif e.key() == Qt.Key_E:
-            self.tilt_view(radians(-15), Camera.ROLL)
-
-        # window zooming
+            self.tilt_view(-1, Camera.ROLL)
+        elif e.key() == Qt.Key_I:
+            self.tilt_view(1, Camera.PITCH)
+        elif e.key() == Qt.Key_K:
+            self.tilt_view(-1, Camera.PITCH)
+        elif e.key() == Qt.Key_J:
+            self.tilt_view(1, Camera.YAW)
+        elif e.key() == Qt.Key_L:
+            self.tilt_view(-1, Camera.YAW)
+        # camera zooming
         elif e.key() == Qt.Key_Minus and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()
             self._zoom_slider.setValue(self._zoom_slider.value() - step)
@@ -439,33 +453,47 @@ class QtViewport(QWidget):
         else:
             return super().wheelEvent(e)
 
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MiddleButton:
-            self._drag_begin = Point(event.x(), event.y())
+    def mousePressEvent(self, e):
+        if e.button() == Qt.MiddleButton:
+            if e.modifiers() & Qt.ShiftModifier:
+                self._drag_begin = Point(e.x(), e.y())
+            elif e.modifiers() & Qt.ControlModifier:
+                self._rotate_begin = Point(e.x(), e.y())
         else:
-            return super().mousePressEvent(event)
+            return super().mousePressEvent(e)
 
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MiddleButton:
+    def mouseReleaseEvent(self, e):
+        if e.button() == Qt.MiddleButton:
+            if self._drag_begin:
+                InteractiveGraphicalSystem.log(
+                    "Window dragged to (%g, %g, %g)" %
+                    (self.camera.x, self.camera.y, self.camera.z)
+                )
             self._drag_begin = None
-            InteractiveGraphicalSystem.log(
-                "Window dragged to (%g, %g)" % (self.camera.x, self.camera.y))
+            self._rotate_begin = None
         else:
-            return super().mouseReleaseEvent(event)
+            return super().mouseReleaseEvent(e)
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, e):
         if self._drag_begin:
             # compute motion vector and update drag initial position
-            delta = Point(event.x(), event.y()) - self._drag_begin
+            delta = Point(e.x(), e.y()) - self._drag_begin
             self._drag_begin += delta
             # adjust delta based on window zoom
             dx = delta.x / self.camera.zoom
             dy = delta.y / self.camera.zoom
             # move the window accordingly (scene follows mouse)
             self.pan_camera(-dx, dy, _normalized=False)
+        elif self._rotate_begin:
+            delta = Point(e.x(), e.y()) - self._rotate_begin
+            self._rotate_begin += delta
+            rx = lerp(delta.x, 0, self.width(), 0, radians(180))
+            ry = lerp(delta.y, 0, self.height(), 0, radians(180))
+            self.tilt_view(rx, Camera.YAW, _normalized=False)
+            self.tilt_view(ry, Camera.PITCH, _normalized=False)
         else:
-            self._eye_position.setText(f"[{event.x()}, {event.y()}]")
-            return super().mouseMoveEvent(event)
+            self._eye_position.setText(f"[{e.x()}, {e.y()}]")
+            return super().mouseMoveEvent(e)
 
 
 class SettingsDialog(QDialog, Ui_SettingsDialog):
