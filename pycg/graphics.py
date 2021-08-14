@@ -801,12 +801,12 @@ def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
                [1,  0,  0,  0])
     for i in range(0, len(points) - 3, 3):
         j = 0
+        MxGx = M @ Vector(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
+        MxGy = M @ Vector(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
         while j < 1:
             T = Matrix([j*j*j, j*j, j, 1])
-            Gx = Vector(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
-            Gy = Vector(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
-            Gx = T @ M @ Gx
-            Gy = T @ M @ Gy
+            Gx = T @ MxGx
+            Gy = T @ MxGy
             curve.append(Point(Gx[0], Gy[0]))
             j += step
 
