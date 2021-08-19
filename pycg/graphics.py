@@ -423,10 +423,10 @@ class Camera(Renderer):
         self._zoom = 1.0
         self._offset = offset or Vector(0, 0)  # canvas-relative position
 
-        # these define the view plane since up and view are orthogonal
-        self._position = Point(0, 0, 0)
+        # these define the view plane since up and normal are orthogonal
+        self._position = Point(0, 0, 500)
         self._up = Vector(0, 1, 0)
-        self._normal = Vector(0, 0, 1)
+        self._normal = Vector(0, 0, -1)
         self._thetas = Vector(0, 0, 0)
 
         self._dirty = True
@@ -476,24 +476,22 @@ class Camera(Renderer):
         if not self._dirty: return
 
         half_size = self._viewport_size / 2
-        focal_distance = 200
+        focal_distance = 100
 
-        center = Transformation().translate(-self.x, -self.y, -(self.z - focal_distance)).matrix()
-
+        center = Transformation().translate(-self.x, -self.y, -self.z).matrix()
         align_x = Transformation.rotation_x(-self._thetas.x)
         align_y = Transformation.rotation_y(-self._thetas.y)
         align_z = Transformation.rotation_z(-self._thetas.z)
-        align = align_y @ align_x @ align_z
+        align = align_z @ align_y @ align_x
 
+        project = Matrix([1, 0, 0,                 0],
+                         [0, 1, 0,                 0],
+                         [0, 0, 1,                 0],
+                         [0, 0, -1/focal_distance, 0])
         scaling = half_size / self.zoom
         normalize = Transformation().scale(1/scaling.x, 1/scaling.y).matrix()
 
-        project = Matrix([1, 0, 0,                0],
-                         [0, 1, 0,                0],
-                         [0, 0, 1,                0],
-                         [0, 0, 1/focal_distance, 0])
-
-        self._world_to_view = normalize @ project @ align @ center
+        self._world_to_view = (normalize @ project) @ (align @ center)
 
         resize = Transformation().scale(half_size.x, half_size.y).matrix()
         corner = Transformation().translate(half_size.x, -half_size.y).matrix()
@@ -504,7 +502,6 @@ class Camera(Renderer):
         self._dirty = False
 
     ROLL, PITCH, YAW = 2, 0, 1
-
     def rotate(self, theta: float, axis: int = 2):
         """Rotates the camera's viewpoint on some axis (ROLL|PITCH|YAW)."""
 
@@ -516,13 +513,13 @@ class Camera(Renderer):
 
         # we rotate them together and extract our view plane + normal back
         rotation = Transformation().matrix()
-        if axis == self.ROLL:
+        if axis == Camera.ROLL:
             rotation = Transformation.rotation_z(theta)
             self._thetas.z = (self._thetas.z + theta) % (2*pi)
-        elif axis == self.PITCH:
+        elif axis == Camera.PITCH:
             rotation = Transformation.rotation_x(theta)
             self._thetas.x = (self._thetas.x + theta) % (2*pi)
-        elif axis == self.YAW:
+        elif axis == Camera.YAW:
             rotation = Transformation.rotation_y(theta)
             self._thetas.y = (self._thetas.y + theta) % (2*pi)
 
@@ -603,7 +600,7 @@ class Camera(Renderer):
 
     @property
     def view_right(self):
-        return Vector.cross(self._up, self._normal)
+        return Vector.cross(self._normal, self._up)
 
 
 class Color:

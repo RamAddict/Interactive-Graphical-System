@@ -258,11 +258,15 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             self.angleInput.setText("0.0")
             self.axisInput.setText("(0, 0, 1)")
 
-        # transformation page setup TODO: button to remove transformations
+        # transformation page setup
         self.pivotSelect.currentIndexChanged.connect(lambda:
             self.customInput.setEnabled(self.pivotSelect.currentText() == 'Custom')
         )
         self.transformAddButton.clicked.connect(add_transformation)
+        self.transformList.itemDoubleClicked.connect(lambda item: begin(
+            self._delayed_transformations.pop(self.transformList.indexFromItem(item).row()),
+            self.transformList.takeItem(self.transformList.indexFromItem(item).row()),
+        ))
         self.transformApplyButtons.button(QDialogButtonBox.Apply) \
                                   .clicked.connect(do_transformations)
         self.transformApplyButtons.rejected.connect(
@@ -426,13 +430,13 @@ class QtViewport(QWidget):
         elif e.key() == Qt.Key_E:
             self.tilt_view(-1, Camera.ROLL)
         elif e.key() == Qt.Key_I:
-            self.tilt_view(-1, Camera.PITCH)
-        elif e.key() == Qt.Key_K:
             self.tilt_view(1, Camera.PITCH)
+        elif e.key() == Qt.Key_K:
+            self.tilt_view(-1, Camera.PITCH)
         elif e.key() == Qt.Key_J:
-            self.tilt_view(-1, Camera.YAW)
-        elif e.key() == Qt.Key_L:
             self.tilt_view(1, Camera.YAW)
+        elif e.key() == Qt.Key_L:
+            self.tilt_view(-1, Camera.YAW)
         # camera zooming
         elif e.key() == Qt.Key_Minus and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()

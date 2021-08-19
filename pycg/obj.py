@@ -36,8 +36,7 @@ class ObjFile:
 
     def __iter__(self) -> Generator:
         for obj in self._descriptors:
-            if obj.attributes['name'] != 'window':  # TODO: change window based on OBJ
-                yield self._obj_to_drawable(obj)
+            yield self._obj_to_drawable(obj)
 
     def _obj_to_drawable(self, obj: _ObjDescriptor) -> Tuple[Drawable, Dict]:
         drawable: Drawable = None
@@ -176,6 +175,9 @@ def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], Sequence[Point], Dict]:
             for v in body:
                 v = v.split('/')[0]
                 current_obj.vertex_indexes.append(int(v))
+        elif head == 'w':  # nope!
+            assert current_obj is not None
+            current_obj = None
 
     if current_obj is not None:  # also close obj on end on file
         descriptors.append(current_obj)

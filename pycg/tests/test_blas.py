@@ -73,6 +73,13 @@ def test_vector_cross_product():
     assert Vector.cross(y, z) == x
     assert Vector.cross(z, x) == y
 
+    u = Vector(1, 0, 0)
+    v = Vector(0, 1, 0)
+    n = Vector(0, 0, -1)
+    assert Vector.cross(v, u) == n
+    assert Vector.cross(n, v) == u
+    assert Vector.cross(u, n) == v
+
 
 def test_matrix_access():
     ref = [[i*j for j in range(3)] for i in range(3)]
