@@ -1,6 +1,6 @@
 """Computer Graphics API."""
 
-from math import sqrt, cos, sin, inf
+from math import sqrt, cos, sin, inf, pi
 from typing import Iterable, Tuple, Sequence
 
 from blas import Vector, Matrix
@@ -105,7 +105,7 @@ class Transformation:
         return self
 
     def rotate(self, theta):
-        self.rotation += theta
+        self.rotation = (self.rotation + theta) % (2*pi)
         return self
 
     def scale(self, scale: float, sy: float = None, sz: float = None, sx: float = None):
@@ -503,13 +503,13 @@ class Camera(Renderer):
         rotation = Transformation().matrix()
         if axis == self.ROLL:
             rotation = Transformation.rotation_z(theta)
-            self._thetas.z += theta
+            self._thetas.z = (self._thetas.z + theta) % (2*pi)
         elif axis == self.PITCH:
             rotation = Transformation.rotation_x(theta)
-            self._thetas.x += theta
+            self._thetas.x = (self._thetas.x + theta) % (2*pi)
         elif axis == self.YAW:
             rotation = Transformation.rotation_y(theta)
-            self._thetas.y += theta
+            self._thetas.y = (self._thetas.y + theta) % (2*pi)
 
         self._up.x, self._up.y, self._up.z, _ = rotation @ v
         self._normal.x, self._normal.y, self._normal.z, _ = rotation @ n
