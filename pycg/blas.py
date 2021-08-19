@@ -156,7 +156,7 @@ class Matrix(Vector):
     def __add__(self, other: Sequence):
         return Matrix(*(super().__add__(other)))
 
-    def __mul__(self, scalar):  # scalar product
+    def __mul__(self, scalar):
         return Matrix(*(super().__mul__(scalar)))
 
     def __matmul__(self, other):
