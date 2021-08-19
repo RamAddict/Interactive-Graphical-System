@@ -426,13 +426,13 @@ class QtViewport(QWidget):
         elif e.key() == Qt.Key_E:
             self.tilt_view(-1, Camera.ROLL)
         elif e.key() == Qt.Key_I:
-            self.tilt_view(1, Camera.PITCH)
-        elif e.key() == Qt.Key_K:
             self.tilt_view(-1, Camera.PITCH)
+        elif e.key() == Qt.Key_K:
+            self.tilt_view(1, Camera.PITCH)
         elif e.key() == Qt.Key_J:
-            self.tilt_view(1, Camera.YAW)
-        elif e.key() == Qt.Key_L:
             self.tilt_view(-1, Camera.YAW)
+        elif e.key() == Qt.Key_L:
+            self.tilt_view(1, Camera.YAW)
         # camera zooming
         elif e.key() == Qt.Key_Minus and e.modifiers() & Qt.ControlModifier:
             step = self._zoom_slider.pageStep()

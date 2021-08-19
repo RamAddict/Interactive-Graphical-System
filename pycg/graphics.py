@@ -230,6 +230,12 @@ class Point(Drawable, Vector):
     def __init__(self, x, y, z = 0, _=1):
         Vector.__init__(self, x, y, z, 1)
 
+    @staticmethod
+    def from_vector(vec: Vector):
+        w = vec[3] if len(vec) >= 4 else 1
+        w = w if abs(w) > 0 else 1
+        return Point(vec.x / w, vec.y / w, vec.z / w, w)
+
     def __repr__(self):  # as per the Well-known text representation of geometry
         return f"POINT ({self.x} {self.y} {self.z})"
 
@@ -244,7 +250,7 @@ class Point(Drawable, Vector):
         renderer.render_pixel(self.x, self.y, self.z)
 
     def transform(self, transformation: Matrix):
-        self.x, self.y, self.z, _ = Point(*(transformation @ self))
+        self.x, self.y, self.z, self[3] = Point.from_vector(transformation @ self)
 
     def center(self):  # -> Point:
         return Point(*self)
@@ -430,15 +436,15 @@ class Camera(Renderer):
 
     def render_pixel(self, x: float, y: float, z: float):
         self._recompute_matrixes()
-        p = self._world_to_view @ Point(x, y, z)
+        p = Point.from_vector(self._world_to_view @ Point(x, y, z))
         if -1 <= p.x <= 1 and -1 <= p.y <= 1:
-            p = self._view_to_screen @ p
+            x, y, *_ = self._view_to_screen @ p
             self.painter.draw_pixel(int(p.x), int(p.y))
 
     def render_line(self, xa: float, ya: float, za: float, xb: float, yb: float, zb: float):
         self._recompute_matrixes()
-        a = self._world_to_view @ Point(xa, ya, za)
-        b = self._world_to_view @ Point(xb, yb, zb)
+        a = Point.from_vector(self._world_to_view @ Point(xa, ya, za))
+        b = Point.from_vector(self._world_to_view @ Point(xb, yb, zb))
         clipper = (make_clipper(-1, +1, -1, +1)
                    if self.line_clipping_algorithm == 'Cohen-Sutherland'
                    else clip_line)
@@ -454,7 +460,7 @@ class Camera(Renderer):
 
         clipspace = []
         for x, y, z in points:
-            x, y, z, *_ = self._world_to_view @ Point(x, y, z)
+            x, y, *_ = Point.from_vector(self._world_to_view @ Point(x, y, z))
             clipspace.append((x, y))
 
         clipped = clip_polygon(clipspace)
