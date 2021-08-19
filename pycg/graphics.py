@@ -476,15 +476,24 @@ class Camera(Renderer):
         if not self._dirty: return
 
         half_size = self._viewport_size / 2
+        focal_distance = 200
 
-        center = Transformation().translate(-self.x, -self.y, -self.z).matrix()
+        center = Transformation().translate(-self.x, -self.y, -(self.z - focal_distance)).matrix()
+
         align_x = Transformation.rotation_x(-self._thetas.x)
         align_y = Transformation.rotation_y(-self._thetas.y)
         align_z = Transformation.rotation_z(-self._thetas.z)
         align = align_y @ align_x @ align_z
+
         scaling = half_size / self.zoom
         normalize = Transformation().scale(1/scaling.x, 1/scaling.y).matrix()
-        self._world_to_view = normalize @ align @ center
+
+        project = Matrix([1, 0, 0,                0],
+                         [0, 1, 0,                0],
+                         [0, 0, 1,                0],
+                         [0, 0, 1/focal_distance, 0])
+
+        self._world_to_view = normalize @ project @ align @ center
 
         resize = Transformation().scale(half_size.x, half_size.y).matrix()
         corner = Transformation().translate(half_size.x, -half_size.y).matrix()
