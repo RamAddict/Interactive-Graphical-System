@@ -63,6 +63,8 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         self.pitchDownBtn.clicked.connect(lambda: self.viewport.tilt_view(-1, Camera.PITCH))
         self.yawLeftBtn.clicked.connect(lambda: self.viewport.tilt_view(1, Camera.YAW))
         self.yawRightBtn.clicked.connect(lambda: self.viewport.tilt_view(-1, Camera.YAW))
+        self.inBtn.clicked.connect(lambda: self.viewport.pan_camera(0, 0, 1))
+        self.outBtn.clicked.connect(lambda: self.viewport.pan_camera(0, 0, -1))
 
         # zoom slider setup
         self.zoomSlider.valueChanged.connect(
@@ -366,16 +368,18 @@ class QtViewport(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMouseTracking(True)
 
-    def pan_camera(self, dx, dy, _normalized=True):
+    def pan_camera(self, dx, dy, dz = 0, _normalized=True):
         """Move the camera by a certain amount of dynamically-sized steps.
         Takes the camera tilt into account, such that movement is view-aligned.
         """
         if _normalized:
             dx *= self._pan
             dy *= self._pan
-        delta = self.camera.view_right * dx + self.camera.view_up * dy
+            dz *= self._pan
+        delta = (self.camera.view_right * dx) + (self.camera.view_up * dy) + (self.camera.view_forward * dz)
         self.camera.x += delta.x
         self.camera.y += delta.y
+        self.camera.z += delta.z
         self.update()
 
     def update_zoom(self, value, minimum, maximum):
