@@ -476,7 +476,7 @@ class Camera(Renderer):
         if not self._dirty: return
 
         half_size = self._viewport_size / 2
-        focal_distance = 100
+        focal_distance = 500
 
         center = Transformation().translate(-self.x, -self.y, -self.z).matrix()
         align_x = Transformation.rotation_x(-self._thetas.x)
