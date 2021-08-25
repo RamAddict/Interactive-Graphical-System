@@ -256,44 +256,6 @@ class Point(Drawable, Vector):
         return Point(*self)
 
 
-class Line(Drawable):
-    def __init__(self, pa: Point, pb: Point):
-        self._points = [pa, pb]
-
-    def __len__(self) -> int:
-        return 2
-
-    def __getitem__(self, key: int) -> Point:
-        return self._points[key]
-
-    def __setitem__(self, key: int, point: Point):
-        self._points[key] = point
-
-    def __repr__(self):  # WKT
-        return f"LINESTRING ({self[0].x} {self[0].y} {self[0].z}, {self[1].x} {self[1].y}, {self[0].z})"
-
-    def __eq__(self, other: Sequence[Point]) -> bool:
-        if len(other) != len(self): return False
-        for p1, p2 in zip(self, other):
-            if p1 != p2:
-                return False
-        return True
-
-    def render(self, renderer: Renderer):
-        renderer.render_line(self[0].x, self[0].y, self[0].z, self[1].x, self[1].y, self[1].z)
-
-    def transform(self, transformation: Matrix):
-        for i, point in enumerate(self._points):
-            self._points[i] = Point(*(transformation @ point))
-
-    def center(self) -> Point:
-        return (self[0] + self[1]) / 2
-
-    @property
-    def length(self) -> float:
-        return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2 + (self[0].z - self[1].z)**2)
-
-
 class Linestring(Drawable):
     """Open polygon defined by a sequence of connected points."""
 
@@ -366,47 +328,61 @@ class BSpline(Linestring):
 
 
 class Wireframe(Drawable):
-    """3D model defined by a set of points and lines linking them."""
+    """3D model as a collection of wires."""
 
-    def __init__(self, points: Sequence[Point], lines: Sequence[Tuple[int, int]]):
-        self.points = points
+    def __init__(self, lines: Sequence[Linestring]):
         self.lines = lines
 
-    def __len__(self):
-        return len(self.lines)
-
-    def __getitem__(self, key: int) -> Tuple[Point, Point]:
-        a, b = self.lines[key]
-        return self.points[a], self.points[b]
-
-    def __setitem__(self, key: int, line: Tuple[int, int]):
-        self.lines[key] = line
-
-    def __repr__(self):  # WKT
-        line = lambda a, b: (
-            f'({self.points[a].x} {self.points[a].y} {self.points[a].z},' +
-            f' {self.points[b].x} {self.points[b].y} {self.points[b].z})')
-        return f"MULTILINESTRING ({','.join(line(a, b) for a, b in self.lines)})"
+    def __repr__(self):
+        lines = ','.join(repr(line).removeprefix('LINESTRING ') for line in self.lines)
+        return f"MULTILINESTRING ({lines})"
 
     def __eq__(self, other) -> bool:
         return (isinstance(other, Wireframe)
-                and self.points == other.points
                 and self.lines == other.lines)
 
     def render(self, renderer: Renderer):
-        for a, b in self.lines:
-            pa, pb = self.points[a], self.points[b]
-            renderer.render_line(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z)
+        for line in self.lines:
+            line.render(renderer)
 
     def transform(self, transformation: Matrix):
-        for i, point in enumerate(self.points):
-            self.points[i] = Point(*(transformation @ point))
+        for line in self.lines:
+            line.transform(transformation)
 
     def center(self) -> Point:
         average = Point(0, 0, 0)
-        for p in self.points:
-            average += p
-        return average / len(self.points)
+        for line in self.lines:
+            average += line.center()
+        return average / len(self.lines)
+
+
+class Mesh(Drawable):
+    """3D model as a collection of faces."""
+
+    def __init__(self, faces: Sequence[Polygon]):
+        self.faces = faces
+
+    def __repr__(self):
+        faces = ','.join(repr(face).removeprefix('POLYGON ') for face in self.faces)
+        return f"MULTIPOLYGON ({faces})"
+
+    def __eq__(self, other) -> bool:
+        return (isinstance(other, Mesh)
+                and self.faces == other.faces)
+
+    def render(self, renderer: Renderer):
+        for face in self.faces:
+            face.render(renderer)
+
+    def transform(self, transformation: Matrix):
+        for face in self.faces:
+            face.transform(transformation)
+
+    def center(self) -> Point:
+        average = Point(0, 0, 0)
+        for face in self.faces:
+            average += face.center()
+        return average / len(self.faces)
 
 
 class Camera(Renderer):
