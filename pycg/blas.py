@@ -129,6 +129,11 @@ class Matrix(Vector):
                 rows.append(convert(row))
         super().__init__(*rows)
 
+    def transpose(self):
+        """Returns this matrix transposed"""
+        M = [[self[j][i] for j in range(self.rows)] for i in range(self.columns)]
+        return Matrix(*M)
+
     @staticmethod
     def from_lists(rows: Sequence):
         """Creates a Matrix with the given sequence of sequences."""
