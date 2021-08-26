@@ -260,6 +260,7 @@ class Linestring(Drawable):
     """Open polygon defined by a sequence of connected points."""
 
     def __init__(self, points: Sequence[Point]):
+        assert(len(points) >= 2)
         self._points = points
 
     def __len__(self):
@@ -303,6 +304,7 @@ class Polygon(Linestring):
     """Filled polygon."""
 
     def __init__(self, points: Sequence[Point]):
+        assert(len(points) >= 3)
         points = list(points)
         if points[-1] != points[0]:  # ensures polygons are closed
             p = points[0]
@@ -330,36 +332,38 @@ class BSpline(Linestring):
 class Wireframe(Drawable):
     """3D model as a collection of wires."""
 
-    def __init__(self, lines: Sequence[Linestring]):
-        self.lines = lines
+    def __init__(self, faces: Sequence[Linestring]):
+        assert(len(faces) >= 1)
+        self.faces= faces
 
     def __repr__(self):
-        lines = ','.join(repr(line).removeprefix('LINESTRING ') for line in self.lines)
-        return f"MULTILINESTRING ({lines})"
+        faces = ','.join(repr(line).removeprefix('LINESTRING ') for line in self.faces)
+        return f"MULTILINESTRING ({faces})"
 
     def __eq__(self, other) -> bool:
         return (isinstance(other, Wireframe)
-                and self.lines == other.lines)
+                and self.faces == other.faces)
 
     def render(self, renderer: Renderer):
-        for line in self.lines:
+        for line in self.faces:
             line.render(renderer)
 
     def transform(self, transformation: Matrix):
-        for line in self.lines:
+        for line in self.faces:
             line.transform(transformation)
 
     def center(self) -> Point:
         average = Point(0, 0, 0)
-        for line in self.lines:
+        for line in self.faces:
             average += line.center()
-        return average / len(self.lines)
+        return average / len(self.faces)
 
 
 class Mesh(Drawable):
     """3D model as a collection of faces."""
 
     def __init__(self, faces: Sequence[Polygon]):
+        assert(len(faces) >= 1)
         self.faces = faces
 
     def __repr__(self):
