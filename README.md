@@ -9,8 +9,8 @@ UFSC Computer Graphics (INE5420) project using [Qt for Python][PySide2].
 
 1. Download and uncompress the latest release archive.
 2. Install dependencies: `pip install -r requirements.txt --user`
-3. Execute the application: `python3 pycg/app.py`.
-   <br/>Note: you may optionally pass in [OBJ] files to be loaded on startup.
+3. Execute the application: `python3 pycg/app.py`<br/>
+    Note: you may optionally pass in [OBJ] files to be loaded on startup.
 
 ### Dev
 
