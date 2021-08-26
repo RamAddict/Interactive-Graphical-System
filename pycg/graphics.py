@@ -261,7 +261,7 @@ class Linestring(Drawable):
 
     def __init__(self, points: Sequence[Point]):
         assert(len(points) >= 2)
-        self._points = points
+        self._points = list(points)
 
     def __len__(self):
         return len(self._points)
@@ -320,43 +320,43 @@ class Polygon(Linestring):
 
 
 class Bezier(Linestring):
-    def __init__(self, points: Sequence[Point], step=0.01):
+    def __init__(self, points: List[Point], step=0.01):
         super().__init__(bezier(points, step))
 
 
 class BSpline(Linestring):
-    def __init__(self, points: Sequence[Point], step=0.01):
+    def __init__(self, points: List[Point], step=0.01):
         super().__init__(bSpline(points, step))
 
 
 class Wireframe(Drawable):
     """3D model as a collection of wires."""
 
-    def __init__(self, faces: Sequence[Linestring]):
-        assert(len(faces) >= 1)
-        self.faces= faces
+    def __init__(self, wires: Sequence[Linestring]):
+        assert(len(wires) >= 1)
+        self.wires= list(wires)
 
     def __repr__(self):
-        faces = ','.join(repr(line).removeprefix('LINESTRING ') for line in self.faces)
-        return f"MULTILINESTRING ({faces})"
+        wires = ','.join(repr(wire).removeprefix('LINESTRING ') for wire in self.wires)
+        return f"MULTILINESTRING ({wires})"
 
     def __eq__(self, other) -> bool:
         return (isinstance(other, Wireframe)
-                and self.faces == other.faces)
+                and self.wires == other.wires)
 
     def render(self, renderer: Renderer):
-        for line in self.faces:
-            line.render(renderer)
+        for wire in self.wires:
+            wire.render(renderer)
 
     def transform(self, transformation: Matrix):
-        for line in self.faces:
-            line.transform(transformation)
+        for wire in self.wires:
+            wire.transform(transformation)
 
     def center(self) -> Point:
         average = Point(0, 0, 0)
-        for line in self.faces:
-            average += line.center()
-        return average / len(self.faces)
+        for wire in self.wires:
+            average += wire.center()
+        return average / len(self.wires)
 
 
 class Mesh(Drawable):
@@ -364,7 +364,7 @@ class Mesh(Drawable):
 
     def __init__(self, faces: Sequence[Polygon]):
         assert(len(faces) >= 1)
-        self.faces = faces
+        self.faces = list(faces)
 
     def __repr__(self):
         faces = ','.join(repr(face).removeprefix('POLYGON ') for face in self.faces)
@@ -390,41 +390,21 @@ class Mesh(Drawable):
 
 
 class Surface(Wireframe):
-    """3D model defined by a set of points and lines linking every row and column (assumes 16nx16)"""
+    """Wireframe defined by a grid of points (assumes multiples of 16)."""
 
-    def __init__(self, points: Sequence[Point], step=0.05):
-        points = bezierSurface(points, step)
-        self.points = []
-        for line in points:
-            for point in line:
-                self.points.append(point)
-        self.lines = []
+    def __init__(self, points: List[Point], step=0.05):
+        grid = Matrix(*bezierSurface(points, step))
 
-        # connect rows
-        x = 0
-        z = 1
-        for _ in self.points:
-            if z % len(points[0]) != 0:
-                self.lines.append([x, z])
-            x+=1
-            z+=1
+        wires = []
 
-        x = 0
-        z = len(points)
-        c = 0
+        def add_lines(grid):
+            for line in grid:
+                wires.append(Linestring([Point(*p) for p in line]))
 
-        # connect columns
-        for _ in self.points:
-            if (z > len(points)):
-                c+=1
-                x = c
-                z = len(points) +c
-            if z >= len(self.points):
-                break
-            self.lines.append([x,z])
-            x+=len(points)
-            z+=len(points)
-        # print(self.lines)
+        add_lines(grid)
+        add_lines(grid.transpose())
+
+        super().__init__(wires)
 
 
 class Camera(Renderer):
@@ -876,7 +856,7 @@ def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
     return curve
 
 
-def bezierSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
+def bezierSurface(points: List[Point], step: float) -> List[List[Point]]:
     """Assumes number of points is of the form (4 + 3*i), iterates 4 by 4."""
     if len(points) < 16: return points
     surface: List[List[Point]] = []
@@ -922,4 +902,5 @@ def bezierSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
                 ti += 1
             s += step
             si += 1
+
     return surface

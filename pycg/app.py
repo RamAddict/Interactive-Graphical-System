@@ -7,8 +7,7 @@ from typing import Optional, Dict
 from ast import literal_eval
 
 from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QDialog,
-                               QColorDialog, QFileDialog, QMessageBox, QInputDialog,
-                               QDialogButtonBox)
+                               QColorDialog, QFileDialog, QMessageBox, QDialogButtonBox)
 from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
                            QPixmap, QPolygon)
 from PySide2.QtCore import Qt, QPoint
@@ -175,46 +174,47 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
 
             lines = [line.strip() for line in self.pointsText.toPlainText().split(";") if len(line.strip()) > 0]
             obj = None
-            if len(lines) < 2:
+            if len(lines) < 2 and typename == 'Point':
                 parsed = literal_eval(lines[0])
-                if typename == 'Point' and len(parsed) >= 2 and isinstance(parsed[0], (int, float)):
-                    obj = Point(*parsed)
-                elif typename in ('Line', 'Linestring') and len(parsed) >= 2:
-                    obj = Linestring([Point(*p) for p in parsed])
-                elif typename == 'Polygon' and len(parsed) >= 3:
-                    obj = Polygon([Point(*p) for p in parsed])
-                elif typename == 'Bezier' and len(parsed) >= 4 and len(parsed) % 3 == 1:
-                    obj = Bezier([Point(*p) for p in parsed])
-                elif typename == 'BSpline' and len(parsed) >= 4:
-                    obj = BSpline([Point(*p) for p in parsed])
-                else:
-                    return
-            else:
-                if typename == 'Wireframe':
-                    wires = []
-                    for line in lines:
-                        parsed = literal_eval(line)
-                        wires.append(Linestring([Point(*p) for p in parsed]))
-                    obj = Wireframe(wires)
-                elif typename == 'Mesh':
-                    faces = []
-                    for line in lines:
-                        parsed = literal_eval(line)
-                        faces.append(Polygon([Point(*p) for p in parsed]))
-                    obj = Mesh(faces)
-                elif typename == 'BezierSurface':
-                    points = []
-                    for line in lines:
-                        parsed = literal_eval(line)
-                        points.extend([Point(*p) for p in parsed])
-                    obj = Surface(points)
-                else:
-                    return
+                obj = Point(*parsed)
+            elif len(lines) < 2 and typename in ('Line', 'Linestring'):
+                parsed = literal_eval(lines[0])
+                obj = Linestring([Point(*p) for p in parsed])
+            elif len(lines) < 2 and typename == 'Polygon':
+                parsed = literal_eval(lines[0])
+                obj = Polygon([Point(*p) for p in parsed])
+            elif len(lines) < 2 and typename == 'Bezier Curve':
+                parsed = literal_eval(lines[0])
+                obj = Bezier([Point(*p) for p in parsed])
+            elif len(lines) < 2 and typename == 'B-Spline':
+                parsed = literal_eval(lines[0])
+                obj = BSpline([Point(*p) for p in parsed])
+            elif typename == 'Wireframe':
+                wires = []
+                for line in lines:
+                    parsed = literal_eval(line)
+                    wires.append(Linestring([Point(*p) for p in parsed]))
+                obj = Wireframe(wires)
+            elif typename == 'Mesh':
+                faces = []
+                for line in lines:
+                    parsed = literal_eval(line)
+                    faces.append(Polygon([Point(*p) for p in parsed]))
+                obj = Mesh(faces)
+            elif typename == 'Bezier Surface':
+                points = []
+                for line in lines:
+                    parsed = literal_eval(line)
+                    points.extend([Point(*p) for p in parsed])
+                obj = Surface(points)
 
-            self.insert_object(obj, name,
-                               index=self.displayFile.currentRow() + 1,
-                               color=color)
-            self.componentWidget.setCurrentWidget(self.emptyPage)
+            if obj:
+                self.insert_object(
+                    obj, name,
+                    index=self.displayFile.currentRow() + 1,
+                    color=color
+                )
+                self.componentWidget.setCurrentWidget(self.emptyPage)
 
         def pick_color(override: str = None):
             color = QColor(override) if override else \
