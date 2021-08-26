@@ -1,6 +1,6 @@
 from math import pi
 
-from graphics import Transformation, Point, Line, Polygon, Bezier
+from graphics import Transformation, Point, Linestring, Polygon, Bezier
 
 
 def test_transformations_center_pivot():
@@ -9,7 +9,7 @@ def test_transformations_center_pivot():
     p.transform(t)
     assert p == (7, 5)
 
-    v = Line(Point(0, 0), Point(10, 0))
+    v = Linestring([Point(0, 0), Point(10, 0)])
     r = Transformation().rotate(pi / 2).matrix(pivot=v.center())
     v.transform(r)
     a, b = v
@@ -35,7 +35,7 @@ def test_transformations_global_pivot():
     p.transform(s)
     assert p == (-12, -6)
 
-    vertical_line = Line(Point(0, 0), Point(0, 300))
+    vertical_line = Linestring([Point(0, 0), Point(0, 300)])
     translation_by_100 = Transformation().translate(100, 0).matrix()
     vertical_line.transform(translation_by_100)
     point_a, point_b = vertical_line
