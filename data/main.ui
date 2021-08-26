@@ -543,12 +543,12 @@
                 </item>
                 <item>
                  <property name="text">
-                  <string>Bezier</string>
+                  <string>Bezier Curve</string>
                  </property>
                 </item>
                 <item>
                  <property name="text">
-                  <string>BSpline</string>
+                  <string>B-Spline</string>
                  </property>
                 </item>
                 <item>
@@ -563,7 +563,7 @@
                 </item>
                 <item>
                  <property name="text">
-                  <string>BezierSurface</string>
+                  <string>Bezier Surface</string>
                  </property>
                 </item>
                </widget>

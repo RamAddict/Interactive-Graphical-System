@@ -82,7 +82,7 @@ class ObjFile:
         # make sure we register vertices before indexing them
         if isinstance(drawable, Wireframe):
             obj = _ObjDescriptor(name, 'wireframe', attributes=kwargs)
-            for wire in drawable.faces:
+            for wire in drawable.wires:
                 obj.vertex_indexes.append([])
                 for point in wire:
                     self._vertices.append(Point(*point))
