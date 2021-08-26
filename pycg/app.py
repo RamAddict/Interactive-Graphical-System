@@ -292,6 +292,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             lambda: self.componentWidget.setCurrentWidget(self.emptyPage))
 
         # render it all
+        self.componentWidget.setCurrentWidget(self.emptyPage)
         self.show()
         self.log("Interactive Graphical System initialized.")
 
