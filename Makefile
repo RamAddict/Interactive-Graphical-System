@@ -15,7 +15,7 @@ QT_OBJECTS := $(patsubst $(QT_SRC)/%.ui, $(QT_OBJ)/%.py, $(QT_SOURCES))
 
 # default
 run: $(QT_OBJECTS)
-	$(PYTHON) $(PY_APP) objs/blender.obj
+	$(PYTHON) $(PY_APP) objs/world.obj
 
 test:
 	$(PYTHON) -m pytest -vv -s
@@ -38,7 +38,7 @@ release: submission.zip
 $(QT_OBJ)/%.py: $(QT_SRC)/%.ui
 	$(QT_COMPILER) $< -o $@
 
-submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md requirements.txt objs/blender.obj objs/palette.mtl
+submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md requirements.txt objs/world.obj objs/palette.mtl
 	@ make test
 	@ make mostlyclean
 	mkdir PyCG
@@ -48,7 +48,7 @@ submission.zip: $(PY_SOURCES) $(QT_OBJECTS) Makefile README.md requirements.txt 
 	cp README.md PyCG
 	cp requirements.txt PyCG
 	mkdir PyCG/objs
-	cp objs/blender.obj PyCG/objs
+	cp objs/world.obj PyCG/objs
 	cp objs/palette.mtl PyCG/objs
 	zip -r submission.zip PyCG
 	rm -r PyCG

@@ -551,12 +551,22 @@
                   <string>BSpline</string>
                  </property>
                 </item>
+                <item>
+                 <property name="text">
+                  <string>Wireframe</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Mesh</string>
+                 </property>
+                </item>
                </widget>
               </item>
               <item row="3" column="1">
                <widget class="QPlainTextEdit" name="pointsText">
                 <property name="placeholderText">
-                 <string>Points in the format (x1, y1, z1), (x2, y2, z2), ...</string>
+                 <string>Points in the format (x1, y1, z1), (x2, y2, z2) ...;</string>
                 </property>
                </widget>
               </item>
