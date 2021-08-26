@@ -1,6 +1,6 @@
 """Computer Graphics API."""
 
-from math import sqrt, cos, sin, inf, pi
+from math import cos, sin, inf, pi
 from typing import Iterable, Tuple, Sequence
 
 from blas import Vector, Matrix
