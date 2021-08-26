@@ -431,8 +431,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>398</width>
-             <height>299</height>
+             <width>415</width>
+             <height>270</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout">
@@ -528,11 +528,6 @@
                 </item>
                 <item>
                  <property name="text">
-                  <string>BezierSurface</string>
-                 </property>
-                </item>
-                <item>
-                 <property name="text">
                   <string>Line</string>
                  </property>
                 </item>
@@ -556,12 +551,28 @@
                   <string>BSpline</string>
                  </property>
                 </item>
+                <item>
+                 <property name="text">
+                  <string>Wireframe</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Mesh</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>BezierSurface</string>
+                 </property>
+                </item>
                </widget>
               </item>
               <item row="3" column="1">
                <widget class="QPlainTextEdit" name="pointsText">
                 <property name="placeholderText">
-                 <string>Points in the format (x1, y1, z1), (x2, y2, z2), ...</string>
+                 <string>Points in the format (x1, y1, z1), (x2, y2, z2) ...
+Use ';' to separate edges/faces in wireframes/meshes.</string>
                 </property>
                </widget>
               </item>

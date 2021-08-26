@@ -128,14 +128,17 @@ def test_matrix_multiply():
     assert id @ c == c @ id
     assert id @ c == c
 
+
 def test_matrix_transpose():
     a = Matrix([1, 2, 3],
                [4, 5, 6])
+    assert a.transpose() == [[1, 4], [2, 5], [3, 6]]
+
     b = Matrix([7, 8],
                [9, 10],
                [11, 12])
+    assert b.transpose() == [[7, 9, 11], [8, 10, 12]]
+
     c = Matrix([58,  64],
                [139, 154])
-    assert a.transpose() == [[1, 4], [2, 5], [3, 6]]
-    assert b.transpose() == [[7, 9, 11], [8, 10, 12]]
     assert c.transpose() == [[58, 139], [64, 154]]

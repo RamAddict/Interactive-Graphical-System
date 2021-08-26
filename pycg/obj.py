@@ -1,8 +1,10 @@
+"""Custom OBJ (de)serialization for our 3D models (Wireframe and Mesh)."""
+
 import builtins
 from os import path
-from typing import Sequence, Tuple, Dict, Generator
+from typing import List, Dict, Sequence, Tuple, Generator
 
-from graphics import Drawable, Point, Line, Polygon, Linestring, Color
+from graphics import Drawable, Point, Linestring, Polygon, Wireframe, Mesh, Color
 from utilities import iter_no_str
 
 
@@ -11,13 +13,14 @@ class _ObjDescriptor:
         self,
         name: str,
         kind: str = None,
-        vertex_indexes: Sequence[int] = None,
+        vertex_indexes: List[List[int]] = None,
         attributes: Dict[str, str] = None,
     ):
-        self.kind = kind or None
+        self.kind = kind
         self.vertex_indexes = vertex_indexes or []
         self.attributes = attributes or {}
         self.attributes['name'] = name
+        self.name = name
 
 
 class ObjFile:
@@ -28,8 +31,8 @@ class ObjFile:
         self.mode = mode
         if self.mode in ('r', 'r+'):  # eager parse XXX: we don't treat errors
             self._descriptors, self._vertices, self._globals = _parse_objs(file)
-        else:  # lazy write
-            assert self.mode in ('w', 'w+')
+        else:
+            assert self.mode in ('w', 'w+')  # lazy write
             self._descriptors = []
             self._vertices = [None]
             self._globals = kwargs
@@ -39,47 +42,60 @@ class ObjFile:
             yield self._obj_to_drawable(obj)
 
     def _obj_to_drawable(self, obj: _ObjDescriptor) -> Tuple[Drawable, Dict]:
-        drawable: Drawable = None
-        if obj.kind == 'point':
-            v = self._vertices[obj.vertex_indexes[0]]
-            drawable = Point(*v)
-        elif obj.kind == 'line':
-            a = self._vertices[obj.vertex_indexes[0]]
-            b = self._vertices[obj.vertex_indexes[1]]
-            drawable = Line(Point(*a), Point(*b))
-        elif obj.kind in ('linestring', 'polygon'):
-            points = [Point(*(self._vertices[v])) for v in obj.vertex_indexes]
-            if obj.kind == 'polygon': drawable = Polygon(points)
-            else: drawable = Linestring(points)
-        return drawable, obj.attributes
+        if obj.kind == 'wireframe':
+            wires = []
+            for wire in obj.vertex_indexes:
+                points = []
+                for p in wire:
+                    points.append(self._vertices[p])
+                wires.append(Linestring(points))
+            return Wireframe(wires), obj.attributes
+        elif obj.kind == 'mesh':
+            faces = []
+            for face in obj.vertex_indexes:
+                points = []
+                for p in face:
+                    points.append(self._vertices[p])
+                faces.append(Polygon(points))
+            return Mesh(faces), obj.attributes
 
-    def read(self) -> Sequence[Tuple[Drawable, Dict]]:
+    def read(self) -> Sequence:
         assert self.mode in ('r', 'r+')
-        return [obj for obj in self]
+        return [x for x in self]
 
     def write(self, drawable: Drawable, name: str, **kwargs):
         assert self.mode in ('w', 'w+', 'r+')
         self._descriptors.append(self._drawable_to_obj(drawable, name, **kwargs))
 
     def _drawable_to_obj(self, drawable: Drawable, name: str, **kwargs) -> _ObjDescriptor:
-        obj = _ObjDescriptor(name=name, attributes=kwargs)
-        # make sure we register vertices before indexing them
+        # handle simpler objects by converting them to either a wireframe or mesh
         if isinstance(drawable, Point):
-            obj.kind = 'point'
-            self._vertices.append(Point(*drawable))
-            obj.vertex_indexes = [len(self._vertices) - 1]
-        elif isinstance(drawable, Line):
-            obj.kind = 'line'
-            a, b = drawable
-            self._vertices += [Point(*a), Point(*b)]
-            n = len(self._vertices) - 1
-            obj.vertex_indexes = [n - 1, n]
+            p = drawable
+            return self._drawable_to_obj(Linestring([p, p]), name, **kwargs)
+        elif isinstance(drawable, Polygon):
+            face = drawable
+            return self._drawable_to_obj(Mesh([face]), name, **kwargs)
         elif isinstance(drawable, Linestring):
-            obj.kind = 'polygon' if isinstance(drawable, Polygon) else 'linestring'
-            for p in drawable:
-                self._vertices.append(Point(*p))
-                obj.vertex_indexes.append(len(self._vertices) - 1)
-        return obj
+            wire = drawable
+            return self._drawable_to_obj(Wireframe([wire]), name, **kwargs)
+
+        # make sure we register vertices before indexing them
+        if isinstance(drawable, Wireframe):
+            obj = _ObjDescriptor(name, 'wireframe', attributes=kwargs)
+            for wire in drawable.faces:
+                obj.vertex_indexes.append([])
+                for point in wire:
+                    self._vertices.append(Point(*point))
+                    obj.vertex_indexes[-1].append(len(self._vertices) - 1)
+            return obj
+        elif isinstance(drawable, Mesh):
+            obj = _ObjDescriptor(name, 'mesh', attributes=kwargs)
+            for face in drawable.faces:
+                obj.vertex_indexes.append([])
+                for point in face:
+                    self._vertices.append(Point(*point))
+                    obj.vertex_indexes[-1].append(len(self._vertices) - 1)
+            return obj
 
     def close(self):
         if self.mode in ('w', 'w+', 'r+') and len(self._descriptors) > 0:
@@ -106,7 +122,7 @@ def open(path, mode: str = 'r', **kwargs):
         return ObjFile(builtins.open(path, mode), mode, **kwargs)
 
 
-def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], Sequence[Point], Dict]:
+def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], List[Point], Dict]:
     descriptors = []
     vertices = [None]
     globals_ = {}
@@ -160,24 +176,26 @@ def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], Sequence[Point], Dict]:
             current_obj.attributes['color'] = materials[mtl]
         elif head == 'p':
             assert current_obj is not None
-            current_obj.kind = 'point'
-            p = body[0].split('/')[0]
-            current_obj.vertex_indexes.append(int(p))
+            current_obj.kind = 'wireframe'
+            p = int(body[0].split('/')[0])
+            current_obj.vertex_indexes.append([p, p])
         elif head == 'l':
             assert current_obj is not None
-            current_obj.kind = 'linestring' if len(body) > 2 else 'line'
+            current_obj.kind = 'wireframe'
+            current_obj.vertex_indexes.append([])
             for v in body:
                 v = v.split('/')[0]
-                current_obj.vertex_indexes.append(int(v))
+                current_obj.vertex_indexes[-1].append(int(v))
         elif head == 'f':
             assert current_obj is not None
-            current_obj.kind = 'polygon'
+            current_obj.kind = 'mesh'
+            current_obj.vertex_indexes.append([])
             for v in body:
                 v = v.split('/')[0]
-                current_obj.vertex_indexes.append(int(v))
-        elif head == 'w':  # nope!
+                current_obj.vertex_indexes[-1].append(int(v))
+        elif head == 'w':
             assert current_obj is not None
-            current_obj = None
+            current_obj = None  # nope!
 
     if current_obj is not None:  # also close obj on end on file
         descriptors.append(current_obj)
@@ -185,7 +203,7 @@ def _parse_objs(file) -> Tuple[Sequence[_ObjDescriptor], Sequence[Point], Dict]:
     return descriptors, vertices, globals_
 
 
-def _dump_objs(file, descriptors: _ObjDescriptor, vertices: Sequence[Point], globals_: Dict):
+def _dump_objs(file, descriptors: Sequence[_ObjDescriptor], vertices: List[Point], globals_: Dict):
     # emit vertices
     for vertex in vertices[1:]:
         x, y, z, *_ = vertex
@@ -199,7 +217,7 @@ def _dump_objs(file, descriptors: _ObjDescriptor, vertices: Sequence[Point], glo
 
     # then, emit each individual object
     for obj in descriptors:
-        file.write(f"o {obj.attributes['name']}\n")
+        file.write(f"o {obj.name}\n")
 
         for key in obj.attributes.keys():
             if key in ('name', 'color'): continue
@@ -207,15 +225,11 @@ def _dump_objs(file, descriptors: _ObjDescriptor, vertices: Sequence[Point], glo
             for val in iter_no_str(obj.attributes[key]): file.write(val + " ")
             file.write("\n")
 
-        kind = obj.kind.lower()
-        if kind == 'point':
-            file.write(f"p {obj.vertex_indexes[0]}\n")
-        elif kind == 'line':
-            a, b = obj.vertex_indexes
-            file.write(f"l {a} {b}\n")
-        elif kind == 'linestring':
-            file.write(" ".join(["l"] + [str(v) for v in obj.vertex_indexes]))
-            file.write("\n")
-        elif kind == 'polygon':
-            file.write(" ".join(["f"] + [str(v) for v in obj.vertex_indexes]))
-            file.write("\n")
+        if obj.kind == 'wireframe':
+            for wire in obj.vertex_indexes:
+                file.write(" ".join(["l"] + [str(p) for p in wire]))
+                file.write("\n")
+        elif obj.kind == 'mesh':
+            for face in obj.vertex_indexes:
+                file.write(" ".join(["f"] + [str(p) for p in face]))
+                file.write("\n")
