@@ -1,7 +1,7 @@
 """Computer Graphics API."""
 
 from math import sqrt, cos, sin, inf, pi
-from typing import Iterable, Tuple, Sequence
+from typing import Iterable, List, Tuple, Sequence
 
 from blas import Vector, Matrix
 from utilities import pairwise, clamp, rotate_2D
@@ -408,6 +408,42 @@ class Wireframe(Drawable):
             average += p
         return average / len(self.points)
 
+class Surface(Wireframe):
+    """3D model defined by a set of points and lines linking every row and column (assumes 16nx16)"""
+   
+    def __init__(self, points: Sequence[Point], step=0.05):
+        points = bezierSurface(points, step)
+        self.points = []
+        for line in points:
+            for point in line:
+                self.points.append(point)
+        self.lines = []
+
+        # connect rows
+        x = 0
+        z = 1
+        for _ in self.points:
+            if z % len(points[0]) != 0:
+                self.lines.append([x, z])
+            x+=1
+            z+=1
+
+        x = 0
+        z = len(points)
+        c = 0
+
+        # connect columns
+        for _ in self.points:
+            if (z > len(points)):
+                c+=1
+                x = c
+                z = len(points) +c
+            if z >= len(self.points):
+                break
+            self.lines.append([x,z])
+            x+=len(points)
+            z+=len(points)
+        # print(self.lines)
 
 class Camera(Renderer):
     """Implements object rendering, calling a painter to draw to the screen."""
@@ -823,6 +859,55 @@ def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
             j += step
 
     return curve
+
+def bezierSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
+    """Assumes number of points is of the form (4 + 3*i), iterates 4 by 4."""
+    if len(points) < 16: return points
+    surface: List[List[Point]] = []
+    M = Matrix([-1, 3,  -3, 1],
+               [3,  -6, 3,  0],
+               [-3, 3,  0,  0],
+               [1,  0,  0,  0])
+    Mt = M.transpose()
+
+    for i in range(0, len(points) - 15, 15):
+        Gx = Matrix([points[i].x, points[i+1].x, points[i+2].x, points[i+3].x],
+                    [points[i+4].x, points[i+5].x, points[i+6].x, points[i+7].x],
+                    [points[i+8].x, points[i+9].x, points[i+10].x, points[i+11].x],
+                    [points[i+12].x, points[i+13].x, points[i+14].x, points[i+15].x])
+        Gy = Matrix([points[i].y, points[i+1].y, points[i+2].y, points[i+3].y],
+                    [points[i+4].y, points[i+5].y, points[i+6].y, points[i+7].y],
+                    [points[i+8].y, points[i+9].y, points[i+10].y, points[i+11].y],
+                    [points[i+12].y, points[i+13].y, points[i+14].y, points[i+15].y])
+        Gz = Matrix([points[i].z, points[i+1].z, points[i+2].z, points[i+3].z],
+                    [points[i+4].z, points[i+5].z, points[i+6].z, points[i+7].z],
+                    [points[i+8].z, points[i+9].z, points[i+10].z, points[i+11].z],
+                    [points[i+12].z, points[i+13].z, points[i+14].z, points[i+15].z])
+        s = 0
+        si = 0
+        while s < 1:
+            S = Matrix([s*s*s, s*s, s, 1])
+            SxM = S @ M
+            SxMxGx = SxM @ Gx
+            SxMxGy = SxM @ Gy
+            SxMxGz = SxM @ Gz
+            t = 0
+            ti = 0
+            surface.append([])
+            while t < 1:
+                T = Matrix([t*t*t, t*t, t, 1]).transpose()
+                MtxTt = Mt @ T
+                Qx = SxMxGx @ MtxTt
+                Qy = SxMxGy @ MtxTt
+                Qz = SxMxGz @ MtxTt
+                # print(Qz)
+                surface[-1].append(Point(Qx[0][0], Qy[0][0], Qz[0][0]))
+                t += step
+                ti+=1
+            # print("end")
+            s += step
+            si+=1
+    return surface
 
 
 def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:

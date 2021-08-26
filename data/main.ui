@@ -431,8 +431,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>415</width>
-             <height>270</height>
+             <width>398</width>
+             <height>299</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout">
@@ -524,6 +524,11 @@
                 <item>
                  <property name="text">
                   <string>Point</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>BezierSurface</string>
                  </property>
                 </item>
                 <item>
