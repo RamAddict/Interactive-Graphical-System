@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from math import inf, radians
+from math import radians
 from sys import argv
 from os import path
-from typing import Optional, Callable, Dict, Sequence, Tuple
-from ast import literal_eval, parse
+from typing import Optional, Dict
+from ast import literal_eval
 
 from PySide2.QtWidgets import (QApplication, QMainWindow, QWidget, QDialog,
                                QColorDialog, QFileDialog, QMessageBox, QInputDialog,
@@ -14,8 +14,8 @@ from PySide2.QtGui import (QPainter, QKeySequence, QColor, QPalette, QIcon,
 from PySide2.QtCore import Qt, QPoint
 
 from blas import Vector
-from graphics import (BSpline, Painter, Camera, Surface, Transformation, Drawable, Point, Line,
-                      Linestring, Polygon, Color, Bezier)
+from graphics import (Painter, Camera, Transformation, Drawable, Point, Linestring,
+                      Polygon, Color, Bezier, BSpline, Wireframe, Mesh, Surface)
 from utilities import experp, begin, sign, to_float, lerp
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
@@ -152,7 +152,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             algo = (SettingsDialog.CLIP_CS if dialog.clipCSButton.isChecked()
                     else SettingsDialog.CLIP_LB)
             self.viewport.camera.line_clipping_algorithm = algo
-            self.log(f"Settings: line clipping algorithm set to '{algo}'.")
+            self.log(f"Line clipping algorithm set to '{algo}'.")
 
         # setting up toolbar actions
         self.toolBar.setContextMenuPolicy(Qt.PreventContextMenu)
@@ -173,28 +173,43 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             color = QColor(self.colorEdit.text())
             color = Color(color.red(), color.green(), color.blue())
 
-            text = self.pointsText.toPlainText().replace("\n", " ")
-            parsed = literal_eval(text)
-            if not isinstance(parsed, tuple): return
-
+            lines = [line.strip() for line in self.pointsText.toPlainText().split(";") if len(line.strip()) > 0]
             obj = None
-            if typename == 'Point' and len(parsed) >= 2 and isinstance(parsed[0], (int, float)):
-                obj = Point(*parsed)
-            elif typename == 'Line' and len(parsed) == 2 and isinstance(parsed[0], tuple):
-                a, b = parsed
-                obj = Line(Point(*a), Point(*b))
-            elif typename == 'Linestring' and len(parsed) > 2:
-                obj = Linestring([Point(*p) for p in parsed])
-            elif typename == 'Polygon' and len(parsed) > 2:
-                obj = Polygon([Point(*p) for p in parsed])
-            elif typename == 'Bezier' and len(parsed) >= 4 and len(parsed) % 3 == 1:
-                obj = Bezier([Point(*p) for p in parsed])
-            elif typename == 'BSpline' and len(parsed) >= 4:
-                obj = BSpline([Point(*p) for p in parsed])
-            elif typename == 'BezierSurface' and len(parsed) >= 16:
-                obj = Surface([Point(*p) for p in parsed])
+            if len(lines) < 2:
+                parsed = literal_eval(lines[0])
+                if typename == 'Point' and len(parsed) >= 2 and isinstance(parsed[0], (int, float)):
+                    obj = Point(*parsed)
+                elif typename in ('Line', 'Linestring') and len(parsed) >= 2:
+                    obj = Linestring([Point(*p) for p in parsed])
+                elif typename == 'Polygon' and len(parsed) >= 3:
+                    obj = Polygon([Point(*p) for p in parsed])
+                elif typename == 'Bezier' and len(parsed) >= 4 and len(parsed) % 3 == 1:
+                    obj = Bezier([Point(*p) for p in parsed])
+                elif typename == 'BSpline' and len(parsed) >= 4:
+                    obj = BSpline([Point(*p) for p in parsed])
+                else:
+                    return
             else:
-                return
+                if typename == 'Wireframe':
+                    wires = []
+                    for line in lines:
+                        parsed = literal_eval(line)
+                        wires.append(Linestring([Point(*p) for p in parsed]))
+                    obj = Wireframe(wires)
+                elif typename == 'Mesh':
+                    faces = []
+                    for line in lines:
+                        parsed = literal_eval(line)
+                        faces.append(Polygon([Point(*p) for p in parsed]))
+                    obj = Mesh(faces)
+                elif typename == 'BezierSurface':
+                    points = []
+                    for line in lines:
+                        parsed = literal_eval(line)
+                        points.extend([Point(*p) for p in parsed])
+                    obj = Surface(points)
+                else:
+                    return
 
             self.insert_object(obj, name,
                                index=self.displayFile.currentRow() + 1,
@@ -228,7 +243,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 result = result @ matrix
             drawable.transform(result)
             self.viewport.update()
-            self.log("Applied transformation\n" + str(result))
+            self.log(f"Applied transformation\n{result}")
 
         def add_transformation():
             def parse_tuple3(text):
@@ -308,7 +323,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         obj.attributes['color'] = color
 
         self.displayFile.insertItem(index, name)
-        self.log(f"Added {type(obj).__name__} '{name}' to Display File.")
+        self.log(f"Added object '{name}' to Display File.")
         self.displayFile.setCurrentRow(index)
         self.componentWidget.setCurrentWidget(self.emptyPage)
         self.viewport.update()
@@ -322,7 +337,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
         else:
             name = item.text()
             model = self.display_file.pop(name)
-            self.log(f"Removed '{name}' from Display File.")
+            self.log(f"Removed object '{name}' from Display File.")
             self.viewport.update()
             return model
 
@@ -477,7 +492,7 @@ class QtViewport(QWidget):
         if e.button() == Qt.MiddleButton:
             if self._drag_begin:
                 InteractiveGraphicalSystem.log(
-                    "Window dragged to (%g, %g, %g)" %
+                    "Camera dragged to (%g, %g, %g)" %
                     (self.camera.x, self.camera.y, self.camera.z)
                 )
             self._drag_begin = None

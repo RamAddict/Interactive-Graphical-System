@@ -1,7 +1,7 @@
 """Computer Graphics API."""
 
-from math import sqrt, cos, sin, inf, pi
-from typing import Iterable, List, Tuple, Sequence
+from math import cos, sin, inf, pi
+from typing import Iterable, Tuple, Sequence, List
 
 from blas import Vector, Matrix
 from utilities import pairwise, clamp, rotate_2D
@@ -256,48 +256,11 @@ class Point(Drawable, Vector):
         return Point(*self)
 
 
-class Line(Drawable):
-    def __init__(self, pa: Point, pb: Point):
-        self._points = [pa, pb]
-
-    def __len__(self) -> int:
-        return 2
-
-    def __getitem__(self, key: int) -> Point:
-        return self._points[key]
-
-    def __setitem__(self, key: int, point: Point):
-        self._points[key] = point
-
-    def __repr__(self):  # WKT
-        return f"LINESTRING ({self[0].x} {self[0].y} {self[0].z}, {self[1].x} {self[1].y}, {self[0].z})"
-
-    def __eq__(self, other: Sequence[Point]) -> bool:
-        if len(other) != len(self): return False
-        for p1, p2 in zip(self, other):
-            if p1 != p2:
-                return False
-        return True
-
-    def render(self, renderer: Renderer):
-        renderer.render_line(self[0].x, self[0].y, self[0].z, self[1].x, self[1].y, self[1].z)
-
-    def transform(self, transformation: Matrix):
-        for i, point in enumerate(self._points):
-            self._points[i] = Point(*(transformation @ point))
-
-    def center(self) -> Point:
-        return (self[0] + self[1]) / 2
-
-    @property
-    def length(self) -> float:
-        return sqrt((self[0].x - self[1].x)**2 + (self[0].y - self[1].y)**2 + (self[0].z - self[1].z)**2)
-
-
 class Linestring(Drawable):
     """Open polygon defined by a sequence of connected points."""
 
     def __init__(self, points: Sequence[Point]):
+        assert(len(points) >= 2)
         self._points = points
 
     def __len__(self):
@@ -341,6 +304,7 @@ class Polygon(Linestring):
     """Filled polygon."""
 
     def __init__(self, points: Sequence[Point]):
+        assert(len(points) >= 3)
         points = list(points)
         if points[-1] != points[0]:  # ensures polygons are closed
             p = points[0]
@@ -366,51 +330,68 @@ class BSpline(Linestring):
 
 
 class Wireframe(Drawable):
-    """3D model defined by a set of points and lines linking them."""
+    """3D model as a collection of wires."""
 
-    def __init__(self, points: Sequence[Point], lines: Sequence[Tuple[int, int]]):
-        self.points = points
-        self.lines = lines
+    def __init__(self, faces: Sequence[Linestring]):
+        assert(len(faces) >= 1)
+        self.faces= faces
 
-    def __len__(self):
-        return len(self.lines)
-
-    def __getitem__(self, key: int) -> Tuple[Point, Point]:
-        a, b = self.lines[key]
-        return self.points[a], self.points[b]
-
-    def __setitem__(self, key: int, line: Tuple[int, int]):
-        self.lines[key] = line
-
-    def __repr__(self):  # WKT
-        line = lambda a, b: (
-            f'({self.points[a].x} {self.points[a].y} {self.points[a].z},' +
-            f' {self.points[b].x} {self.points[b].y} {self.points[b].z})')
-        return f"MULTILINESTRING ({','.join(line(a, b) for a, b in self.lines)})"
+    def __repr__(self):
+        faces = ','.join(repr(line).removeprefix('LINESTRING ') for line in self.faces)
+        return f"MULTILINESTRING ({faces})"
 
     def __eq__(self, other) -> bool:
         return (isinstance(other, Wireframe)
-                and self.points == other.points
-                and self.lines == other.lines)
+                and self.faces == other.faces)
 
     def render(self, renderer: Renderer):
-        for a, b in self.lines:
-            pa, pb = self.points[a], self.points[b]
-            renderer.render_line(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z)
+        for line in self.faces:
+            line.render(renderer)
 
     def transform(self, transformation: Matrix):
-        for i, point in enumerate(self.points):
-            self.points[i] = Point(*(transformation @ point))
+        for line in self.faces:
+            line.transform(transformation)
 
     def center(self) -> Point:
         average = Point(0, 0, 0)
-        for p in self.points:
-            average += p
-        return average / len(self.points)
+        for line in self.faces:
+            average += line.center()
+        return average / len(self.faces)
+
+
+class Mesh(Drawable):
+    """3D model as a collection of faces."""
+
+    def __init__(self, faces: Sequence[Polygon]):
+        assert(len(faces) >= 1)
+        self.faces = faces
+
+    def __repr__(self):
+        faces = ','.join(repr(face).removeprefix('POLYGON ') for face in self.faces)
+        return f"MULTIPOLYGON ({faces})"
+
+    def __eq__(self, other) -> bool:
+        return (isinstance(other, Mesh)
+                and self.faces == other.faces)
+
+    def render(self, renderer: Renderer):
+        for face in self.faces:
+            face.render(renderer)
+
+    def transform(self, transformation: Matrix):
+        for face in self.faces:
+            face.transform(transformation)
+
+    def center(self) -> Point:
+        average = Point(0, 0, 0)
+        for face in self.faces:
+            average += face.center()
+        return average / len(self.faces)
+
 
 class Surface(Wireframe):
     """3D model defined by a set of points and lines linking every row and column (assumes 16nx16)"""
-   
+
     def __init__(self, points: Sequence[Point], step=0.05):
         points = bezierSurface(points, step)
         self.points = []
@@ -444,6 +425,7 @@ class Surface(Wireframe):
             x+=len(points)
             z+=len(points)
         # print(self.lines)
+
 
 class Camera(Renderer):
     """Implements object rendering, calling a painter to draw to the screen."""
@@ -860,10 +842,45 @@ def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
 
     return curve
 
+
+def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
+    if len(points) < 3: return points
+    if len(points) == 3: points = [points[0], points[1], points[1], points[2]]
+
+    curve = []
+
+    d1 = step
+    d2 = d1*step
+    d3 = d2*step
+    E = Matrix([0,    0,    0,  1],
+               [d3,   d2,   d1, 0],
+               [6*d3, 2*d2, 0,  0],
+               [6*d3, 0,    0,  0])
+    M = (1/6)*Matrix([-1, 3,  -3, 1],
+                     [3,  -6, 3,  0],
+                     [-3, 0,  3,  0],
+                     [1,  4,  1,  0])
+    ExM = E @ M
+    for i in range(0, len(points) - 3):
+        G = Matrix(points[i], points[i+1], points[i+2], points[i+3])
+        D = ExM @ G
+        j = 0
+        while True:
+            j += step
+            if j >= 1: break
+            curve.append(Point(D[0][0], D[0][1]))
+            D[0] += D[1]
+            D[1] += D[2]
+            D[2] += D[3]
+
+    return curve
+
+
 def bezierSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
     """Assumes number of points is of the form (4 + 3*i), iterates 4 by 4."""
     if len(points) < 16: return points
     surface: List[List[Point]] = []
+
     M = Matrix([-1, 3,  -3, 1],
                [3,  -6, 3,  0],
                [-3, 3,  0,  0],
@@ -900,44 +917,9 @@ def bezierSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
                 Qx = SxMxGx @ MtxTt
                 Qy = SxMxGy @ MtxTt
                 Qz = SxMxGz @ MtxTt
-                # print(Qz)
                 surface[-1].append(Point(Qx[0][0], Qy[0][0], Qz[0][0]))
                 t += step
-                ti+=1
-            # print("end")
+                ti += 1
             s += step
-            si+=1
+            si += 1
     return surface
-
-
-def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
-    if len(points) < 3: return points
-    if len(points) == 3: points = [points[0], points[1], points[1], points[2]]
-
-    curve = []
-
-    d1 = step
-    d2 = d1*step
-    d3 = d2*step
-    E = Matrix([0,    0,    0,  1],
-               [d3,   d2,   d1, 0],
-               [6*d3, 2*d2, 0,  0],
-               [6*d3, 0,    0,  0])
-    M = (1/6)*Matrix([-1, 3,  -3, 1],
-                     [3,  -6, 3,  0],
-                     [-3, 0,  3,  0],
-                     [1,  4,  1,  0])
-    ExM = E @ M
-    for i in range(0, len(points) - 3):
-        G = Matrix(points[i], points[i+1], points[i+2], points[i+3])
-        D = ExM @ G
-        j = 0
-        while True:
-            j += step
-            if j >= 1: break
-            curve.append(Point(D[0][0], D[0][1]))
-            D[0] += D[1]
-            D[1] += D[2]
-            D[2] += D[3]
-
-    return curve

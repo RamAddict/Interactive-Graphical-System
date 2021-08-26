@@ -130,9 +130,9 @@ class Matrix(Vector):
         super().__init__(*rows)
 
     def transpose(self):
-        """Returns this matrix transposed"""
-        M = [[self[j][i] for j in range(self.rows)] for i in range(self.columns)]
-        return Matrix(*M)
+        """Returns a transposed version of this matrix."""
+        m, n = self.rows, self.columns
+        return Matrix.from_function(n, m, lambda i, j: self[j][i])
 
     @staticmethod
     def from_lists(rows: Sequence):
