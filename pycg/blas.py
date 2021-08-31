@@ -129,11 +129,6 @@ class Matrix(Vector):
                 rows.append(convert(row))
         super().__init__(*rows)
 
-    def transpose(self):
-        """Returns a transposed version of this matrix."""
-        m, n = self.rows, self.columns
-        return Matrix.from_function(n, m, lambda i, j: self[j][i])
-
     @staticmethod
     def from_lists(rows: Sequence):
         """Creates a Matrix with the given sequence of sequences."""
@@ -184,6 +179,9 @@ class Matrix(Vector):
             raise NotImplementedError("Can't multiply Matrix by %s." %
                                       type(other).__name__)
 
+    def __str__(self) -> str:
+        return "[" + ";\n".join(str(line) for line in self) + "]\n"
+
     @property
     def rows(self):
         return len(self)
@@ -191,3 +189,8 @@ class Matrix(Vector):
     @property
     def columns(self):
         return len(self[0])
+
+    def transpose(self):
+        """Returns a transposed version of this matrix."""
+        m, n = self.rows, self.columns
+        return Matrix.from_function(n, m, lambda i, j: self[j][i])

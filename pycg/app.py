@@ -213,7 +213,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 for line in lines:
                     parsed = literal_eval(line)
                     points.append([Point(*p) for p in parsed])
-                obj = BSplineSurface(points, bSpline=True)
+                obj = BSplineSurface(points)
 
             if obj:
                 self.insert_object(

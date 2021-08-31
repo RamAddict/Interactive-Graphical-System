@@ -407,24 +407,24 @@ class BezierSurface(Wireframe):
         super().__init__(wires)
 
 
-
 class BSplineSurface(Wireframe):
-    """Wireframe defined by a grid of control points (multiple of 4x4)."""
-
     def __init__(self, points: List[List[Point]], step=0.05):
+        curves = []
 
-        grid = Matrix(*bSplin(points, step))
+        m = len(points)
+        for i in range(m - 3):
+            n = len(points[i])
+            for j in range(n - 3):
+                controls = [
+                    points[i][j], points[i][j+1], points[i][j+2], points[i][j+3],
+                    points[i+1][j], points[i+1][j+1], points[i+1][j+2], points[i+1][j+3],
+                    points[i+2][j], points[i+2][j+1], points[i+2][j+2], points[i+2][j+3],
+                    points[i+3][j], points[i+3][j+1], points[i+3][j+2], points[i+3][j+3],
+                ]
+                lines = bSplineSurface(controls, step)
+                curves.extend([Linestring(line) for line in lines])
 
-        wires = []
-
-        def add_lines(grid):
-            for line in grid:
-                wires.append(Linestring([Point(*p) for p in line]))
-
-        add_lines(grid)
-        add_lines(grid.transpose())
-# TODO
-        super().__init__(wires)
+        super().__init__(curves)
 
 
 class Camera(Renderer):
@@ -849,12 +849,11 @@ def forward_diff(
     y, dy, dy2, dy3,
     z, dz, dz2, dz3
 ) -> Iterable[Point]:
-    yield Point(x, y, z)
     for _ in range(n):
+        yield Point(x, y, z)
         x += dx; dx += dx2; dx2 += dx3
         y += dy; dy += dy2; dy2 += dy3
         z += dz; dz += dz2; dz2 += dz3
-        yield Point(x, y, z)
 
 
 def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
