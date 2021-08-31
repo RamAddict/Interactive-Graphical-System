@@ -1,6 +1,6 @@
 from math import pi
 
-from graphics import Transformation, Point, Linestring, Polygon, Bezier, bezierSurface
+from graphics import Transformation, Point, Linestring, Polygon, Bezier, bezierSurface, bSplineSurface
 
 
 def test_transformations_center_pivot():
@@ -69,6 +69,15 @@ def test_bezier():
 
 def test_surface_bezier():
     _ = bezierSurface([
+        Point(0, 0, 0), Point(0, 3, 4), Point(0, 6, 3), Point(0, 10 ,0),
+        Point(3, 2.5, 2), Point(2, 6, 5), Point(3, 8, 5), Point(4, 0, 2),
+        Point(6, 3, 2), Point(8, 6, 5), Point(7, 10, 4.5 ), Point(6, 0, 2.5),
+        Point(10, 0, 0), Point(11, 3, 4), Point(11, 6, 3), Point(10, 9, 0)
+    ], step=.1)
+
+
+def test_surface_bSpline():
+    _ = bSplineSurface([
         Point(0, 0, 0), Point(0, 3, 4), Point(0, 6, 3), Point(0, 10 ,0),
         Point(3, 2.5, 2), Point(2, 6, 5), Point(3, 8, 5), Point(4, 0, 2),
         Point(6, 3, 2), Point(8, 6, 5), Point(7, 10, 4.5 ), Point(6, 0, 2.5),

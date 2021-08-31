@@ -14,7 +14,8 @@ from PySide2.QtCore import Qt, QPoint
 
 from blas import Vector
 from graphics import (Painter, Camera, Transformation, Drawable, Point, Linestring,
-                      Polygon, Color, Bezier, BSpline, Wireframe, Mesh, Surface)
+                      Polygon, Color, Bezier, BSpline, Wireframe, Mesh,
+                      BezierSurface, BSplineSurface)
 from utilities import experp, begin, sign, to_float, lerp
 import obj as wavefront_obj
 from ui.main import Ui_MainWindow
@@ -206,7 +207,13 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 for line in lines:
                     parsed = literal_eval(line)
                     points.extend([Point(*p) for p in parsed])
-                obj = Surface(points)
+                obj = BezierSurface(points)
+            elif typename == 'B-Spline Surface':
+                points = []
+                for line in lines:
+                    parsed = literal_eval(line)
+                    points.append([Point(*p) for p in parsed])
+                obj = BSplineSurface(points, bSpline=True)
 
             if obj:
                 self.insert_object(
