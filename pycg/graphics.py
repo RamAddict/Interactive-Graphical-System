@@ -1,7 +1,7 @@
 """Computer Graphics API."""
 
-from math import cos, sin, inf, pi
-from typing import Iterable, Tuple, Sequence, List
+from math import cos, sin, inf, pi, ceil
+from typing import Iterable, List, Tuple, Sequence
 
 from blas import Vector, Matrix
 from utilities import pairwise, clamp, rotate_2D
@@ -423,7 +423,7 @@ class BSplineSurface(Wireframe):
 
         add_lines(grid)
         add_lines(grid.transpose())
-
+# TODO
         super().__init__(wires)
 
 
@@ -843,11 +843,23 @@ def bezier(points: Sequence[Point], step: float) -> Sequence[Point]:
     return curve
 
 
+def forward_diff(
+    n,
+    x, dx, dx2, dx3,
+    y, dy, dy2, dy3,
+    z, dz, dz2, dz3
+) -> Iterable[Point]:
+    yield Point(x, y, z)
+    for _ in range(n):
+        x += dx; dx += dx2; dx2 += dx3
+        y += dy; dy += dy2; dy2 += dy3
+        z += dz; dz += dz2; dz2 += dz3
+        yield Point(x, y, z)
+
+
 def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
     if len(points) < 3: return points
     if len(points) == 3: points = [points[0], points[1], points[1], points[2]]
-
-    curve = []
 
     d1 = step
     d2 = d1*step
@@ -861,17 +873,23 @@ def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
                      [-3, 0,  3,  0],
                      [1,  4,  1,  0])
     ExM = E @ M
-    for i in range(0, len(points) - 3):
-        G = Matrix(points[i], points[i+1], points[i+2], points[i+3])
-        D = ExM @ G
-        j = 0
-        while True:
-            j += step
-            if j >= 1: break
-            curve.append(Point(D[0][0], D[0][1]))
-            D[0] += D[1]
-            D[1] += D[2]
-            D[2] += D[3]
+
+    curve = []
+
+    for i in range(0, len(points) - 3, 1):
+        Gx = Vector(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
+        Gy = Vector(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
+        Gz = Vector(points[i].z, points[i+1].z, points[i+2].z, points[i+3].z)
+        Dx = ExM @ Gx
+        Dy = ExM @ Gy
+        Dz = ExM @ Gz
+
+        curve.extend(list(forward_diff(
+            ceil(1 / step),
+            Dx[0], Dx[1], Dx[2], Dx[3],
+            Dy[0], Dy[1], Dy[2], Dy[3],
+            Dz[0], Dz[1], Dz[2], Dz[3],
+        )))
 
     return curve
 
@@ -926,74 +944,17 @@ def bezierSurface(points: List[Point], step: float) -> List[List[Point]]:
     return surface
 
 
-def bSpline(points: Sequence[Point], step: float) -> Sequence[Point]:
-    if len(points) < 3: return points
-    if len(points) == 3: points = [points[0], points[1], points[1], points[2]]
+def bSplineSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
+    if len(points) < 16: return points
 
-    d1 = step
-    d2 = d1*step
-    d3 = d2*step
-    E = Matrix([0,    0,    0,  1],
-               [d3,   d2,   d1, 0],
-               [6*d3, 2*d2, 0,  0],
-               [6*d3, 0,    0,  0])
     M = (1/6)*Matrix([-1, 3,  -3, 1],
                      [3,  -6, 3,  0],
                      [-3, 0,  3,  0],
                      [1,  4,  1,  0])
-    ExM = E @ M
-    return drawCurveFwdDif(points, step, ExM)
 
-def drawCurveFwdDif(points: Sequence[Point], step: float, ExM: Matrix) -> Sequence[Point]:
-    curve = []
-    for i in range(0, len(points) - 3):
-        Gx = Vector(points[i].x, points[i+1].x, points[i+2].x, points[i+3].x)
-        Gy = Vector(points[i].y, points[i+1].y, points[i+2].y, points[i+3].y)
-        Gz = Vector(points[i].z, points[i+1].z, points[i+2].z, points[i+3].z)
-        Dx = ExM @ Gx
-        Dy = ExM @ Gy
-        Dz = ExM @ Gz
-        j = 0
-        while True:
-            j += step
-            if j >= 1: break
-            curve.append(Point(Dx[0], Dy[0], Dz[0]))
-            Dx[0] += Dx[1]
-            Dx[1] += Dx[2]
-            Dx[2] += Dx[3]
-            Dy[0] += Dy[1]
-            Dy[1] += Dy[2]
-            Dy[2] += Dy[3]
-            Dz[0] += Dz[1]
-            Dz[1] += Dz[2]
-            Dz[2] += Dz[3]
-    return curve
+    curve: List[List[Point]] = []
 
-def bSplineSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
-    if len(points) < 16: return points
-    s = t = step
-    curve = []
-
-    d1 = step
-    d2 = d1*step
-    d3 = d2*step
-    Es = Matrix([0,    0,    0,  1],
-               [d3,   d2,   d1, 0],
-               [6*d3, 2*d2, 0,  0],
-               [6*d3, 0,    0,  0])
-    Et = Es.transpose()
-
-    M: Matrix = (1/6)*Matrix([-1, 3,  -3, 1],
-                    [3,  -6, 3,  0],
-                    [-3, 0,  3,  0],
-                    [1,  4,  1,  0])
-    # for every submatrix in the points (skipping 2 down and up)
-    # for i in range(0, len(points)-15, 15):
     i = 0
-    # G = Matrix([points[i], points[i+1], points[i+2], points[i+3]],
-    #             [points[i+4], points[i+5], points[i+6], points[i+7]],
-    #             [points[i+8], points[i+9], points[i+10], points[i+11]],
-    #             [points[i+12], points[i+13], points[i+14], points[i+15]])
     Gx = Matrix([points[i].x, points[i+1].x, points[i+2].x, points[i+3].x],
                 [points[i+4].x, points[i+5].x, points[i+6].x, points[i+7].x],
                 [points[i+8].x, points[i+9].x, points[i+10].x, points[i+11].x],
@@ -1007,47 +968,49 @@ def bSplineSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
                 [points[i+8].z, points[i+9].z, points[i+10].z, points[i+11].z],
                 [points[i+12].z, points[i+13].z, points[i+14].z, points[i+15].z])
 
-    # C: Matrix = M @ G @ M.transpose()
-    Cx: Matrix = M @ Gx @ M.transpose()
-    Cy: Matrix = M @ Gy @ M.transpose()
-    Cz: Matrix = M @ Gz @ M.transpose()
+    Cx = M @ Gx @ M.transpose()
+    Cy = M @ Gy @ M.transpose()
+    Cz = M @ Gz @ M.transpose()
 
-    # DD: Matrix = Es @ C @ Et
-    DDx: Matrix = Es @ Cx @ Et
-    DDy: Matrix = Es @ Cy @ Et
-    DDz: Matrix = Es @ Cz @ Et
-    while True:
-        s += step
-        if s >= 1: break
-        print(DDx[0])
-        curve.append(drawCurveFwdDif(DDx[0], step))
-        curve.append(drawCurveFwdDif(DDy[0], step))
-        curve.append(drawCurveFwdDif(DDz[0], step))
-        # update DD Matrix
-        for i in range(0, 3):
-            # DD[i] += DD[i+1]
-            DDx[i] += DDx[i+1]
-            DDy[i] += DDy[i+1]
-            DDz[i] += DDz[i+1]
-    # DD: Matrix = Es @ C @ Et
-    # DD = DD.transpose()
-    DDx: Matrix = Es @ Cx @ Et
-    DDy: Matrix = Es @ Cy @ Et
-    DDz: Matrix = Es @ Cz @ Et
-    DDx = DDx.transpose()
-    DDy = DDy.transpose()
-    DDz = DDz.transpose()
+    ns = ceil(1 / step)
+    nt = ceil(1 / step)
+    d1 = step
+    d2 = d1*step
+    d3 = d2*step
+    Es = Matrix([0,    0,    0,  1],
+                [d3,   d2,   d1, 0],
+                [6*d3, 2*d2, 0,  0],
+                [6*d3, 0,    0,  0])
+    Et = Es.transpose()
 
-    while True:
-        t += step
-        if t >= 1: break
-        curve.append(bSpline(DDx[0], step))
-        # update DD Matrix
+    DDx = Es @ Cx @ Et
+    DDy = Es @ Cy @ Et
+    DDz = Es @ Cz @ Et
+    for _ in range(ns):
+        curve.append([p for p in forward_diff(
+            nt,
+            DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
+            DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
+            DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3]
+        )])
         for i in range(0, 3):
-            # DD[i] += DD[i+1]
             DDx[i] += DDx[i+1]
             DDy[i] += DDy[i+1]
             DDz[i] += DDz[i+1]
 
-    print(curve)
+    DDx = (Es @ Cx @ Et).transpose()
+    DDy = (Es @ Cy @ Et).transpose()
+    DDz = (Es @ Cz @ Et).transpose()
+    for _ in range(nt):
+        curve.append([p for p in forward_diff(
+            ns,
+            DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
+            DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
+            DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3]
+        )])
+        for i in range(0, 3):
+            DDx[i] += DDx[i+1]
+            DDy[i] += DDy[i+1]
+            DDz[i] += DDz[i+1]
+
     return curve
