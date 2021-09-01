@@ -943,29 +943,30 @@ def bezierSurface(points: List[Point], step: float) -> List[List[Point]]:
     return surface
 
 
-def bSplineSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
+def bSplineSurface(points: List[Point], step: float) -> List[List[Point]]:
     if len(points) < 16: return points
+
+    curves: List[List[Point]] = []
 
     M = (1/6)*Matrix([-1, 3,  -3, 1],
                      [3,  -6, 3,  0],
                      [-3, 0,  3,  0],
                      [1,  4,  1,  0])
 
-    curve: List[List[Point]] = []
+    Gx = Matrix([points[0].x,  points[1].x,  points[2].x,  points[3].x],
+                [points[4].x,  points[5].x,  points[6].x,  points[7].x],
+                [points[8].x,  points[9].x,  points[10].x, points[11].x],
+                [points[12].x, points[13].x, points[14].x, points[15].x])
 
-    i = 0
-    Gx = Matrix([points[i].x, points[i+1].x, points[i+2].x, points[i+3].x],
-                [points[i+4].x, points[i+5].x, points[i+6].x, points[i+7].x],
-                [points[i+8].x, points[i+9].x, points[i+10].x, points[i+11].x],
-                [points[i+12].x, points[i+13].x, points[i+14].x, points[i+15].x])
-    Gy = Matrix([points[i].y, points[i+1].y, points[i+2].y, points[i+3].y],
-                [points[i+4].y, points[i+5].y, points[i+6].y, points[i+7].y],
-                [points[i+8].y, points[i+9].y, points[i+10].y, points[i+11].y],
-                [points[i+12].y, points[i+13].y, points[i+14].y, points[i+15].y])
-    Gz = Matrix([points[i].z, points[i+1].z, points[i+2].z, points[i+3].z],
-                [points[i+4].z, points[i+5].z, points[i+6].z, points[i+7].z],
-                [points[i+8].z, points[i+9].z, points[i+10].z, points[i+11].z],
-                [points[i+12].z, points[i+13].z, points[i+14].z, points[i+15].z])
+    Gy = Matrix([points[0].y,  points[1].y,  points[2].y,  points[3].y],
+                [points[4].y,  points[5].y,  points[6].y,  points[7].y],
+                [points[8].y,  points[9].y,  points[10].y, points[11].y],
+                [points[12].y, points[13].y, points[14].y, points[15].y])
+
+    Gz = Matrix([points[0].z,  points[1].z,  points[2].z,  points[3].z],
+                [points[4].z,  points[5].z,  points[6].z,  points[7].z],
+                [points[8].z,  points[9].z,  points[10].z, points[11].z],
+                [points[12].z, points[13].z, points[14].z, points[15].z])
 
     Cx = M @ Gx @ M.transpose()
     Cy = M @ Gy @ M.transpose()
@@ -986,12 +987,12 @@ def bSplineSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
     DDy = Es @ Cy @ Et
     DDz = Es @ Cz @ Et
     for _ in range(ns):
-        curve.append([p for p in forward_diff(
+        curves.append(list(forward_diff(
             nt,
             DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
             DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
             DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3]
-        )])
+        )))
         for i in range(0, 3):
             DDx[i] += DDx[i+1]
             DDy[i] += DDy[i+1]
@@ -1001,15 +1002,15 @@ def bSplineSurface(points: Sequence[Point], step: float) -> Sequence[Point]:
     DDy = (Es @ Cy @ Et).transpose()
     DDz = (Es @ Cz @ Et).transpose()
     for _ in range(nt):
-        curve.append([p for p in forward_diff(
+        curves.append(list(forward_diff(
             ns,
             DDx[0][0], DDx[0][1], DDx[0][2], DDx[0][3],
             DDy[0][0], DDy[0][1], DDy[0][2], DDy[0][3],
             DDz[0][0], DDz[0][1], DDz[0][2], DDz[0][3]
-        )])
+        )))
         for i in range(0, 3):
             DDx[i] += DDx[i+1]
             DDy[i] += DDy[i+1]
             DDz[i] += DDz[i+1]
 
-    return curve
+    return curves
