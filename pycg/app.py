@@ -430,8 +430,15 @@ class QtViewport(QWidget):
         painter.drawRect(40, 40, w - 80, h-80)
 
         for drawable in self._display_file.values():
-            painter.setPen(QColor(str(drawable.color)))
-            painter.setBrush(QColor(str(drawable.color)))
+            color = drawable.color
+            color = QColor.fromRgb(color.r, color.g, color.b, color.a)
+
+            # NOTE: lacking shadows, alpha for filled objs is slightly reduced
+            if isinstance(drawable, (Polygon, Mesh)):
+                color.setAlpha(color.alpha() * 0.75)
+
+            painter.setPen(color)
+            painter.setBrush(color)
             drawable.render(self.camera)
 
         painter.end()
