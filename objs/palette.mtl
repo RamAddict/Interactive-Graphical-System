@@ -12,3 +12,6 @@ Kd 0 0 0
 
 newmtl white
 Kd 1 1 1
+
+newmtl light_gray
+Kd 0.75 0.75 0.75
