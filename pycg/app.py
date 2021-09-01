@@ -173,7 +173,11 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
             color = QColor(self.colorEdit.text())
             color = Color(color.red(), color.green(), color.blue())
 
-            lines = [line.strip() for line in self.pointsText.toPlainText().split(";") if len(line.strip()) > 0]
+            lines = [
+                line.strip()
+                for line in self.pointsText.toPlainText().split(";")
+                if len(line.strip()) > 0
+            ]
             obj = None
             if len(lines) < 2 and typename == 'Point':
                 parsed = literal_eval(lines[0])
@@ -250,7 +254,7 @@ class InteractiveGraphicalSystem(QMainWindow, Ui_MainWindow):
                 result = result @ matrix
             drawable.transform(result)
             self.viewport.update()
-            self.log(f"Applied transformation\n{result}")
+            self.log(f"Applied transformation matrix:\n{result}")
 
         def add_transformation():
             def parse_tuple3(text):

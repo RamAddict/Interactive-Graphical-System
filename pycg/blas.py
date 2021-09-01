@@ -180,7 +180,7 @@ class Matrix(Vector):
                                       type(other).__name__)
 
     def __str__(self) -> str:
-        return "[" + ";\n".join(str(line) for line in self) + "]\n"
+        return "[" + ",\n ".join(str(line) for line in self) + "]"
 
     @property
     def rows(self):
