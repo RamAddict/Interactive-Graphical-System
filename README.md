@@ -1,4 +1,7 @@
-# Interactive Graphical System - Computer Graphics in Python
+# Interactive Graphical System
+
+![Lines of code](https://img.shields.io/tokei/lines/github/RamAddict/INE5420-CG?color=%2301A1d0)
+![GitHub release](https://img.shields.io/github/v/release/RamAddict/INE5420-CG)
 
 UFSC Computer Graphics (INE5420) project using [Qt for Python][PySide2].
 
