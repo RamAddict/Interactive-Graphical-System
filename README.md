@@ -2,8 +2,10 @@
 
 UFSC Computer Graphics (INE5420) project using [Qt for Python][PySide2].
 
-![2D](https://user-images.githubusercontent.com/27034173/131594230-6012ef29-01fb-44db-8ba4-2d97f00ff00d.png)
-![3D](https://user-images.githubusercontent.com/27034173/131594235-0bc0321c-598d-4bb9-9959-6913577005d6.png)
+![3D](https://user-images.githubusercontent.com/27034173/131598578-02114b0e-6d33-455b-823b-3dfd36b59479.png)
+|||
+|---|---|
+|![2D](https://user-images.githubusercontent.com/27034173/131594230-6012ef29-01fb-44db-8ba4-2d97f00ff00d.png)|![Color](https://user-images.githubusercontent.com/27034173/131594235-0bc0321c-598d-4bb9-9959-6913577005d6.png)|
 
 
 ## Installation
