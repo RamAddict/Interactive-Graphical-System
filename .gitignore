@@ -21,3 +21,5 @@ venv/
 # OBJ
 *.obj
 *.mtl
+
+*.env
