@@ -1,17 +1,16 @@
 extends KinematicBody
 
 const MOUSE_SENSITIVITY = 0.5
-const MAX_SPEED = 20
-const ACCEL = 5
+const MAX_SPEED = 12
+const ACCEL = 6
 const DEACCEL = 10
-const GRAVITY = -10
-const JUMP_SPEED = 8
+const GRAVITY = -20
+const JUMP_SPEED = 10
 
 var vel = Vector3()
 
 onready var skeleton = $Skeleton
-onready var body = $CollisionShapeBody
-onready var feet = $CollisionShapeFeet
+onready var body = $CollisionShape
 onready var camera = $Camera
 onready var animator = $AnimationTree.get("parameters/playback")
 
@@ -30,7 +29,6 @@ func _input(event):
 		rotate_y(theta)
 		skeleton.rotate_y(-theta)
 		body.rotate_y(-theta)
-		feet.rotate_y(-theta)
 
 
 func _physics_process(delta):
@@ -90,8 +88,9 @@ func _physics_process(delta):
 		var facing = skeleton.global_transform.basis.y.normalized()
 		facing = Vector2(facing.x, -facing.z)
 		var direction = Vector2(dir.x, -dir.z)
-		var theta = facing.angle_to(direction)
-		skeleton.rotate_y(theta * delta * ACCEL)
+		var theta = facing.angle_to(direction) * delta * ACCEL
+		skeleton.rotate_y(theta)
+		body.rotate_y(theta)
 
 	# compute velocity
 	var ground_velocity = Vector3(vel.x, 0, vel.z)
@@ -106,4 +105,9 @@ func _physics_process(delta):
 	vel.x = ground_velocity.x
 	vel.z = ground_velocity.z
 	vel.y += delta * GRAVITY
-	vel = move_and_slide(vel, Vector3.UP)
+	var snap
+	if is_on_floor() and not Input.is_action_just_pressed("movement_jump"):
+		snap = Vector3.DOWN
+	else:
+		snap = Vector3.ZERO
+	vel = move_and_slide_with_snap(vel, snap, Vector3.UP, true)
