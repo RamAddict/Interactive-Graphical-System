@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=2]
+[gd_scene load_steps=13 format=2]
 
 [ext_resource path="res://assets/model/mat2.material" type="Material" id=1]
 [ext_resource path="res://assets/model/mat1.material" type="Material" id=2]
@@ -550,11 +550,15 @@ height = 1.27034
 [sub_resource type="BoxShape" id=8]
 extents = Vector3( 0.29, 0.15, 0.29 )
 
-[node name="Blaziken" type="KinematicBody"]
+[sub_resource type="AnimationNodeBlendTree" id=9]
+graph_offset = Vector2( 0, 101.5 )
+nodes/output/position = Vector2( 960, 260 )
+
+[node name="Player" type="KinematicBody"]
 script = ExtResource( 3 )
 
 [node name="Skeleton" type="Skeleton" parent="."]
-transform = Transform( 0.01, 0, 0, 0, -4.37114e-10, -0.01, 0, 0.01, -4.37114e-10, 0, -0.05, 0 )
+transform = Transform( 0.01, 0, 0, 0, -4.37114e-10, -0.01, 0, 0.01, -4.37114e-10, 0, -1.05, 0 )
 bones/0/name = "Salomao_Solving_Hips"
 bones/0/parent = -1
 bones/0/rest = Transform( 0.99966, 0.00888712, 0.0245118, -0.020799, -0.295102, 0.955239, 0.0157228, -0.955424, -0.294817, 0.195896, 0.222136, -93.5471 )
@@ -650,9 +654,16 @@ anims/Jump = SubResource( 5 )
 anims/Run = SubResource( 6 )
 
 [node name="CollisionShapeBody" type="CollisionShape" parent="."]
-transform = Transform( 1, 0, 0, 0, 0, -1, 0, 1, 0, -0.0136581, 0.899771, -0.0601176 )
+transform = Transform( 1, 0, 0, 0, 0, -1, 0, 1, 0, -0.014, -0.1, -0.06 )
 shape = SubResource( 7 )
 
 [node name="CollisionShapeFeet" type="CollisionShape" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.017006, 0.297713, -0.058708 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.017, -0.702, -0.059 )
 shape = SubResource( 8 )
+
+[node name="Camera" type="Camera" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2 )
+
+[node name="AnimationTree" type="AnimationTree" parent="."]
+tree_root = SubResource( 9 )
+anim_player = NodePath("../AnimationPlayer")
