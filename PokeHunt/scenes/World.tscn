@@ -1,9 +1,17 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://scenes/Player.tscn" type="PackedScene" id=1]
 [ext_resource path="res://scenes/Boat.tscn" type="PackedScene" id=2]
 [ext_resource path="res://assets/water/depth_buffer/Water.tscn" type="PackedScene" id=3]
 [ext_resource path="res://scenes/Sapo.tscn" type="PackedScene" id=4]
+[ext_resource path="res://ui/fonts/Comfortaa-Bold.ttf" type="DynamicFontData" id=5]
+
+[sub_resource type="BoxShape" id=1]
+extents = Vector3( 500, 1, 500 )
+
+[sub_resource type="DynamicFont" id=2]
+size = 150
+font_data = ExtResource( 5 )
 
 [node name="World" type="Spatial"]
 
@@ -42,3 +50,40 @@ transform = Transform( 0.05, 0, 0, 0, -0.00673909, 0.0495438, 0, -0.0495438, -0.
 
 [node name="Water" parent="." instance=ExtResource( 3 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.0186162, 0 )
+
+[node name="Area" type="Area" parent="Water"]
+
+[node name="CollisionShape" type="CollisionShape" parent="Water/Area"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.92327, 0 )
+shape = SubResource( 1 )
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="CenterContainer" type="CenterContainer" parent="CanvasLayer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="CanvasLayer/CenterContainer"]
+margin_left = 118.0
+margin_top = 312.0
+margin_right = 1162.0
+margin_bottom = 481.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_fonts/font = SubResource( 2 )
+custom_colors/font_color = Color( 1, 0.984314, 0.627451, 1 )
+text = "Voce venceu!"
+align = 1
+valign = 1
+
+[node name="Timer" type="Timer" parent="."]
+process_mode = 0
+
+[connection signal="body_entered" from="Sapo" to="Player" method="_on_Sapo_body_entered"]
+[connection signal="body_entered" from="Water/Area" to="Player" method="_on_Water_body_entered"]
+[connection signal="timeout" from="Timer" to="Player" method="_on_Timer_timeout"]

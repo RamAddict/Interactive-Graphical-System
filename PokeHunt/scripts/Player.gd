@@ -13,10 +13,15 @@ onready var skeleton = $Skeleton
 onready var body = $CollisionShape
 onready var camera = $Camera
 onready var animator = $AnimationTree.get("parameters/playback")
+onready var initial_transform = self.transform
+onready var message = get_parent().get_node("CanvasLayer/CenterContainer/Label")
+onready var timer = get_parent().get_node("Timer")
 
 
 func _ready():
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	message.text = "Encontre\n o sapo!"
+	timer.start(3)
 
 
 func _input(event):
@@ -111,3 +116,25 @@ func _physics_process(delta):
 	else:
 		snap = Vector3.ZERO
 	vel = move_and_slide_with_snap(vel, snap, Vector3.UP, true)
+
+
+func _on_Sapo_body_entered(body):
+	if body != self:
+		return
+
+	message.text = "Você venceu!"
+	timer.start(3)
+	self.transform = initial_transform
+
+
+func _on_Water_body_entered(body):
+	if body != self:
+		return
+
+	message.text = "Tente\nnovamente!"
+	timer.start(1.5)
+	self.transform = initial_transform
+
+
+func _on_Timer_timeout():
+	message.text = ""
