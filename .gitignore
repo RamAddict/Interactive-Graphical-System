@@ -21,9 +21,3 @@ venv/
 # OBJ
 *.obj
 *.mtl
-
-
-# Godot
-.import/
-export.cfg
-export_presets.cfg
